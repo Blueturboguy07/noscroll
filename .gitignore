@@ -1,0 +1,13 @@
+keys/*.pem
+keys/*.raw
+node_modules/
+dist/
+build/
+.gradle/
+*.xcuserdatad
+.build/
+.swiftpm/
+Project.xcodeproj/
+test-results/
+playwright-report/
+results.json

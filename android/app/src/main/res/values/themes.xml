@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.NoScroll" parent="Theme.AppCompat.DayNight.NoActionBar" />
+    <style name="Theme.NoScroll.Shield" parent="Theme.NoScroll">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

@@ -1,0 +1,21 @@
+{
+  "name": "@noscroll/engine",
+  "version": "0.1.0",
+  "description": "NoScroll blocking engine — one JS engine, injected into the platform's own mobile web app by both native shells.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "main": "dist/noscroll.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.24.2",
+    "happy-dom": "^15.11.7",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

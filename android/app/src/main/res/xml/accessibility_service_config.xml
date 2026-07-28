@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deliberately minimal.
+
+  - typeWindowStateChanged only: we need to know which app came to the front,
+    nothing else.
+  - NO canRetrieveWindowContent. We never read the contents of another app.
+  - NO canPerformGestures. We never act inside another app.
+  - packageNames is scoped to the apps this product shields, so the service is
+    not even notified about anything else.
+
+  This shape is what keeps us inside Google's Jan 2026 carve-out for
+  "deterministic, rule-based automation ... a static, human-defined script".
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="200"
+    android:packageNames="com.instagram.android,com.google.android.youtube"
+    android:description="@string/accessibility_description" />

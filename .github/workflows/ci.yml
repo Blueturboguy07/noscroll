@@ -1,0 +1,53 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: engine/pnpm-lock.yaml }
+      - run: pnpm install --dir engine
+      - run: pnpm --dir engine typecheck
+      # Includes the auth-guard invariant and the rule lint. If these fail,
+      # nothing ships.
+      - run: pnpm --dir engine test
+      - run: pnpm --dir engine build
+
+  signing:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      # Node and Swift must agree on canonical bytes. A mismatch would fail
+      # every signature on device while passing both languages' own tests.
+      - run: node tools/sign-bundle.mjs verify rules/*.json
+      - run: swift tools/verify-canonical.swift
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - run: cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd ios/NoScrollCore && swift test
+      - name: Typecheck app sources against the iOS SDK
+        run: |
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          cd ios
+          xcrun swiftc -typecheck -target arm64-apple-ios17.0 -sdk "$SDK" \
+            NoScroll/Core/*.swift NoScroll/Web/*.swift
+          for f in NoScroll/Shield/*.swift ShieldConfiguration/*.swift \
+                   ShieldAction/*.swift DeviceActivityMonitor/*.swift; do
+            xcrun swiftc -typecheck -target arm64-apple-ios17.0 -sdk "$SDK" "$f"
+          done

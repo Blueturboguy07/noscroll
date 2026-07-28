@@ -1,0 +1,52 @@
+<!--
+  Golden fixture: YouTube mobile home.
+
+  Structural fixture, hand-authored to mirror the real element graph. The custom
+  element names (ytm-pivot-bar-item-renderer, ytd-rich-shelf-renderer[is-shorts],
+  ytm-rich-section-renderer) are the stable public surface that the uBlock filter
+  lists key off, and are what our selectors target.
+
+  To regenerate from a live page instead, see tools/capture-fixture.mjs — it
+  captures and SANITISES real DOM (strips text, titles, thumbnails, ids and any
+  account markers) so a fixture can never carry a contributor's personal data
+  into the repo.
+-->
+<div id="app">
+  <ytm-pivot-bar-renderer style="display:flex">
+    <ytm-pivot-bar-item-renderer class="pivot-home">
+      <a href="/" aria-label="Home"><span>Home</span></a>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer class="pivot-shorts">
+      <a href="/shorts" aria-label="Shorts"><div aria-label="Shorts">Shorts</div></a>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer class="pivot-create">
+      <a href="/upload" aria-label="Create"><div aria-label="Create">Create</div></a>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer class="pivot-subs">
+      <a href="/feed/subscriptions" aria-label="Subscriptions"><span>Subscriptions</span></a>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer class="pivot-you">
+      <a href="/feed/you" aria-label="You"><span>You</span></a>
+    </ytm-pivot-bar-item-renderer>
+  </ytm-pivot-bar-renderer>
+
+  <ytm-rich-grid-renderer>
+    <ytm-rich-item-renderer>
+      <a href="/watch?v=aaaaaaaaaaa"><span>A normal long-form video</span></a>
+    </ytm-rich-item-renderer>
+
+    <ytm-rich-section-renderer id="shorts-shelf-1">
+      <h2>Shorts</h2>
+      <a href="/shorts/bbbbbbbbbbb"><span>short one</span></a>
+      <a href="/shorts/ccccccccccc"><span>short two</span></a>
+    </ytm-rich-section-renderer>
+
+    <ytm-rich-item-renderer>
+      <a href="/watch?v=ddddddddddd"><span>Another long-form video</span></a>
+    </ytm-rich-item-renderer>
+
+    <ytm-video-with-context-renderer id="inline-short">
+      <a href="/shorts/eeeeeeeeeee"><span>a short surfaced inline in the feed</span></a>
+    </ytm-video-with-context-renderer>
+  </ytm-rich-grid-renderer>
+</div>

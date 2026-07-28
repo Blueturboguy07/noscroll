@@ -1,0 +1,15 @@
+{
+  "name": "@noscroll/probe",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "probe": "playwright test",
+    "probe:youtube": "playwright test -g YouTube",
+    "probe:instagram": "playwright test -g Instagram"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1"
+  }
+}

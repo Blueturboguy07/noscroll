@@ -1,0 +1,50 @@
+<!--
+  Golden fixture: Instagram mobile web feed.
+
+  Structural fixture. Instagram's class names are hashed and rotate, so this
+  deliberately contains NO hashed classes — it mirrors only the stable surface
+  our selector policy allows us to target: href patterns, ARIA labels and roles.
+
+  If a future selector can only be expressed via a hashed class, it must carry
+  `expiresAfter` in the bundle and it will not be representable here. That is the
+  intended pressure: fixtures that cannot express a rule are telling you the rule
+  is too fragile to ship.
+-->
+<div id="mount">
+  <nav role="navigation" style="display:flex">
+    <a href="/" role="link" aria-label="Home"><span>Home</span></a>
+    <a href="/explore/" role="link" aria-label="Search"><span>Search</span></a>
+    <a href="/reels/" role="link" aria-label="Reels"><span>Reels</span></a>
+    <a href="/direct/inbox/" role="link" aria-label="Messenger"><span>Messages</span></a>
+    <a href="/accounts/activity/" role="link" aria-label="Notifications"><span>Notifications</span></a>
+    <a href="/someuser/" role="link" aria-label="Profile"><span>Profile</span></a>
+  </nav>
+
+  <main>
+    <section id="reels-tray">
+      <div><a href="/reels/123/" role="link"><span>reels tray item</span></a></div>
+    </section>
+
+    <article id="post-following">
+      <a href="/friendaccount/" role="link"><span>friendaccount</span></a>
+      <img alt="Photo by friendaccount" />
+      <span>A post from someone you actually follow</span>
+    </article>
+
+    <article id="post-suggested">
+      <div aria-label="Suggested for you">Suggested for you</div>
+      <a href="/randomaccount/" role="link"><span>randomaccount</span></a>
+      <span>An algorithmically suggested post</span>
+    </article>
+
+    <article id="post-sponsored">
+      <a href="https://example.com/?utm_source=ig" role="link"><span>Sponsored</span></a>
+      <span>An ad</span>
+    </article>
+
+    <article id="post-following-2">
+      <a href="/anotherfriend/" role="link"><span>anotherfriend</span></a>
+      <span>Another real post</span>
+    </article>
+  </main>
+</div>

@@ -1,0 +1,26 @@
+name: Live probe
+# Selector rot is continuous and silent. This is what turns it from "a user
+# eventually complains" into "an alert fires within one cycle".
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: pnpm install --dir engine && pnpm --dir engine build
+      - run: pnpm install --dir probe
+      - run: pnpm --dir probe exec playwright install --with-deps chromium
+      - run: pnpm --dir probe exec playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: probe-results
+          path: probe/results.json

@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "minEngine": 1,
+  "services": {
+    "instagram": {
+      "match": [
+        "*://*.instagram.com/*"
+      ],
+      "authAllowList": [
+        "^/accounts/",
+        "^/challenge/",
+        "^/oauth/",
+        "^/emailsignup"
+      ],
+      "surfaces": {
+        "reels-tab": {
+          "kind": "dom-remove",
+          "locked": true,
+          "label": "Block Reels",
+          "selectors": [
+            "nav a[href^='/reels']",
+            "[role='tablist'] a[href^='/reels']",
+            "[role='navigation'] a[href^='/reels']",
+            "a[href='/reels/'][role='link']",
+            "div[role='menuitem'] a[href^='/reels']"
+          ],
+          "afterRemove": "rejustify",
+          "observe": true,
+          "probe": {
+            "expectMin": 1,
+            "onlyWhenSignedIn": true
+          }
+        },
+        "reels-route": {
+          "kind": "route-block",
+          "locked": true,
+          "label": "Block Reels (routes)",
+          "patterns": [
+            "^/reels(/|$)",
+            "^/reels/audio/",
+            "^/reels/video/"
+          ],
+          "redirect": "/"
+        },
+        "reels-tray": {
+          "kind": "dom-remove",
+          "locked": true,
+          "label": "Block Reels tray in feed",
+          "selectors": [
+            "section:has(div > a[href^='/reels/'])",
+            "article:has(a[href^='/reels/'][role='link'])"
+          ],
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "explore-tab": {
+          "kind": "dom-remove",
+          "locked": true,
+          "label": "Block Explore",
+          "selectors": [
+            "nav a[href^='/explore']",
+            "[role='tablist'] a[href^='/explore']",
+            "[role='navigation'] a[href^='/explore']"
+          ],
+          "afterRemove": "rejustify",
+          "observe": true,
+          "probe": {
+            "expectMin": 1,
+            "onlyWhenSignedIn": true
+          }
+        },
+        "explore-route": {
+          "kind": "route-block",
+          "locked": true,
+          "label": "Block Explore (routes)",
+          "patterns": [
+            "^/explore(/|$)",
+            "^/explore/tags/",
+            "^/explore/locations/"
+          ],
+          "redirect": "/"
+        },
+        "suggested-posts": {
+          "kind": "dom-remove",
+          "defaultEnabled": true,
+          "label": "Hide Ads & Suggested",
+          "selectors": [
+            "article:has([aria-label='Suggested for you'])",
+            "article:has([aria-label*='Suggested'])",
+            "article:has(div[role='button'][aria-label*='Why am I seeing'])"
+          ],
+          "observe": true,
+          "suppression": "remove",
+          "probe": {
+            "expectMin": 0,
+            "warnIfZeroFor": "6h"
+          },
+          "source": "seeded from BevizLaszlo/UBlock-Filters-for-Social-Media (MIT)"
+        },
+        "sponsored": {
+          "kind": "dom-remove",
+          "defaultEnabled": true,
+          "label": "Hide sponsored posts",
+          "selectors": [
+            "article:has(a[href*='utm_source'])",
+            "article:has([data-ad-preview])"
+          ],
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "stories-tray": {
+          "kind": "dom-remove",
+          "defaultEnabled": false,
+          "label": "Block Stories",
+          "selectors": [
+            "main [role='menu']:has(canvas)",
+            "main > div > div:first-child:has(canvas + img)"
+          ],
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "stories-route": {
+          "kind": "route-block",
+          "defaultEnabled": false,
+          "label": "Block Stories (routes)",
+          "patterns": [
+            "^/stories/"
+          ],
+          "redirect": "/"
+        },
+        "saved-posts": {
+          "kind": "route-block",
+          "defaultEnabled": false,
+          "label": "Block Saved Posts",
+          "patterns": [
+            "^/[^/]+/saved(/|$)"
+          ],
+          "redirect": "/"
+        },
+        "feed": {
+          "kind": "dom-remove",
+          "defaultEnabled": false,
+          "label": "Block Feed",
+          "selectors": [
+            "main article"
+          ],
+          "onlyOnRoutes": [
+            "^/$"
+          ],
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "dms-only": {
+          "kind": "route-block",
+          "defaultEnabled": false,
+          "label": "DMs Only",
+          "patterns": [
+            "^/(?!direct/|accounts/|challenge/|oauth/|emailsignup|recover/|two_factor|ServiceLogin|signin|signup|login|register|logout|verify|2fa|p/|reel/)[^/]*$"
+          ],
+          "redirect": "/direct/inbox/"
+        },
+        "grayscale": {
+          "kind": "style",
+          "defaultEnabled": false,
+          "label": "Grayscale",
+          "css": "html { filter: grayscale(1) !important; }"
+        },
+        "isolated-player": {
+          "kind": "isolate",
+          "locked": true,
+          "label": "One video at a time",
+          "patterns": [
+            "^/reel/[^/]+",
+            "^/p/[^/]+"
+          ],
+          "onAdvance": "back"
+        }
+      }
+    }
+  },
+  "signature": "ZYU7dpMjDnegYADcgsl6JRw6VcOnRcu45LIsBxfZOQS2T14sg+IiM708VH5GyoSGx1e2FmwlB4O4bW/rrWiJAw=="
+}

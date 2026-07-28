@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">NoScroll</string>
+
+    <string name="shield_title">%1$s is set aside</string>
+    <string name="shield_subtitle">You can still read messages and see people you follow — without the feed that goes on forever.</string>
+    <string name="shield_primary">Open in NoScroll</string>
+    <string name="shield_secondary">Not now</string>
+
+    <!-- Shown in Android's own accessibility settings screen. -->
+    <string name="accessibility_description">NoScroll checks which app is in the foreground so it can show your shield screen when you open an app you have chosen to set aside. It cannot read the contents of any app, and never taps or acts inside one.</string>
+</resources>

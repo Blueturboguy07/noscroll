@@ -8,7 +8,8 @@ parts you actually opened the app for: messages, the people you follow, and post
 friend sends you a reel you can watch *that* video. You just can't scroll to the next one.
 
 > Status: **pre-release.** The engine, rule bundles, both native shells and the shield layers are
-> written and tested. Not yet submitted to either store — see [What's not done](#whats-not-done).
+> written and tested, and the iPhone app builds and runs. Not yet submitted to either store —
+> see [What's not done](#whats-not-done).
 
 ---
 
@@ -55,17 +56,18 @@ you can fix it yourself — see [docs/RULES.md](docs/RULES.md).
 ## Build
 
 ```bash
-# Engine — 40 tests, no device needed
+# Engine — 42 tests, no device needed
 cd engine && pnpm install && pnpm test && pnpm build
 
 # Sync the built engine + rules into both app targets
 ./tools/sync-engine.sh
 
-# iOS — pure logic tests on the host
+# iOS — pure logic tests on the host, then the app itself
 cd ios/NoScrollCore && swift test
+open ios/NoScroll.xcodeproj      # pick your Apple ID under Signing, then Run
 
 # Android — unit tests + a real APK
-cd android && gradle :app:testDebugUnitTest :app:assembleDebug
+cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug
 
 # Live probes against real Instagram and YouTube
 cd probe && pnpm install && pnpm exec playwright install chromium && pnpm probe
@@ -133,8 +135,9 @@ Honestly, because a feature list that overpromises is the thing this project is 
 - **Not submitted to either store.** The iOS `com.apple.developer.family-controls` entitlement is
   gated by Apple, takes days-to-weeks, and can be denied — see [docs/ENTITLEMENT.md](docs/ENTITLEMENT.md).
   It has to be granted before the shield layer can run on a device.
-- **No Xcode project file yet.** Sources compile against the iOS SDK; the `.xcodeproj` with three
-  extension targets and the app group still needs to be assembled.
+- **The three Screen Time extensions are not yet targets in the Xcode project.** The app target
+  builds and runs today; the shield extensions are written and typecheck against the iOS SDK, but
+  adding them as targets is blocked on the entitlement above, since they cannot run without it.
 - **Android rule-bundle signature verification is not implemented.** iOS verifies; Android
   currently reads bundles from assets/cache without checking the signature. Do not ship without it.
 - **No notifications.** WKWebView cannot receive web push, and shielding an app suppresses that

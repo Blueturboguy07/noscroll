@@ -76,8 +76,14 @@ describe('Instagram', () => {
     expect(document.getElementById('post-sponsored')).toBeNull();
   });
 
-  it('locked surfaces ignore a user setting that tries to disable them', () => {
+  it('every block can be switched off by the user — nothing is forced on', () => {
     run(ig, { 'instagram.reels-tab': false, 'instagram.explore-tab': false });
+    expect(document.querySelector("nav a[href^='/reels']")).not.toBeNull();
+    expect(document.querySelector("nav a[href^='/explore']")).not.toBeNull();
+  });
+
+  it('but blocks default to ON, so a fresh install blocks without setup', () => {
+    run(ig);
     expect(document.querySelector("nav a[href^='/reels']")).toBeNull();
     expect(document.querySelector("nav a[href^='/explore']")).toBeNull();
   });

@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Per-service blocking settings.
-///
+/// Per-service blocking settings. Every block is a switch the user owns.
 /// The structure mirrors the product's spine: locked surfaces render as a padlock
 /// and the words "Always On" — they are not switches. Block Reels, Block Explore
 /// and Block Shorts cannot be turned off, so there is no "I'll just disable it
@@ -16,8 +15,9 @@ struct SettingsView: View {
             List {
                 ForEach(AppState.services) { service in
                     Section {
-                        ForEach(state.surfaces(for: service.id), id: \.key) { surface in
-                            row(service: service.id, surface: surface)
+                        ForEach(state.surfaces(for: service.id)) { group in
+                            Toggle(group.label,
+                                   isOn: state.binding(service: service.id, surfaces: group.keys))
                         }
                     } header: {
                         Label(service.name, systemImage: service.symbol)
@@ -52,22 +52,4 @@ struct SettingsView: View {
         return Set(versions).sorted().joined(separator: " / ")
     }
 
-    @ViewBuilder
-    private func row(service: String, surface: (key: String, label: String, locked: Bool)) -> some View {
-        if surface.locked {
-            HStack {
-                Label {
-                    Text(surface.label)
-                } icon: {
-                    Image(systemName: "lock.fill").foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text("Always On")
-                    .font(.subheadline)
-                    .foregroundStyle(.green)
-            }
-        } else {
-            Toggle(surface.label, isOn: state.binding(service: service, surface: surface.key))
-        }
-    }
 }

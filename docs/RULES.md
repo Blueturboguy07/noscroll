@@ -41,11 +41,17 @@ Every rule should declare one:
 `onlyWhenSignedIn` when the surface does not exist for a logged-out visitor — logged-out
 m.youtube.com has three pivot-bar items and no Shorts tab, so a zero there is correct.
 
-## Locked surfaces
+## Defaults, not locks
 
-`"locked": true` means the user cannot switch it off. That is deliberate and it is the product's
-spine: Block Reels, Block Explore and Block Shorts are always on, so there is no "I'll just turn
-it off for a second" failure mode. Everything else is an optional toggle.
+No surface is locked — every block is a switch the user owns, enforced by
+`engine/test/rulelint.test.ts`. The product's opinion lives in `defaultEnabled`:
+the core blocks ship `true` so a fresh install works with no setup, and the
+extras ship `false`.
+
+Surfaces that share a `label` are presented as **one** switch in the apps and
+toggle together. That is how "Block Reels" covers both the DOM rule (the nav
+icon) and the route rule (typing the URL) without showing the user two rows —
+`(routes)` is an implementation detail and has no business on screen.
 
 ## Never target an auth surface
 

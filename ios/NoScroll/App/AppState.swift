@@ -38,11 +38,35 @@ final class AppState: ObservableObject {
     private(set) var engineSource = ""
 
     private let settingsKey = "noscroll.settings"
+    private let onboardedKey = "noscroll.onboarded"
+
+    /// First run shows onboarding, where the user sees every switch once and
+    /// decides. Nothing is forced on.
+    @Published var needsOnboarding: Bool
 
     init() {
+        needsOnboarding = !UserDefaults.standard.bool(forKey: "noscroll.onboarded")
         loadSettings()
         loadEngine()
         loadBundles()
+        seedDefaults()
+    }
+
+    func completeOnboarding() {
+        UserDefaults.standard.set(true, forKey: onboardedKey)
+        needsOnboarding = false
+    }
+
+    /// Materialise each surface's default so onboarding shows real switch
+    /// positions rather than a screen of greyed-out unknowns.
+    private func seedDefaults() {
+        for service in Self.services {
+            guard let svc = bundles[service.id]?.services[service.id] else { continue }
+            for (name, surface) in svc.surfaces where surface.label != nil {
+                let key = "\(service.id).\(name)"
+                if settings[key] == nil { settings[key] = surface.defaultEnabled ?? false }
+            }
+        }
     }
 
     // MARK: - Loading
@@ -98,36 +122,49 @@ final class AppState: ObservableObject {
 
     // MARK: - Settings
 
-    /// Locked surfaces ignore user settings — that is what locked means.
-    func isLocked(service: String, surface: String) -> Bool {
-        bundles[service]?.services[service]?.surfaces[surface]?.locked == true
-    }
-
-    func binding(service: String, surface: String) -> Binding<Bool> {
-        let key = "\(service).\(surface)"
-        return Binding(
+    /// One switch may drive several surfaces. "Block Reels" is both a DOM rule
+    /// (the nav icon) and a route rule (typing the URL); the user thinks of that
+    /// as one thing, so surfaces sharing a label are presented as one toggle.
+    func binding(service: String, surfaces keys: [String]) -> Binding<Bool> {
+        Binding(
             get: { [weak self] in
                 guard let self else { return false }
-                if self.isLocked(service: service, surface: surface) { return true }
-                if let v = self.settings[key] { return v }
-                return self.bundles[service]?.services[service]?
-                    .surfaces[surface]?.defaultEnabled ?? false
+                return keys.contains { key in
+                    if let v = self.settings["\(service).\(key)"] { return v }
+                    return self.bundles[service]?.services[service]?
+                        .surfaces[key]?.defaultEnabled ?? false
+                }
             },
             set: { [weak self] newValue in
-                guard let self, !self.isLocked(service: service, surface: surface) else { return }
-                self.settings[key] = newValue
+                guard let self else { return }
+                for key in keys { self.settings["\(service).\(key)"] = newValue }
             }
         )
     }
 
-    /// Surfaces in a stable, human order for the settings screen.
-    func surfaces(for service: String) -> [(key: String, label: String, locked: Bool)] {
+    /// Surfaces in a stable, human order. Suggested-on ones sort first so the
+    /// list reads as "here is what we recommend", then the extras.
+    struct SurfaceGroup: Identifiable {
+        let label: String
+        let keys: [String]
+        let suggested: Bool
+        var id: String { label }
+    }
+
+    func surfaces(for service: String) -> [SurfaceGroup] {
         guard let svc = bundles[service]?.services[service] else { return [] }
-        return svc.surfaces
-            .filter { $0.value.label != nil }
-            .map { (key: $0.key, label: $0.value.label ?? $0.key, locked: $0.value.locked == true) }
+        var byLabel: [String: (keys: [String], suggested: Bool)] = [:]
+        for (key, surface) in svc.surfaces {
+            guard let label = surface.label else { continue }
+            var entry = byLabel[label] ?? (keys: [], suggested: false)
+            entry.keys.append(key)
+            entry.suggested = entry.suggested || (surface.defaultEnabled ?? false)
+            byLabel[label] = entry
+        }
+        return byLabel
+            .map { SurfaceGroup(label: $0.key, keys: $0.value.keys.sorted(), suggested: $0.value.suggested) }
             .sorted { lhs, rhs in
-                if lhs.locked != rhs.locked { return lhs.locked && !rhs.locked }
+                if lhs.suggested != rhs.suggested { return lhs.suggested && !rhs.suggested }
                 return lhs.label < rhs.label
             }
     }

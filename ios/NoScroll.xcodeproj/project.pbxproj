@@ -7,42 +7,38 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */ = {isa = PBXBuildFile; fileRef = D2E4B2A875DB71820FEEF62C /* noscroll.js */; };
-		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
-		1D2E1EE8C2149DD88BC8C6ED /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0311043D0B352B1131AB79 /* SettingsView.swift */; };
 		211246652C856B7C7B40ABE4 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047FC2B83B056FF780C9CBAF /* AppState.swift */; };
-		31FBFF85D93B3B80D011FD31 /* instagram.json in Resources */ = {isa = PBXBuildFile; fileRef = E732E973BFB6A9589AC73386 /* instagram.json */; };
-		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
-		5A0F8E775023BC474E03BE33 /* WebScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */; };
-		73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */ = {isa = PBXBuildFile; fileRef = F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */; };
-		827770E84FF0BF9D5999EA61 /* youtube.json in Resources */ = {isa = PBXBuildFile; fileRef = 45D328F985929718EE6E102E /* youtube.json */; };
+		9CE706942BC2BC90EAEEFC41 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 129ACA5399660EA59D9967B7 /* OnboardingView.swift */; };
 		A0243E566B552984A9390757 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD38699BAEFADF064EAA8DC2 /* RootView.swift */; };
+		1D2E1EE8C2149DD88BC8C6ED /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0311043D0B352B1131AB79 /* SettingsView.swift */; };
+		5A0F8E775023BC474E03BE33 /* WebScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */; };
+		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
+		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
 		A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */; };
+		0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */ = {isa = PBXBuildFile; fileRef = D2E4B2A875DB71820FEEF62C /* noscroll.js */; };
+		73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */ = {isa = PBXBuildFile; fileRef = F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */; };
+		31FBFF85D93B3B80D011FD31 /* instagram.json in Resources */ = {isa = PBXBuildFile; fileRef = E732E973BFB6A9589AC73386 /* instagram.json */; };
+		827770E84FF0BF9D5999EA61 /* youtube.json in Resources */ = {isa = PBXBuildFile; fileRef = 45D328F985929718EE6E102E /* youtube.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		047FC2B83B056FF780C9CBAF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppState.swift; path = NoScroll/App/AppState.swift; sourceTree = "<group>"; };
-		45D328F985929718EE6E102E /* youtube.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = youtube.json; path = NoScroll/Resources/Rules/youtube.json; sourceTree = "<group>"; };
-		4F0311043D0B352B1131AB79 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = NoScroll/App/SettingsView.swift; sourceTree = "<group>"; };
-		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuleBundle.swift; path = NoScroll/Core/RuleBundle.swift; sourceTree = "<group>"; };
-		5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebScreen.swift; path = NoScroll/App/WebScreen.swift; sourceTree = "<group>"; };
-		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebSession.swift; path = NoScroll/Core/WebSession.swift; sourceTree = "<group>"; };
-		BD38699BAEFADF064EAA8DC2 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RootView.swift; path = NoScroll/App/RootView.swift; sourceTree = "<group>"; };
-		D2E4B2A875DB71820FEEF62C /* noscroll.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = noscroll.js; path = NoScroll/Resources/noscroll.js; sourceTree = "<group>"; };
+		047FC2B83B056FF780C9CBAF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AppState.swift"; path = "NoScroll/App/AppState.swift"; sourceTree = "<group>"; };
+		129ACA5399660EA59D9967B7 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnboardingView.swift"; path = "NoScroll/App/OnboardingView.swift"; sourceTree = "<group>"; };
+		BD38699BAEFADF064EAA8DC2 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RootView.swift"; path = "NoScroll/App/RootView.swift"; sourceTree = "<group>"; };
+		4F0311043D0B352B1131AB79 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SettingsView.swift"; path = "NoScroll/App/SettingsView.swift"; sourceTree = "<group>"; };
+		5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebScreen.swift"; path = "NoScroll/App/WebScreen.swift"; sourceTree = "<group>"; };
+		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RuleBundle.swift"; path = "NoScroll/Core/RuleBundle.swift"; sourceTree = "<group>"; };
+		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebSession.swift"; path = "NoScroll/Core/WebSession.swift"; sourceTree = "<group>"; };
+		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WrappedWebViewController.swift"; path = "NoScroll/Web/WrappedWebViewController.swift"; sourceTree = "<group>"; };
+		D2E4B2A875DB71820FEEF62C /* noscroll.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "noscroll.js"; path = "NoScroll/Resources/noscroll.js"; sourceTree = "<group>"; };
+		F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */ = {isa = PBXFileReference; lastKnownFileType = file; name = "rules-signing.pub.raw"; path = "NoScroll/Resources/rules-signing.pub.raw"; sourceTree = "<group>"; };
+		E732E973BFB6A9589AC73386 /* instagram.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "instagram.json"; path = "NoScroll/Resources/Rules/instagram.json"; sourceTree = "<group>"; };
+		45D328F985929718EE6E102E /* youtube.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "youtube.json"; path = "NoScroll/Resources/Rules/youtube.json"; sourceTree = "<group>"; };
 		D91517BFBDECE389497A425B /* NoScroll.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoScroll.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E732E973BFB6A9589AC73386 /* instagram.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = instagram.json; path = NoScroll/Resources/Rules/instagram.json; sourceTree = "<group>"; };
-		F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */ = {isa = PBXFileReference; lastKnownFileType = text; name = "rules-signing.pub.raw"; path = "NoScroll/Resources/rules-signing.pub.raw"; sourceTree = "<group>"; };
-		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WrappedWebViewController.swift; path = NoScroll/Web/WrappedWebViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		4F6F5CC3FCCF73F75AE9CCF4 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+		4F6F5CC3FCCF73F75AE9CCF4 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -53,6 +49,21 @@
 				307A90002D1285ED8C05A9E0 /* Resources */,
 				A8CBE22D73EBCC4E5F27B59C /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		D8DBA3F9900DD17689CA0C4D /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				047FC2B83B056FF780C9CBAF /* AppState.swift */,
+				129ACA5399660EA59D9967B7 /* OnboardingView.swift */,
+				BD38699BAEFADF064EAA8DC2 /* RootView.swift */,
+				4F0311043D0B352B1131AB79 /* SettingsView.swift */,
+				5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */,
+				54BD89AE0AFB93182037786A /* RuleBundle.swift */,
+				6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */,
+				F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */,
+			);
+			name = Sources;
 			sourceTree = "<group>";
 		};
 		307A90002D1285ED8C05A9E0 /* Resources */ = {
@@ -74,35 +85,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D8DBA3F9900DD17689CA0C4D /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				047FC2B83B056FF780C9CBAF /* AppState.swift */,
-				BD38699BAEFADF064EAA8DC2 /* RootView.swift */,
-				4F0311043D0B352B1131AB79 /* SettingsView.swift */,
-				5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */,
-				54BD89AE0AFB93182037786A /* RuleBundle.swift */,
-				6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */,
-				F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */,
-			);
-			name = Sources;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		42AEFBAE01D2DFD981F7DA7D /* NoScroll */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B351D9E61CFAD9F667AA7583 /* Build configuration list for PBXNativeTarget "NoScroll" */;
+			buildConfigurationList = B351D9E61CFAD9F667AA7583;
 			buildPhases = (
-				FCA229C23F166EBB0BA5029E /* Sources */,
-				4F6F5CC3FCCF73F75AE9CCF4 /* Frameworks */,
-				B9C6EB6F79FC54535ACB3053 /* Resources */,
+				FCA229C23F166EBB0BA5029E,
+				4F6F5CC3FCCF73F75AE9CCF4,
+				B9C6EB6F79FC54535ACB3053,
 			);
-			buildRules = (
-			);
-			dependencies = (
-			);
+			buildRules = ();
+			dependencies = ();
 			name = NoScroll;
 			productName = NoScroll;
 			productReference = D91517BFBDECE389497A425B /* NoScroll.app */;
@@ -111,7 +106,7 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+		46F86FAA6BBF9AC94A7E4595 = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
@@ -123,14 +118,11 @@
 					};
 				};
 			};
-			buildConfigurationList = 200AD4F23452D049FE3D290D /* Build configuration list for PBXProject "NoScroll" */;
+			buildConfigurationList = 200AD4F23452D049FE3D290D;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
-			knownRegions = (
-				en,
-				Base,
-			);
+			knownRegions = (en, Base);
 			mainGroup = 1629A0BB4117BEFC577EF28D;
 			productRefGroup = A8CBE22D73EBCC4E5F27B59C /* Products */;
 			projectDirPath = "";
@@ -142,7 +134,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		B9C6EB6F79FC54535ACB3053 /* Resources */ = {
+		B9C6EB6F79FC54535ACB3053 = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -156,11 +148,12 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		FCA229C23F166EBB0BA5029E /* Sources */ = {
+		FCA229C23F166EBB0BA5029E = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				211246652C856B7C7B40ABE4 /* AppState.swift in Sources */,
+				9CE706942BC2BC90EAEEFC41 /* OnboardingView.swift in Sources */,
 				A0243E566B552984A9390757 /* RootView.swift in Sources */,
 				1D2E1EE8C2149DD88BC8C6ED /* SettingsView.swift in Sources */,
 				5A0F8E775023BC474E03BE33 /* WebScreen.swift in Sources */,
@@ -173,13 +166,29 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		3229BDAFFF5E8A0B82BA0A5B /* Release */ = {
+		6004C90EA86F79D24F736B17 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				ONLY_ACTIVE_ARCH = YES;
+			};
+			name = Debug;
+		};
+		B479D6A952475C7454B83798 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R5R3ZS54LV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Instagram uses your camera when you take a photo or story inside NoScroll.";
@@ -193,23 +202,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		6004C90EA86F79D24F736B17 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -223,19 +215,18 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		B479D6A952475C7454B83798 /* Debug */ = {
+		3229BDAFFF5E8A0B82BA0A5B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R5R3ZS54LV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Instagram uses your camera when you take a photo or story inside NoScroll.";
@@ -250,12 +241,12 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
-			name = Debug;
+			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		200AD4F23452D049FE3D290D /* Build configuration list for PBXProject "NoScroll" */ = {
+		200AD4F23452D049FE3D290D = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6004C90EA86F79D24F736B17 /* Debug */,
@@ -264,7 +255,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B351D9E61CFAD9F667AA7583 /* Build configuration list for PBXNativeTarget "NoScroll" */ = {
+		B351D9E61CFAD9F667AA7583 = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B479D6A952475C7454B83798 /* Debug */,
@@ -274,6 +265,7 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
 	};
-	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+	rootObject = 46F86FAA6BBF9AC94A7E4595;
 }

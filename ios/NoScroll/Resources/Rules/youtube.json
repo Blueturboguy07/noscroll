@@ -15,15 +15,14 @@
       "surfaces": {
         "shorts-route": {
           "kind": "route-rewrite",
-          "locked": true,
           "label": "Block Shorts",
           "pattern": "^/shorts/([A-Za-z0-9_-]+)(.*)$",
           "replacement": "/watch?v=$1",
-          "source": "The single cheapest win in the product: /shorts is purely a front-end player skin. Same video, same CDN, same metadata."
+          "source": "The single cheapest win in the product: /shorts is purely a front-end player skin. Same video, same CDN, same metadata.",
+          "defaultEnabled": true
         },
         "shorts-shelf": {
           "kind": "dom-remove",
-          "locked": true,
           "label": "Block Shorts shelf",
           "selectors": [
             "ytd-rich-shelf-renderer[is-shorts]",
@@ -40,11 +39,11 @@
             "expectMin": 0,
             "warnIfZeroFor": "6h"
           },
-          "source": "seeded from gijsdev/ublock-hide-yt-shorts (MIT)"
+          "source": "seeded from gijsdev/ublock-hide-yt-shorts (MIT)",
+          "defaultEnabled": true
         },
         "shorts-nav": {
           "kind": "dom-remove",
-          "locked": true,
           "label": "Remove Shorts tab",
           "selectors": [
             "ytd-mini-guide-entry-renderer:has(a[title='Shorts'])",
@@ -59,7 +58,8 @@
           "probe": {
             "expectMin": 1,
             "onlyWhenSignedIn": true
-          }
+          },
+          "defaultEnabled": true
         },
         "create-nav": {
           "kind": "dom-remove",
@@ -137,5 +137,5 @@
       ]
     }
   },
-  "signature": "qu6hZBZZGwstZgKYdcuMus5tftujFIGD6koMBXz4Oy3vBobS/cGnrdKHwELiMEjm6rsBv25Sos0CImdDAXz+Dg=="
+  "signature": "d5f+bjI4RICmS3demmGRgpJFWTflHQ5+2reAXSc9UyUFiXg+pDWaCdQIB0rn5XWtxS6CxtPBTXPZCn535VuEAA=="
 }

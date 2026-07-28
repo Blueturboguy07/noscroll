@@ -81,6 +81,15 @@ swift tools/verify-canonical.swift          # Node and Swift must agree byte for
 
 ---
 
+## Nothing is forced on
+
+Every block is a switch you own. The core ones — Reels, Shorts, Explore,
+suggested posts — arrive switched **on**, so a fresh install works with no
+setup, and first-run onboarding shows you every switch once so nothing is a
+surprise later. But you can turn any of them off, at any time, in Settings.
+
+The product has an opinion. It doesn't take the choice away.
+
 ## The one rule that is not negotiable
 
 ```

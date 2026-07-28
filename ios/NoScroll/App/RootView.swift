@@ -53,6 +53,9 @@ struct RootView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
+            .fullScreenCover(isPresented: $state.needsOnboarding) {
+                OnboardingView(isPresented: $state.needsOnboarding)
+            }
             .fullScreenCover(item: $openService) { service in
                 WebScreen(service: service)
             }
@@ -94,8 +97,10 @@ struct RootView: View {
     }
 
     private func blockedSummary(for id: String) -> String {
-        let locked = state.surfaces(for: id).filter(\.locked).count
-        return locked > 0 ? "\(locked) always-on blocks" : "Rules unavailable"
+        let all = state.surfaces(for: id)
+        guard !all.isEmpty else { return "Rules unavailable" }
+        let on = all.filter { state.binding(service: id, surfaces: $0.keys).wrappedValue }.count
+        return "\(on) of \(all.count) blocks on"
     }
 
     private func errorCard(_ message: String) -> some View {

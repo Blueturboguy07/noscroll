@@ -84,12 +84,31 @@ describe('rule lint', () => {
     }
   });
 
-  it('locked surfaces are exactly the product promise, and are never default-off', () => {
+  /**
+   * Nothing is forced on: every surface must be a switch the user owns. The
+   * product's opinion lives in the DEFAULTS, not in taking the choice away.
+   */
+  it('no surface is locked — every block is user-controllable', () => {
     for (const [file, bundle] of bundles) {
       for (const [svc, service] of Object.entries(bundle.services)) {
         for (const [name, surface] of Object.entries(service.surfaces)) {
-          if (!surface.locked) continue;
-          expect(surface.defaultEnabled, `${file}:${svc}.${name} is locked`).not.toBe(false);
+          expect(surface.locked, `${file}:${svc}.${name} must not be locked`).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it('the core blocks still default ON, so a fresh install works with no setup', () => {
+    const mustDefaultOn: Record<string, string[]> = {
+      'instagram.json': ['reels-tab', 'reels-route', 'explore-tab', 'explore-route'],
+      'youtube.json': ['shorts-route', 'shorts-shelf', 'shorts-nav'],
+    };
+    for (const [file, bundle] of bundles) {
+      const expected = mustDefaultOn[file];
+      if (!expected) continue;
+      for (const service of Object.values(bundle.services)) {
+        for (const name of expected) {
+          expect(service.surfaces[name]?.defaultEnabled, `${file}:${name}`).toBe(true);
         }
       }
     }

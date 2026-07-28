@@ -15,7 +15,6 @@
       "surfaces": {
         "reels-tab": {
           "kind": "dom-remove",
-          "locked": true,
           "label": "Block Reels",
           "selectors": [
             "nav a[href^='/reels']",
@@ -29,22 +28,22 @@
           "probe": {
             "expectMin": 1,
             "onlyWhenSignedIn": true
-          }
+          },
+          "defaultEnabled": true
         },
         "reels-route": {
           "kind": "route-block",
-          "locked": true,
-          "label": "Block Reels (routes)",
+          "label": "Block Reels",
           "patterns": [
             "^/reels(/|$)",
             "^/reels/audio/",
             "^/reels/video/"
           ],
-          "redirect": "/"
+          "redirect": "/",
+          "defaultEnabled": true
         },
         "reels-tray": {
           "kind": "dom-remove",
-          "locked": true,
           "label": "Block Reels tray in feed",
           "selectors": [
             "section:has(div > a[href^='/reels/'])",
@@ -53,11 +52,11 @@
           "observe": true,
           "probe": {
             "expectMin": 0
-          }
+          },
+          "defaultEnabled": true
         },
         "explore-tab": {
           "kind": "dom-remove",
-          "locked": true,
           "label": "Block Explore",
           "selectors": [
             "nav a[href^='/explore']",
@@ -71,18 +70,19 @@
           "probe": {
             "expectMin": 1,
             "onlyWhenSignedIn": true
-          }
+          },
+          "defaultEnabled": true
         },
         "explore-route": {
           "kind": "route-block",
-          "locked": true,
-          "label": "Block Explore (routes)",
+          "label": "Block Explore",
           "patterns": [
             "^/explore(/|$)",
             "^/explore/tags/",
             "^/explore/locations/"
           ],
-          "redirect": "/"
+          "redirect": "/",
+          "defaultEnabled": true
         },
         "suggested-posts": {
           "kind": "dom-remove",
@@ -130,7 +130,7 @@
         "stories-route": {
           "kind": "route-block",
           "defaultEnabled": false,
-          "label": "Block Stories (routes)",
+          "label": "Block Stories",
           "patterns": [
             "^/stories/"
           ],
@@ -177,13 +177,13 @@
         },
         "isolated-player": {
           "kind": "isolate",
-          "locked": true,
           "label": "One video at a time",
           "patterns": [
             "^/reel/[^/]+",
             "^/p/[^/]+"
           ],
-          "onAdvance": "back"
+          "onAdvance": "back",
+          "defaultEnabled": true
         }
       },
       "signedOutWhen": [
@@ -192,5 +192,5 @@
       ]
     }
   },
-  "signature": "lUCWGenaljhVZ6QGNMYW5ilvGMiFQJxHRhZsJAInpxXT6Ekc7mdRGiBBekYak2S52s3G+cT2ztS9sn5QicC3AA=="
+  "signature": "3XBtNlQriaScx7a90dtKsycVrSD+b2aXJPDyPHsdX4cauPMDsHg7x1ncYbZQVKqQuKpJX2+ZREkfc44j96gODg=="
 }

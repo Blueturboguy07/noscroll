@@ -21,7 +21,7 @@
             "nav a[href^='/reels']",
             "[role='tablist'] a[href^='/reels']",
             "[role='navigation'] a[href^='/reels']",
-            "a[href='/reels/'][role='link']",
+            "a[href^='/reels'][role='link']",
             "div[role='menuitem'] a[href^='/reels']"
           ],
           "afterRemove": "rejustify",
@@ -62,7 +62,9 @@
           "selectors": [
             "nav a[href^='/explore']",
             "[role='tablist'] a[href^='/explore']",
-            "[role='navigation'] a[href^='/explore']"
+            "[role='navigation'] a[href^='/explore']",
+            "a[href^='/explore/'][role='link']",
+            "div[role='menuitem'] a[href^='/explore']"
           ],
           "afterRemove": "rejustify",
           "observe": true,
@@ -183,8 +185,12 @@
           ],
           "onAdvance": "back"
         }
-      }
+      },
+      "signedOutWhen": [
+        "a[href*='/accounts/login']",
+        "a[href*='/accounts/signup']"
+      ]
     }
   },
-  "signature": "ZYU7dpMjDnegYADcgsl6JRw6VcOnRcu45LIsBxfZOQS2T14sg+IiM708VH5GyoSGx1e2FmwlB4O4bW/rrWiJAw=="
+  "signature": "lUCWGenaljhVZ6QGNMYW5ilvGMiFQJxHRhZsJAInpxXT6Ekc7mdRGiBBekYak2S52s3G+cT2ztS9sn5QicC3AA=="
 }

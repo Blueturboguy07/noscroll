@@ -51,9 +51,11 @@ export function record(ruleId: string, probe: Probe | undefined, actual: number)
  * Flush after settle. A rule whose expectMin is >0 but matched 0 is the signal
  * that something upstream changed.
  */
-export function flush(): void {
+export function flush(signedOut = false): void {
   for (const r of records.values()) {
     if (r.reported) continue;
+    // Surface does not exist for a signed-out visitor — not rot.
+    if (signedOut && r.onlyWhenSignedIn) continue;
     if (r.expected > 0 && r.actual === 0) {
       r.reported = true;
       send({

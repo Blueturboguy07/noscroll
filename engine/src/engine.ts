@@ -139,6 +139,24 @@ function removeCss(): void {
 
 /* ------------------------------------------------------------- DOM sweep */
 
+/**
+ * Cheap signed-out detection. A login link on the page is the reliable tell on
+ * both Instagram and YouTube, and it needs no cookie access (session cookies are
+ * httpOnly and invisible to us by design).
+ */
+function isSignedOut(): boolean {
+  const hints = service?.signedOutWhen;
+  if (!hints || hints.length === 0) return false;
+  for (const sel of hints) {
+    try {
+      if (document.querySelector(sel)) return true;
+    } catch {
+      /* a malformed hint must not break probing */
+    }
+  }
+  return false;
+}
+
 function rejustify(parent: Element | null): void {
   if (!parent) return;
   const style = getComputedStyle(parent);
@@ -263,7 +281,7 @@ function handleRoute(path: string): void {
   // batching then handles every subsequent mutation.
   sweepDom();
   sweepNow();
-  setTimeout(flush, 2500);
+  setTimeout(() => flush(isSignedOut()), 2500);
 }
 
 /* ---------------------------------------------------------------- start */

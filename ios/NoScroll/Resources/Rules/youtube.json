@@ -130,8 +130,12 @@
           "label": "Grayscale",
           "css": "html { filter: grayscale(1) !important; }"
         }
-      }
+      },
+      "signedOutWhen": [
+        "a[href*='accounts.google.com/ServiceLogin']",
+        "a[href*='/signin']"
+      ]
     }
   },
-  "signature": "pqCLzmlcitXmB7vOW5VgWg1nvcXgItrDqaTM/crbAkpbczkamlYLacuvKQb+7Nc+OYSQ8l6QKst9yoWh6L+pAA=="
+  "signature": "qu6hZBZZGwstZgKYdcuMus5tftujFIGD6koMBXz4Oy3vBobS/cGnrdKHwELiMEjm6rsBv25Sos0CImdDAXz+Dg=="
 }

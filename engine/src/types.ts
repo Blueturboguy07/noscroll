@@ -111,6 +111,13 @@ export interface Service {
   /** Host match patterns, e.g. "*://*.instagram.com/*". */
   match: string[];
   /**
+   * Selectors that indicate a logged-OUT page. When any matches, probes flagged
+   * `onlyWhenSignedIn` are suppressed: their surfaces genuinely do not exist for
+   * a signed-out visitor, so reporting them as rot is a false alarm — and a rot
+   * alarm that cries wolf is one nobody reads.
+   */
+  signedOutWhen?: string[];
+  /**
    * Additional auth routes for this service. MERGED with the engine's hard-coded
    * list — a bundle can widen the allow-list but can never narrow it.
    */

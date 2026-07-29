@@ -1,9 +1,11 @@
 package app.noscroll.web
 
 import android.content.Context
+import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import app.noscroll.BuildConfig
 import org.json.JSONObject
 
 /**
@@ -28,7 +30,7 @@ object EngineInjector {
         val config = JSONObject().apply {
             put("bundle", JSONObject(bundle))
             put("settings", JSONObject())
-            put("telemetry", false)
+            put("telemetry", BuildConfig.DEBUG)  // local logging only; there is no network sink
         }
 
         val bootstrap = """
@@ -74,6 +76,11 @@ object EngineInjector {
         fun postMessage(json: String) {
             runCatching {
                 val msg = JSONObject(json)
+                // Parity with the iOS shell's console logging: shows the engine
+                // really is running inside this WebView, and what it removed.
+                // Debug builds only — see docs/PRIVACY.md on what the bridge
+                // is permitted to carry.
+                if (BuildConfig.DEBUG) Log.d("NoScroll", json)
                 when (msg.optString("type")) {
                     "probe" -> RuleHealth.report(
                         msg.optString("ruleId"),

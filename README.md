@@ -10,7 +10,7 @@ parts you actually opened the app for: messages, the people you follow, and post
 friend sends you a reel you can watch *that* video. You just can't scroll to the next one.
 
 > Status: **pre-release.** The engine, rule bundles, both native shells and the shield layers are
-> written and tested, and the iPhone app builds and runs. Not yet submitted to either store —
+> written and tested, and both the iPhone and Android apps build and run. Not yet submitted to either store —
 > see [What's not done](#whats-not-done).
 
 ---
@@ -137,9 +137,6 @@ Honestly, because a feature list that overpromises is the thing this project is 
 - **Not submitted to either store.** The iOS `com.apple.developer.family-controls` entitlement is
   gated by Apple, takes days-to-weeks, and can be denied — see [docs/ENTITLEMENT.md](docs/ENTITLEMENT.md).
   It has to be granted before the shield layer can run on a device.
-- **Android is only verified by unit tests and APK inspection, not on a device.** This machine
-  has no arm64 emulator image and not enough free disk to install one; the Kotlin logic is
-  covered by tests and the icon/manifest by `aapt`, but nobody has watched it run.
 - **The three Screen Time extensions are not yet targets in the Xcode project.** The app target
   builds and runs today; the shield extensions are written and typecheck against the iOS SDK, but
   adding them as targets is blocked on the entitlement above, since they cannot run without it.

@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "minEngine": 1,
+  "services": {
+    "reddit": {
+      "match": [
+        "*://*.reddit.com/*"
+      ],
+      "signedOutWhen": [
+        "a[href*='/login']"
+      ],
+      "authAllowList": [
+        "^/login",
+        "^/register",
+        "^/account/"
+      ],
+      "surfaces": {
+        "popular": {
+          "kind": "route-block",
+          "label": "Block Popular & All",
+          "patterns": [
+            "^/r/popular",
+            "^/r/all",
+            "^/best"
+          ],
+          "redirect": "/",
+          "defaultEnabled": true
+        },
+        "home-feed": {
+          "kind": "dom-remove",
+          "label": "Block the home feed",
+          "selectors": [
+            "shreddit-feed",
+            "div[data-testid='posts-list']"
+          ],
+          "onlyOnRoutes": [
+            "^/$",
+            "^/\\?"
+          ],
+          "defaultEnabled": false,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "video-feed": {
+          "kind": "dom-remove",
+          "label": "Block the video feed",
+          "selectors": [
+            "shreddit-player",
+            "a[href*='/media?']"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "promoted": {
+          "kind": "dom-remove",
+          "label": "Hide promoted posts",
+          "selectors": [
+            "shreddit-post[promoted]",
+            "shreddit-ad-post"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          },
+          "source": "seeded from BevizLaszlo/UBlock-Filters-for-Social-Media (MIT)"
+        },
+        "grayscale": {
+          "kind": "style",
+          "label": "Grayscale",
+          "css": "html { filter: grayscale(1) !important; }"
+        }
+      }
+    }
+  },
+  "signature": "DzhD+SUTE3kMywPy2vYkHJGXK2KyGKFo3udj0tJgZfphvFLt+Sk7474puEtxn4PzDvmbjTvCoY0y1fEw2BvJDA=="
+}

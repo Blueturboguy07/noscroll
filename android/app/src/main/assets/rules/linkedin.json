@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "minEngine": 1,
+  "services": {
+    "linkedin": {
+      "match": [
+        "*://*.linkedin.com/*"
+      ],
+      "signedOutWhen": [
+        "a[href*='/login']",
+        "a[href*='/uas/login']"
+      ],
+      "authAllowList": [
+        "^/login",
+        "^/uas/",
+        "^/checkpoint/",
+        "^/signup"
+      ],
+      "surfaces": {
+        "video-tab": {
+          "kind": "route-block",
+          "label": "Block the video feed",
+          "patterns": [
+            "^/video",
+            "^/feed/video"
+          ],
+          "redirect": "/feed/",
+          "defaultEnabled": true
+        },
+        "video-nav": {
+          "kind": "dom-remove",
+          "label": "Remove the Video tab",
+          "selectors": [
+            "a[href^='/video']",
+            "a[data-test-app-aware-link][href*='/video/']"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "afterRemove": "rejustify",
+          "probe": {
+            "expectMin": 0,
+            "onlyWhenSignedIn": true
+          }
+        },
+        "feed": {
+          "kind": "dom-remove",
+          "label": "Block Feed",
+          "selectors": [
+            "main [data-id^='urn:li:activity']"
+          ],
+          "onlyOnRoutes": [
+            "^/feed"
+          ],
+          "defaultEnabled": false,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "grayscale": {
+          "kind": "style",
+          "label": "Grayscale",
+          "css": "html { filter: grayscale(1) !important; }"
+        }
+      }
+    }
+  },
+  "signature": "HsMY2CntuxAUBLOgIBvcAd0OB5OVa8p/iTl63B7NZy/cFPMoZ8lo2P5r/mOVrIq60rH6Q9w9fhHHMN1dN95/Bg=="
+}

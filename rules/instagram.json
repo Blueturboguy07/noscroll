@@ -161,13 +161,15 @@
           }
         },
         "dms-only": {
-          "kind": "route-block",
+          "kind": "route-allow-only",
           "defaultEnabled": false,
           "label": "DMs Only",
-          "patterns": [
-            "^/(?!direct/|accounts/|challenge/|oauth/|emailsignup|recover/|two_factor|ServiceLogin|signin|signup|login|register|logout|verify|2fa|p/|reel/)[^/]*$"
-          ],
-          "redirect": "/direct/inbox/"
+          "redirect": "/direct/inbox/",
+          "allow": [
+            "^/direct/",
+            "^/p/",
+            "^/reel/"
+          ]
         },
         "grayscale": {
           "kind": "style",
@@ -192,5 +194,5 @@
       ]
     }
   },
-  "signature": "3XBtNlQriaScx7a90dtKsycVrSD+b2aXJPDyPHsdX4cauPMDsHg7x1ncYbZQVKqQuKpJX2+ZREkfc44j96gODg=="
+  "signature": "kaJV5kL03w728skTvHzqhW3io0lqLAPHdPgzWBy40LY+Z9XvQDabJqtNxlZqz8qySE638pRuxxdnjsdVbJFFDw=="
 }

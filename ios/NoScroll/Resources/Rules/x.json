@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "minEngine": 1,
+  "services": {
+    "x": {
+      "match": [
+        "*://*.x.com/*",
+        "*://*.twitter.com/*"
+      ],
+      "signedOutWhen": [
+        "a[href*='/i/flow/login']",
+        "a[href='/login']"
+      ],
+      "authAllowList": [
+        "^/i/flow/",
+        "^/login",
+        "^/account/"
+      ],
+      "surfaces": {
+        "for-you": {
+          "kind": "dom-remove",
+          "label": "Block For You tab",
+          "selectors": [
+            "[role='tablist'] [role='tab']:first-child",
+            "a[href='/home'][role='tab']:first-child"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "afterRemove": "rejustify",
+          "probe": {
+            "expectMin": 0,
+            "onlyWhenSignedIn": true
+          }
+        },
+        "explore": {
+          "kind": "route-block",
+          "label": "Block Explore & Trends",
+          "patterns": [
+            "^/explore",
+            "^/i/trends",
+            "^/i/topics"
+          ],
+          "redirect": "/home",
+          "defaultEnabled": true
+        },
+        "video-feed": {
+          "kind": "route-block",
+          "label": "Block the video feed",
+          "patterns": [
+            "^/i/videos",
+            "^/i/immersive"
+          ],
+          "redirect": "/home",
+          "defaultEnabled": true
+        },
+        "promoted": {
+          "kind": "dom-remove",
+          "label": "Hide promoted posts",
+          "selectors": [
+            "article:has([data-testid='placementTracking'])",
+            "article:has(span:only-child[data-testid='promotedIndicator'])"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "who-to-follow": {
+          "kind": "dom-remove",
+          "label": "Hide 'Who to follow'",
+          "selectors": [
+            "aside[aria-label]:has(a[href='/i/connect_people'])",
+            "[data-testid='UserCell']"
+          ],
+          "defaultEnabled": false,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "grayscale": {
+          "kind": "style",
+          "label": "Grayscale",
+          "css": "html { filter: grayscale(1) !important; }"
+        }
+      }
+    }
+  },
+  "signature": "bgmwwoNAUSLUcJYeLahCawuf2nDp4rVycqs8t9uNziW4pwBrv0S0bcEwVDkIgC4AFhmCf5H7snGOM1aKgCdsBw=="
+}

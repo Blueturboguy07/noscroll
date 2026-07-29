@@ -8,6 +8,7 @@
 export type SurfaceKind =
   | 'dom-remove'
   | 'route-block'
+  | 'route-allow-only'
   | 'route-rewrite'
   | 'isolate'
   | 'style';
@@ -78,6 +79,21 @@ export interface RouteBlockSurface extends SurfaceBase {
   redirect: string;
 }
 
+/**
+ * "Only these routes are allowed" — everything else redirects.
+ *
+ * Exists because the alternative (a route-block with a negative lookahead over
+ * every auth path) got the auth list wrong twice: once on Instagram, once on
+ * TikTok. Enumerating what to EXCLUDE is a bug generator; enumerating what to
+ * ALLOW is not, and the engine exempts auth surfaces structurally.
+ */
+export interface RouteAllowOnlySurface extends SurfaceBase {
+  kind: 'route-allow-only';
+  /** Routes that remain reachable. Auth surfaces are always allowed on top. */
+  allow: string[];
+  redirect: string;
+}
+
 export interface RouteRewriteSurface extends SurfaceBase {
   kind: 'route-rewrite';
   /** Regex with capture groups, applied to pathname + search. */
@@ -103,6 +119,7 @@ export interface StyleSurface extends SurfaceBase {
 export type Surface =
   | DomRemoveSurface
   | RouteBlockSurface
+  | RouteAllowOnlySurface
   | RouteRewriteSurface
   | IsolateSurface
   | StyleSurface;

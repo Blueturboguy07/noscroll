@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "minEngine": 1,
+  "services": {
+    "facebook": {
+      "match": [
+        "*://*.facebook.com/*"
+      ],
+      "signedOutWhen": [
+        "a[href*='/login']",
+        "form[action*='login']"
+      ],
+      "authAllowList": [
+        "^/login",
+        "^/checkpoint/",
+        "^/recover/",
+        "^/reg/"
+      ],
+      "surfaces": {
+        "reels": {
+          "kind": "route-block",
+          "label": "Block Reels",
+          "patterns": [
+            "^/reel/",
+            "^/reels"
+          ],
+          "redirect": "/",
+          "defaultEnabled": true
+        },
+        "watch": {
+          "kind": "route-block",
+          "label": "Block Watch",
+          "patterns": [
+            "^/watch"
+          ],
+          "redirect": "/",
+          "defaultEnabled": true
+        },
+        "reels-nav": {
+          "kind": "dom-remove",
+          "label": "Remove Reels & Watch tabs",
+          "selectors": [
+            "a[href^='/reel']",
+            "a[href^='/watch']"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "afterRemove": "rejustify",
+          "probe": {
+            "expectMin": 0,
+            "onlyWhenSignedIn": true
+          }
+        },
+        "feed": {
+          "kind": "dom-remove",
+          "label": "Block Feed",
+          "selectors": [
+            "div[role='feed']"
+          ],
+          "onlyOnRoutes": [
+            "^/$"
+          ],
+          "defaultEnabled": false,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "marketplace": {
+          "kind": "route-block",
+          "label": "Block Marketplace",
+          "patterns": [
+            "^/marketplace"
+          ],
+          "redirect": "/",
+          "defaultEnabled": false
+        },
+        "stories": {
+          "kind": "dom-remove",
+          "label": "Block Stories",
+          "selectors": [
+            "div[aria-label='Stories']"
+          ],
+          "defaultEnabled": false,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "grayscale": {
+          "kind": "style",
+          "label": "Grayscale",
+          "css": "html { filter: grayscale(1) !important; }"
+        }
+      }
+    }
+  },
+  "signature": "3u/SzWsb8L6TLZ2/e03LaAPzSWp1Hfvf1IIV87dpmxA4aODP8d4CQsBsNOOvuN34sJdw93nmtW0gemofBduhBQ=="
+}

@@ -11,23 +11,6 @@ import SwiftUI
 @MainActor
 final class AppState: ObservableObject {
 
-    struct Service: Identifiable, Hashable {
-        let id: String
-        let name: String
-        let home: URL
-        let tint: Color
-        let symbol: String
-    }
-
-    static let services: [Service] = [
-        .init(id: "instagram", name: "Instagram",
-              home: URL(string: "https://www.instagram.com/")!,
-              tint: Color(red: 0.86, green: 0.24, blue: 0.55), symbol: "camera.fill"),
-        .init(id: "youtube", name: "YouTube",
-              home: URL(string: "https://m.youtube.com/")!,
-              tint: Color(red: 0.85, green: 0.12, blue: 0.12), symbol: "play.rectangle.fill"),
-    ]
-
     @Published private(set) var bundles: [String: RuleBundle] = [:]
     @Published private(set) var rawBundles: [String: Data] = [:]
     @Published private(set) var loadError: String?
@@ -43,6 +26,47 @@ final class AppState: ObservableObject {
     /// First run shows onboarding, where the user sees every switch once and
     /// decides. Nothing is forced on.
     @Published var needsOnboarding: Bool
+
+    /// Onboarding answers. Kept on device; the age exists only to draw the
+    /// life grid and the copy on that screen says so.
+    @Published var age: Int = UserDefaults.standard.object(forKey: "noscroll.age") as? Int ?? 18 {
+        didSet { UserDefaults.standard.set(age, forKey: "noscroll.age") }
+    }
+    @Published var scrollHoursPerDay: Double =
+        UserDefaults.standard.object(forKey: "noscroll.scrollHours") as? Double ?? 4.8 {
+        didSet { UserDefaults.standard.set(scrollHoursPerDay, forKey: "noscroll.scrollHours") }
+    }
+
+    /// True once Screen Time authorisation is granted. Gated on the
+    /// FamilyControls entitlement — see docs/ENTITLEMENT.md — so it is false in
+    /// every build until Apple approves it.
+    @Published private(set) var hasScreenTimeAccess = false
+
+    /// Per-service time today. Real numbers need a DeviceActivityReport
+    /// extension under the same entitlement; until then this says so rather
+    /// than inventing a figure, which is the exact dishonesty this project is
+    /// reacting to.
+    func usageToday(for serviceID: String) -> String {
+        guard hasScreenTimeAccess else { return "—" }
+        let minutes = screenTimeMinutes[serviceID] ?? 0
+        return minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h \(minutes % 60)m"
+    }
+
+    @Published private(set) var screenTimeMinutes: [String: Int] = [:]
+
+    /// Requests Screen Time authorisation.
+    ///
+    /// Compiled out until the FamilyControls entitlement is granted: without it
+    /// the framework is unavailable and linking it fails the build. See
+    /// docs/ENTITLEMENT.md — this is the one thing on the critical path.
+    func requestScreenTimeAccess() async {
+        #if NOSCROLL_SHIELD
+        await shield.requestAuthorization()
+        hasScreenTimeAccess = shield.authorization == .approved
+        #else
+        hasScreenTimeAccess = false
+        #endif
+    }
 
     init() {
         needsOnboarding = !UserDefaults.standard.bool(forKey: "noscroll.onboarded")

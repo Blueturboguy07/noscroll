@@ -32,7 +32,12 @@ guard let keyData = try? Data(contentsOf: keyURL) else {
 let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: keyData)
 
 var failures = 0
-for name in ["instagram", "youtube"] {
+let names = (try? FileManager.default.contentsOfDirectory(atPath: "rules"))?
+    .filter { $0.hasSuffix(".json") }
+    .map { String($0.dropLast(5)) }
+    .sorted() ?? []
+
+for name in names {
     let url = root.appendingPathComponent("rules/\(name).json")
     guard let raw = try? Data(contentsOf: url) else {
         print("FAIL \(name): unreadable"); failures += 1; continue

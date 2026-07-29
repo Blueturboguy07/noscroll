@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "minEngine": 1,
+  "services": {
+    "tiktok": {
+      "match": [
+        "*://*.tiktok.com/*"
+      ],
+      "signedOutWhen": [
+        "a[href*='/login']"
+      ],
+      "authAllowList": [
+        "^/login",
+        "^/signup",
+        "^/passport/"
+      ],
+      "surfaces": {
+        "for-you": {
+          "kind": "route-block",
+          "label": "Block For You",
+          "patterns": [
+            "^/foryou",
+            "^/?$"
+          ],
+          "redirect": "/following",
+          "defaultEnabled": true
+        },
+        "explore": {
+          "kind": "route-block",
+          "label": "Block Explore",
+          "patterns": [
+            "^/explore"
+          ],
+          "redirect": "/following",
+          "defaultEnabled": true
+        },
+        "live": {
+          "kind": "route-block",
+          "label": "Block LIVE",
+          "patterns": [
+            "^/live"
+          ],
+          "redirect": "/following",
+          "defaultEnabled": true
+        },
+        "feed-videos": {
+          "kind": "dom-remove",
+          "label": "Block the video feed",
+          "selectors": [
+            "[data-e2e='recommend-list-item-container']"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "probe": {
+            "expectMin": 0
+          }
+        },
+        "dms-only": {
+          "kind": "route-allow-only",
+          "label": "DMs Only",
+          "redirect": "/messages",
+          "defaultEnabled": false,
+          "allow": [
+            "^/messages",
+            "^/following",
+            "^/@"
+          ]
+        },
+        "grayscale": {
+          "kind": "style",
+          "label": "Grayscale",
+          "css": "html { filter: grayscale(1) !important; }"
+        }
+      }
+    }
+  },
+  "signature": "NGBdzZBgxpBZpVfJ9InigBObraLY8nD9m8oqTxZ72HHOMk9h+3uVld6awoY18k+ADD63wv4sdVLj8Toq98i3DA=="
+}

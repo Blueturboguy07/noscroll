@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "minEngine": 1,
+  "services": {
+    "snapchat": {
+      "match": [
+        "*://*.snapchat.com/*"
+      ],
+      "signedOutWhen": [
+        "a[href*='/accounts/login']"
+      ],
+      "authAllowList": [
+        "^/accounts/",
+        "^/login",
+        "^/web/login"
+      ],
+      "surfaces": {
+        "spotlight": {
+          "kind": "route-block",
+          "label": "Block Spotlight",
+          "patterns": [
+            "^/spotlight",
+            "^/lens"
+          ],
+          "redirect": "/",
+          "defaultEnabled": true
+        },
+        "discover": {
+          "kind": "route-block",
+          "label": "Block Discover & Stories",
+          "patterns": [
+            "^/discover",
+            "^/stories"
+          ],
+          "redirect": "/",
+          "defaultEnabled": true
+        },
+        "spotlight-nav": {
+          "kind": "dom-remove",
+          "label": "Remove Spotlight & Discover tabs",
+          "selectors": [
+            "a[href^='/spotlight']",
+            "a[href^='/discover']"
+          ],
+          "defaultEnabled": true,
+          "observe": true,
+          "afterRemove": "rejustify",
+          "probe": {
+            "expectMin": 0,
+            "onlyWhenSignedIn": true
+          }
+        },
+        "grayscale": {
+          "kind": "style",
+          "label": "Grayscale",
+          "css": "html { filter: grayscale(1) !important; }"
+        }
+      }
+    }
+  },
+  "signature": "53y+qIJXzdW5Ix+Zg39FY6il9W7nQc3W2TbYkKdMeyqYVHO0XewTPKIt9nHur6wkdf+EKMk9YjpN7BrPKza9BQ=="
+}

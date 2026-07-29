@@ -22,6 +22,7 @@ import type {
   DomRemoveSurface,
   EngineConfig,
   IsolateSurface,
+  RouteAllowOnlySurface,
   RouteBlockSurface,
   RouteRewriteSurface,
   RuleBundle,
@@ -253,7 +254,20 @@ function handleRoute(path: string): void {
     }
   }
 
-  // 3. isolation: one item plays, nothing advances
+  // 3. allow-only ("DMs Only" and friends). The auth check above already
+  //    returned, so an auth surface can never reach this loop.
+  for (const [name, s] of Object.entries(service.surfaces)) {
+    if (s.kind !== 'route-allow-only' || !isEnabled(name, s)) continue;
+    const r = s as RouteAllowOnlySurface;
+    if (isAuthSurface({ hostname: location.hostname, pathname: path.split('?')[0] })) break;
+    if (!matchesAny(path, compile(r.allow))) {
+      send({ type: 'route', path, blocked: true });
+      location.replace(r.redirect);
+      return;
+    }
+  }
+
+  // 4. isolation: one item plays, nothing advances
   let isolate: IsolateSurface | null = null;
   for (const [name, s] of Object.entries(service.surfaces)) {
     if (s.kind !== 'isolate' || !isEnabled(name, s)) continue;

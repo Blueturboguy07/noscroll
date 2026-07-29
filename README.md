@@ -1,5 +1,7 @@
 # NoScroll
 
+![NoScroll — the home screen, the setup screen, and Instagram with no Reels tab](docs/img/hero.jpg)
+
 **Use Instagram and YouTube without short-form video.** Free, open source, no paywall, no ads,
 no analytics.
 

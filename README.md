@@ -159,6 +159,10 @@ Honestly, because a feature list that overpromises is the thing this project is 
   currently reads bundles from assets/cache without checking the signature. Do not ship without it.
 - **No notifications.** WKWebView cannot receive web push, and shielding an app suppresses that
   app's own notifications too. This is a scoped-out non-goal, not a bug.
+- **Screen Time is off by default even on a device.** The Family Controls entitlement is opt-in
+  (`NOSCROLL_ENTITLEMENTS`) because wiring it unconditionally breaks signing for any account
+  without Apple's approval. Without it, "Grant access" explains why rather than failing with
+  Apple's `Couldn't communicate with a helper application`.
 - **Screen Time does not work in the iOS Simulator at all.** The frameworks are non-functional
   there, so the permission prompt can never appear; the app says so rather than failing quietly.
   Testing that flow needs a real device *and* the entitlement below.

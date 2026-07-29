@@ -95,9 +95,15 @@ struct ShieldTab: View {
                             Task { await state.requestScreenTimeAccess() }
                         }
                         Button("Open iOS Settings") { state.openSystemSettings() }
+                        if state.screenTimeError != nil {
+                            Link("Why isn't this working?",
+                                 destination: URL(string: "https://github.com/Blueturboguy07/noscroll/blob/main/docs/ENTITLEMENT.md")!)
+                        }
                     } footer: {
                         if let error = state.screenTimeError {
-                            Text(error).foregroundStyle(.red)
+                            Text(error)
+                                .foregroundStyle(.orange)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }

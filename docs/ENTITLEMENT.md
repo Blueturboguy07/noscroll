@@ -18,6 +18,35 @@ be granted for the main app **and each of the three extensions**:
 
 Being open source helps — link the repository.
 
+## Symptom when it is absent
+
+Tapping **Grant Screen Time access** fails with:
+
+> Couldn't communicate with a helper application.
+
+That is `NSCocoaErrorDomain 4099` (`NSXPCConnectionInvalid`). It is not a bug in NoScroll: the
+Family Controls daemon refuses to talk to a process that does not carry the entitlement, and the
+XPC layer reports the refusal in those words. NoScroll now translates it rather than showing it
+raw.
+
+## Building with the entitlement
+
+It is **off by default**, because wiring it unconditionally breaks code signing for anyone whose
+Apple account does not have the capability — and an app that will not sign is worse than one whose
+Shield tab is honest about being wrapper-only.
+
+Once Apple has approved it for your App ID:
+
+```bash
+# command line
+xcodebuild -project ios/NoScroll.xcodeproj -scheme NoScroll \
+  NOSCROLL_ENTITLEMENTS=NoScroll/NoScroll.entitlements
+
+# or in Xcode: set the NOSCROLL_ENTITLEMENTS build setting on the NoScroll target
+```
+
+Everything else in the app works without it.
+
 ## If it is denied
 
 The app degrades to wrapper-only. That is a supported state, not a crash:

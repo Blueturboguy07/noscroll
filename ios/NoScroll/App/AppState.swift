@@ -142,11 +142,52 @@ final class AppState: ObservableObject {
                 ? nil
                 : "Screen Time access was declined. You can turn it on in Settings."
         } catch {
-            // The usual cause is the missing entitlement — see docs/ENTITLEMENT.md.
-            screenTimeError = error.localizedDescription
+            screenTimeError = Self.explain(error)
             hasScreenTimeAccess = false
         }
         #endif
+    }
+
+    /// Turns Apple's Screen Time errors into something a person can act on.
+    ///
+    /// The default text for the common case is "Couldn't communicate with a
+    /// helper application", which is an XPC failure message that tells the user
+    /// nothing whatsoever about the actual cause — the app not carrying the
+    /// Family Controls entitlement.
+    static func explain(_ error: Error) -> String {
+        let ns = error as NSError
+
+        // NSXPCConnectionInvalid. The Family Controls daemon refuses to talk to
+        // a process that is not entitled, so this IS the missing-entitlement case.
+        if ns.domain == NSCocoaErrorDomain && ns.code == 4099 {
+            return "This build doesn't carry Apple's Family Controls entitlement, so iOS won't "
+                + "hand out Screen Time access. Apple has to approve that entitlement for the "
+                + "app before this can work — see docs/ENTITLEMENT.md. Everything else in "
+                + "NoScroll works without it."
+        }
+
+        if let fc = error as? FamilyControlsError {
+            switch fc {
+            case .unavailable:
+                return "Screen Time isn't available on this device."
+            case .invalidAccountType:
+                return "Screen Time needs a personal Apple ID. A Managed Apple ID or a child "
+                    + "account can't grant it here."
+            case .authorizationCanceled:
+                return "You cancelled the Screen Time prompt. Tap Grant access to try again."
+            case .authenticationMethodUnavailable:
+                return "iOS couldn't verify your Apple ID. Check you're signed in, then retry."
+            case .restricted:
+                return "Screen Time is restricted on this device, so NoScroll can't request it."
+            case .networkError:
+                return "Couldn't reach Apple to set up Screen Time. Check your connection."
+            case .invalidArgument:
+                return "Screen Time rejected the request. Please report this."
+            @unknown default:
+                break
+            }
+        }
+        return error.localizedDescription
     }
 
     /// Opens this app's page in Settings. Works everywhere, no entitlement.

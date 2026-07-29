@@ -7,49 +7,81 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */ = {isa = PBXBuildFile; fileRef = D2E4B2A875DB71820FEEF62C /* noscroll.js */; };
-		015A0C68FF3BCFFE901F439E /* snapchat.json in Resources */ = {isa = PBXBuildFile; fileRef = 17CF03DE2F372ED120231215 /* snapchat.json */; };
-		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
-		020C789461082BD6392711DE /* linkedin.json in Resources */ = {isa = PBXBuildFile; fileRef = 4E1342EB9955B0D1F959C9BC /* linkedin.json */; };
-		024E40666AED54B036AF4364 /* SVGPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = F289B64C92194643788A6FA4 /* SVGPath.swift */; };
-		19DCC1D3D44447917D6B61E9 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CE3A6C1231F824E6904289F /* OnboardingFlow.swift */; };
 		211246652C856B7C7B40ABE4 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047FC2B83B056FF780C9CBAF /* AppState.swift */; };
+		A0243E566B552984A9390757 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD38699BAEFADF064EAA8DC2 /* RootView.swift */; };
+		9C079E74C99D392B62A20825 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE79E075B3369855BA9631CA /* Services.swift */; };
+		5A0F8E775023BC474E03BE33 /* WebScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */; };
+		D83AB944B5F8E0296DC5253D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F101DA5C9C1BF120AFC3D3D /* Theme.swift */; };
+		E3D2C8740D06E02BD6ABD35D /* TabScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3625EA0C0613FDC22D64C5DC /* TabScreens.swift */; };
+		33F5423E5FFE6DCC43DAFDA5 /* BrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98198764AB5B5DD6D6ED8722 /* BrandMark.swift */; };
+		C92F86E2B54AF053DA1925D8 /* BrandPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */; };
+		9A4AD3B553ADBA5EE081781C /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CFA9C35930C2FCC655A15D /* HomeView.swift */; };
+		DC66C7088500AC1FB21DACFC /* ServiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */; };
+		603FA5A9AC96BEBE2A841CB5 /* LifeGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E7317D5642AA8442B74BAB /* LifeGridView.swift */; };
+		19DCC1D3D44447917D6B61E9 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CE3A6C1231F824E6904289F /* OnboardingFlow.swift */; };
+		56C8F3D4FE6ACEC2335054A4 /* OnboardingScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED09C400A14FFD8B60B169E /* OnboardingScreens.swift */; };
+		FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */; };
+		024E40666AED54B036AF4364 /* SVGPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = F289B64C92194643788A6FA4 /* SVGPath.swift */; };
+		79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0730769F06E849F940D126 /* SleepSchedule.swift */; };
+		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
+		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
+		A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */; };
+		8BBA0F12CFE98E6B7CEE26F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 847708244D2F2364D2D98223 /* Assets.xcassets */; };
+		0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */ = {isa = PBXBuildFile; fileRef = D2E4B2A875DB71820FEEF62C /* noscroll.js */; };
+		73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */ = {isa = PBXBuildFile; fileRef = F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */; };
 		2F54E958873733761E2D57DE /* facebook.json in Resources */ = {isa = PBXBuildFile; fileRef = 6DD636EB38F7FB6347CF8CEC /* facebook.json */; };
 		31FBFF85D93B3B80D011FD31 /* instagram.json in Resources */ = {isa = PBXBuildFile; fileRef = E732E973BFB6A9589AC73386 /* instagram.json */; };
-		33F5423E5FFE6DCC43DAFDA5 /* BrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98198764AB5B5DD6D6ED8722 /* BrandMark.swift */; };
-		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
-		56C8F3D4FE6ACEC2335054A4 /* OnboardingScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED09C400A14FFD8B60B169E /* OnboardingScreens.swift */; };
-		5A0F8E775023BC474E03BE33 /* WebScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */; };
-		5E86D988E1CFC7573C497EFA /* NoScrollWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */; };
-		603FA5A9AC96BEBE2A841CB5 /* LifeGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E7317D5642AA8442B74BAB /* LifeGridView.swift */; };
-		6A4BD3B1CBC66F4CF0721548 /* NoScrollWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */ = {isa = PBXBuildFile; fileRef = F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */; };
-		79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0730769F06E849F940D126 /* SleepSchedule.swift */; };
-		827770E84FF0BF9D5999EA61 /* youtube.json in Resources */ = {isa = PBXBuildFile; fileRef = 45D328F985929718EE6E102E /* youtube.json */; };
-		8BBA0F12CFE98E6B7CEE26F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 847708244D2F2364D2D98223 /* Assets.xcassets */; };
-		97358D1A963520AEA8FE3696 /* tiktok.json in Resources */ = {isa = PBXBuildFile; fileRef = C67D92310714AF1161A4007F /* tiktok.json */; };
-		9A4AD3B553ADBA5EE081781C /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CFA9C35930C2FCC655A15D /* HomeView.swift */; };
-		9C079E74C99D392B62A20825 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE79E075B3369855BA9631CA /* Services.swift */; };
-		A0243E566B552984A9390757 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD38699BAEFADF064EAA8DC2 /* RootView.swift */; };
-		A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */; };
+		020C789461082BD6392711DE /* linkedin.json in Resources */ = {isa = PBXBuildFile; fileRef = 4E1342EB9955B0D1F959C9BC /* linkedin.json */; };
 		B42BF4E0334043D799B7CBC7 /* reddit.json in Resources */ = {isa = PBXBuildFile; fileRef = B7558EF8C34F3CE6D26BB64D /* reddit.json */; };
-		C92F86E2B54AF053DA1925D8 /* BrandPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */; };
+		015A0C68FF3BCFFE901F439E /* snapchat.json in Resources */ = {isa = PBXBuildFile; fileRef = 17CF03DE2F372ED120231215 /* snapchat.json */; };
+		97358D1A963520AEA8FE3696 /* tiktok.json in Resources */ = {isa = PBXBuildFile; fileRef = C67D92310714AF1161A4007F /* tiktok.json */; };
 		D698B01EC3BB77FD1669A593 /* x.json in Resources */ = {isa = PBXBuildFile; fileRef = E923E430F8E46F763F647273 /* x.json */; };
-		D83AB944B5F8E0296DC5253D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F101DA5C9C1BF120AFC3D3D /* Theme.swift */; };
-		DC66C7088500AC1FB21DACFC /* ServiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */; };
-		E3D2C8740D06E02BD6ABD35D /* TabScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3625EA0C0613FDC22D64C5DC /* TabScreens.swift */; };
-		FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */; };
+		827770E84FF0BF9D5999EA61 /* youtube.json in Resources */ = {isa = PBXBuildFile; fileRef = 45D328F985929718EE6E102E /* youtube.json */; };
+		5E86D988E1CFC7573C497EFA /* NoScrollWidget.swift in WidgetSources */ = {isa = PBXBuildFile; fileRef = 1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */; };
+		6A4BD3B1CBC66F4CF0721548 /* NoScrollWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		825E46201E58FBAA1250CA67 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C064250FBC77EBF547FA1971;
-			remoteInfo = NoScrollWidget;
-		};
-/* End PBXContainerItemProxy section */
+/* Begin PBXFileReference section */
+		047FC2B83B056FF780C9CBAF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AppState.swift"; path = "NoScroll/App/AppState.swift"; sourceTree = "<group>"; };
+		BD38699BAEFADF064EAA8DC2 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RootView.swift"; path = "NoScroll/App/RootView.swift"; sourceTree = "<group>"; };
+		FE79E075B3369855BA9631CA /* Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Services.swift"; path = "NoScroll/App/Services.swift"; sourceTree = "<group>"; };
+		5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebScreen.swift"; path = "NoScroll/App/WebScreen.swift"; sourceTree = "<group>"; };
+		7F101DA5C9C1BF120AFC3D3D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Theme.swift"; path = "NoScroll/Design/Theme.swift"; sourceTree = "<group>"; };
+		3625EA0C0613FDC22D64C5DC /* TabScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TabScreens.swift"; path = "NoScroll/Home/TabScreens.swift"; sourceTree = "<group>"; };
+		98198764AB5B5DD6D6ED8722 /* BrandMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BrandMark.swift"; path = "NoScroll/Design/BrandMark.swift"; sourceTree = "<group>"; };
+		64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BrandPaths.swift"; path = "NoScroll/Design/BrandPaths.swift"; sourceTree = "<group>"; };
+		30CFA9C35930C2FCC655A15D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HomeView.swift"; path = "NoScroll/Home/HomeView.swift"; sourceTree = "<group>"; };
+		D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ServiceSettingsView.swift"; path = "NoScroll/Home/ServiceSettingsView.swift"; sourceTree = "<group>"; };
+		B2E7317D5642AA8442B74BAB /* LifeGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LifeGridView.swift"; path = "NoScroll/Onboarding/LifeGridView.swift"; sourceTree = "<group>"; };
+		1CE3A6C1231F824E6904289F /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnboardingFlow.swift"; path = "NoScroll/Onboarding/OnboardingFlow.swift"; sourceTree = "<group>"; };
+		CED09C400A14FFD8B60B169E /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnboardingScreens.swift"; path = "NoScroll/Onboarding/OnboardingScreens.swift"; sourceTree = "<group>"; };
+		9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LifeInWeeks.swift"; path = "NoScrollCore/Sources/NoScrollCore/LifeInWeeks.swift"; sourceTree = "<group>"; };
+		F289B64C92194643788A6FA4 /* SVGPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SVGPath.swift"; path = "NoScrollCore/Sources/NoScrollCore/SVGPath.swift"; sourceTree = "<group>"; };
+		AF0730769F06E849F940D126 /* SleepSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SleepSchedule.swift"; path = "NoScrollCore/Sources/NoScrollCore/SleepSchedule.swift"; sourceTree = "<group>"; };
+		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RuleBundle.swift"; path = "NoScroll/Core/RuleBundle.swift"; sourceTree = "<group>"; };
+		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebSession.swift"; path = "NoScroll/Core/WebSession.swift"; sourceTree = "<group>"; };
+		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WrappedWebViewController.swift"; path = "NoScroll/Web/WrappedWebViewController.swift"; sourceTree = "<group>"; };
+		847708244D2F2364D2D98223 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Assets.xcassets"; path = "NoScroll/Assets.xcassets"; sourceTree = "<group>"; };
+		D2E4B2A875DB71820FEEF62C /* noscroll.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "noscroll.js"; path = "NoScroll/Resources/noscroll.js"; sourceTree = "<group>"; };
+		F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */ = {isa = PBXFileReference; lastKnownFileType = file; name = "rules-signing.pub.raw"; path = "NoScroll/Resources/rules-signing.pub.raw"; sourceTree = "<group>"; };
+		6DD636EB38F7FB6347CF8CEC /* facebook.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "facebook.json"; path = "NoScroll/Resources/Rules/facebook.json"; sourceTree = "<group>"; };
+		E732E973BFB6A9589AC73386 /* instagram.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "instagram.json"; path = "NoScroll/Resources/Rules/instagram.json"; sourceTree = "<group>"; };
+		4E1342EB9955B0D1F959C9BC /* linkedin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "linkedin.json"; path = "NoScroll/Resources/Rules/linkedin.json"; sourceTree = "<group>"; };
+		B7558EF8C34F3CE6D26BB64D /* reddit.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "reddit.json"; path = "NoScroll/Resources/Rules/reddit.json"; sourceTree = "<group>"; };
+		17CF03DE2F372ED120231215 /* snapchat.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "snapchat.json"; path = "NoScroll/Resources/Rules/snapchat.json"; sourceTree = "<group>"; };
+		C67D92310714AF1161A4007F /* tiktok.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "tiktok.json"; path = "NoScroll/Resources/Rules/tiktok.json"; sourceTree = "<group>"; };
+		E923E430F8E46F763F647273 /* x.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "x.json"; path = "NoScroll/Resources/Rules/x.json"; sourceTree = "<group>"; };
+		45D328F985929718EE6E102E /* youtube.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "youtube.json"; path = "NoScroll/Resources/Rules/youtube.json"; sourceTree = "<group>"; };
+		1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NoScrollWidget.swift"; path = "NoScrollWidget/NoScrollWidget.swift"; sourceTree = "<group>"; };
+		FBF257999FE8034997CE0C5E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info.plist"; path = "NoScrollWidget/Info.plist"; sourceTree = "<group>"; };
+		C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NoScrollWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D91517BFBDECE389497A425B /* NoScroll.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoScroll.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4F6F5CC3FCCF73F75AE9CCF4 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		DE01148BD5ECED1017080940 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		425893CE4AEDF359C5F0F0D7 /* Embed Foundation Extensions */ = {
@@ -65,60 +97,6 @@
 		};
 /* End PBXCopyFilesBuildPhase section */
 
-/* Begin PBXFileReference section */
-		047FC2B83B056FF780C9CBAF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppState.swift; path = NoScroll/App/AppState.swift; sourceTree = "<group>"; };
-		17CF03DE2F372ED120231215 /* snapchat.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = snapchat.json; path = NoScroll/Resources/Rules/snapchat.json; sourceTree = "<group>"; };
-		1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NoScrollWidget.swift; path = NoScrollWidget/NoScrollWidget.swift; sourceTree = "<group>"; };
-		1CE3A6C1231F824E6904289F /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingFlow.swift; path = NoScroll/Onboarding/OnboardingFlow.swift; sourceTree = "<group>"; };
-		30CFA9C35930C2FCC655A15D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HomeView.swift; path = NoScroll/Home/HomeView.swift; sourceTree = "<group>"; };
-		3625EA0C0613FDC22D64C5DC /* TabScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TabScreens.swift; path = NoScroll/Home/TabScreens.swift; sourceTree = "<group>"; };
-		45D328F985929718EE6E102E /* youtube.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = youtube.json; path = NoScroll/Resources/Rules/youtube.json; sourceTree = "<group>"; };
-		4E1342EB9955B0D1F959C9BC /* linkedin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = linkedin.json; path = NoScroll/Resources/Rules/linkedin.json; sourceTree = "<group>"; };
-		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuleBundle.swift; path = NoScroll/Core/RuleBundle.swift; sourceTree = "<group>"; };
-		5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebScreen.swift; path = NoScroll/App/WebScreen.swift; sourceTree = "<group>"; };
-		64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BrandPaths.swift; path = NoScroll/Design/BrandPaths.swift; sourceTree = "<group>"; };
-		6DD636EB38F7FB6347CF8CEC /* facebook.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = facebook.json; path = NoScroll/Resources/Rules/facebook.json; sourceTree = "<group>"; };
-		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebSession.swift; path = NoScroll/Core/WebSession.swift; sourceTree = "<group>"; };
-		7F101DA5C9C1BF120AFC3D3D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = NoScroll/Design/Theme.swift; sourceTree = "<group>"; };
-		847708244D2F2364D2D98223 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = NoScroll/Assets.xcassets; sourceTree = "<group>"; };
-		98198764AB5B5DD6D6ED8722 /* BrandMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BrandMark.swift; path = NoScroll/Design/BrandMark.swift; sourceTree = "<group>"; };
-		9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LifeInWeeks.swift; path = NoScrollCore/Sources/NoScrollCore/LifeInWeeks.swift; sourceTree = "<group>"; };
-		AF0730769F06E849F940D126 /* SleepSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SleepSchedule.swift; path = NoScrollCore/Sources/NoScrollCore/SleepSchedule.swift; sourceTree = "<group>"; };
-		B2E7317D5642AA8442B74BAB /* LifeGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LifeGridView.swift; path = NoScroll/Onboarding/LifeGridView.swift; sourceTree = "<group>"; };
-		B7558EF8C34F3CE6D26BB64D /* reddit.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = reddit.json; path = NoScroll/Resources/Rules/reddit.json; sourceTree = "<group>"; };
-		BD38699BAEFADF064EAA8DC2 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RootView.swift; path = NoScroll/App/RootView.swift; sourceTree = "<group>"; };
-		C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NoScrollWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		C67D92310714AF1161A4007F /* tiktok.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = tiktok.json; path = NoScroll/Resources/Rules/tiktok.json; sourceTree = "<group>"; };
-		CED09C400A14FFD8B60B169E /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingScreens.swift; path = NoScroll/Onboarding/OnboardingScreens.swift; sourceTree = "<group>"; };
-		D2E4B2A875DB71820FEEF62C /* noscroll.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = noscroll.js; path = NoScroll/Resources/noscroll.js; sourceTree = "<group>"; };
-		D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServiceSettingsView.swift; path = NoScroll/Home/ServiceSettingsView.swift; sourceTree = "<group>"; };
-		D91517BFBDECE389497A425B /* NoScroll.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoScroll.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E732E973BFB6A9589AC73386 /* instagram.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = instagram.json; path = NoScroll/Resources/Rules/instagram.json; sourceTree = "<group>"; };
-		E923E430F8E46F763F647273 /* x.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = x.json; path = NoScroll/Resources/Rules/x.json; sourceTree = "<group>"; };
-		F289B64C92194643788A6FA4 /* SVGPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SVGPath.swift; path = NoScrollCore/Sources/NoScrollCore/SVGPath.swift; sourceTree = "<group>"; };
-		F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */ = {isa = PBXFileReference; lastKnownFileType = text; name = "rules-signing.pub.raw"; path = "NoScroll/Resources/rules-signing.pub.raw"; sourceTree = "<group>"; };
-		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WrappedWebViewController.swift; path = NoScroll/Web/WrappedWebViewController.swift; sourceTree = "<group>"; };
-		FBF257999FE8034997CE0C5E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = NoScrollWidget/Info.plist; sourceTree = "<group>"; };
-		FE79E075B3369855BA9631CA /* Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Services.swift; path = NoScroll/App/Services.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		4F6F5CC3FCCF73F75AE9CCF4 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		DE01148BD5ECED1017080940 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXGroup section */
 		1629A0BB4117BEFC577EF28D = {
 			isa = PBXGroup;
@@ -128,42 +106,6 @@
 				3AF7E71D86EA58D9E0F75F28 /* NoScrollWidget */,
 				A8CBE22D73EBCC4E5F27B59C /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		307A90002D1285ED8C05A9E0 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				847708244D2F2364D2D98223 /* Assets.xcassets */,
-				D2E4B2A875DB71820FEEF62C /* noscroll.js */,
-				F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */,
-				6DD636EB38F7FB6347CF8CEC /* facebook.json */,
-				E732E973BFB6A9589AC73386 /* instagram.json */,
-				4E1342EB9955B0D1F959C9BC /* linkedin.json */,
-				B7558EF8C34F3CE6D26BB64D /* reddit.json */,
-				17CF03DE2F372ED120231215 /* snapchat.json */,
-				C67D92310714AF1161A4007F /* tiktok.json */,
-				E923E430F8E46F763F647273 /* x.json */,
-				45D328F985929718EE6E102E /* youtube.json */,
-			);
-			name = Resources;
-			sourceTree = "<group>";
-		};
-		3AF7E71D86EA58D9E0F75F28 /* NoScrollWidget */ = {
-			isa = PBXGroup;
-			children = (
-				1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */,
-				FBF257999FE8034997CE0C5E /* Info.plist */,
-			);
-			name = NoScrollWidget;
-			sourceTree = "<group>";
-		};
-		A8CBE22D73EBCC4E5F27B59C /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				D91517BFBDECE389497A425B /* NoScroll.app */,
-				C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		D8DBA3F9900DD17689CA0C4D /* Sources */ = {
@@ -192,20 +134,55 @@
 			name = Sources;
 			sourceTree = "<group>";
 		};
+		307A90002D1285ED8C05A9E0 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				847708244D2F2364D2D98223 /* Assets.xcassets */,
+				D2E4B2A875DB71820FEEF62C /* noscroll.js */,
+				F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */,
+				6DD636EB38F7FB6347CF8CEC /* facebook.json */,
+				E732E973BFB6A9589AC73386 /* instagram.json */,
+				4E1342EB9955B0D1F959C9BC /* linkedin.json */,
+				B7558EF8C34F3CE6D26BB64D /* reddit.json */,
+				17CF03DE2F372ED120231215 /* snapchat.json */,
+				C67D92310714AF1161A4007F /* tiktok.json */,
+				E923E430F8E46F763F647273 /* x.json */,
+				45D328F985929718EE6E102E /* youtube.json */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		A8CBE22D73EBCC4E5F27B59C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D91517BFBDECE389497A425B /* NoScroll.app */,
+				C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3AF7E71D86EA58D9E0F75F28 /* NoScrollWidget */ = {
+			isa = PBXGroup;
+			children = (
+				1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */,
+				FBF257999FE8034997CE0C5E /* Info.plist */,
+			);
+			name = NoScrollWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		42AEFBAE01D2DFD981F7DA7D /* NoScroll */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B351D9E61CFAD9F667AA7583 /* Build configuration list for PBXNativeTarget "NoScroll" */;
+			buildConfigurationList = B351D9E61CFAD9F667AA7583;
 			buildPhases = (
-				FCA229C23F166EBB0BA5029E /* Sources */,
-				4F6F5CC3FCCF73F75AE9CCF4 /* Frameworks */,
-				B9C6EB6F79FC54535ACB3053 /* Resources */,
-				425893CE4AEDF359C5F0F0D7 /* Embed Foundation Extensions */,
+				FCA229C23F166EBB0BA5029E,
+				4F6F5CC3FCCF73F75AE9CCF4,
+				B9C6EB6F79FC54535ACB3053,
+				425893CE4AEDF359C5F0F0D7,
 			);
-			buildRules = (
-			);
+			buildRules = ();
 			dependencies = (
 				C22F584A664AA0E09B7E768E /* PBXTargetDependency */,
 			);
@@ -216,15 +193,13 @@
 		};
 		C064250FBC77EBF547FA1971 /* NoScrollWidget */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4DADE223381F01D7FAD311FB /* Build configuration list for PBXNativeTarget "NoScrollWidget" */;
+			buildConfigurationList = 4DADE223381F01D7FAD311FB;
 			buildPhases = (
-				59C757B69A2BA5C7B3FDB1D7 /* Sources */,
-				DE01148BD5ECED1017080940 /* Frameworks */,
+				59C757B69A2BA5C7B3FDB1D7,
+				DE01148BD5ECED1017080940,
 			);
-			buildRules = (
-			);
-			dependencies = (
-			);
+			buildRules = ();
+			dependencies = ();
 			name = NoScrollWidget;
 			productName = NoScrollWidget;
 			productReference = C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */;
@@ -232,8 +207,26 @@
 		};
 /* End PBXNativeTarget section */
 
+/* Begin PBXTargetDependency section */
+		C22F584A664AA0E09B7E768E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C064250FBC77EBF547FA1971 /* NoScrollWidget */;
+			targetProxy = 825E46201E58FBAA1250CA67 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		825E46201E58FBAA1250CA67 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595;
+			proxyType = 1;
+			remoteGlobalIDString = C064250FBC77EBF547FA1971;
+			remoteInfo = NoScrollWidget;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXProject section */
-		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+		46F86FAA6BBF9AC94A7E4595 = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
@@ -248,14 +241,11 @@
 					};
 				};
 			};
-			buildConfigurationList = 200AD4F23452D049FE3D290D /* Build configuration list for PBXProject "NoScroll" */;
+			buildConfigurationList = 200AD4F23452D049FE3D290D;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
-			knownRegions = (
-				en,
-				Base,
-			);
+			knownRegions = (en, Base);
 			mainGroup = 1629A0BB4117BEFC577EF28D;
 			productRefGroup = A8CBE22D73EBCC4E5F27B59C /* Products */;
 			projectDirPath = "";
@@ -268,7 +258,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		B9C6EB6F79FC54535ACB3053 /* Resources */ = {
+		B9C6EB6F79FC54535ACB3053 = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -289,15 +279,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		59C757B69A2BA5C7B3FDB1D7 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5E86D988E1CFC7573C497EFA /* NoScrollWidget.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		FCA229C23F166EBB0BA5029E /* Sources */ = {
+		FCA229C23F166EBB0BA5029E = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -323,34 +305,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		59C757B69A2BA5C7B3FDB1D7 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5E86D988E1CFC7573C497EFA /* NoScrollWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		C22F584A664AA0E09B7E768E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C064250FBC77EBF547FA1971 /* NoScrollWidget */;
-			targetProxy = 825E46201E58FBAA1250CA67 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		3229BDAFFF5E8A0B82BA0A5B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R5R3ZS54LV;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		6004C90EA86F79D24F736B17 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -360,20 +325,37 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
 		};
-		77748907EE6232549BFF1D1C /* Release */ = {
+		B479D6A952475C7454B83798 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				NOSCROLL_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
+				INFOPLIST_FILE = NoScroll/Info.plist;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9BDCCBA29C3D6E6125BB6682 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R5R3ZS54LV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
@@ -384,7 +366,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
-			name = Release;
+			name = Debug;
 		};
 		8C1BE4D75C50C6B06F4574D3 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -396,18 +378,35 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		9BDCCBA29C3D6E6125BB6682 /* Debug */ = {
+		3229BDAFFF5E8A0B82BA0A5B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				NOSCROLL_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
+				INFOPLIST_FILE = NoScroll/Info.plist;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		77748907EE6232549BFF1D1C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R5R3ZS54LV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
@@ -418,29 +417,12 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
-			name = Debug;
-		};
-		B479D6A952475C7454B83798 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R5R3ZS54LV;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
+			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		200AD4F23452D049FE3D290D /* Build configuration list for PBXProject "NoScroll" */ = {
+		200AD4F23452D049FE3D290D = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6004C90EA86F79D24F736B17 /* Debug */,
@@ -449,16 +431,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4DADE223381F01D7FAD311FB /* Build configuration list for PBXNativeTarget "NoScrollWidget" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				9BDCCBA29C3D6E6125BB6682 /* Debug */,
-				77748907EE6232549BFF1D1C /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		B351D9E61CFAD9F667AA7583 /* Build configuration list for PBXNativeTarget "NoScroll" */ = {
+		B351D9E61CFAD9F667AA7583 = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B479D6A952475C7454B83798 /* Debug */,
@@ -467,7 +440,17 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		4DADE223381F01D7FAD311FB = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9BDCCBA29C3D6E6125BB6682 /* Debug */,
+				77748907EE6232549BFF1D1C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
 	};
-	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+	rootObject = 46F86FAA6BBF9AC94A7E4595;
 }

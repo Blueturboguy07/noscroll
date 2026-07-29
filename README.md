@@ -9,6 +9,10 @@ NoScroll removes Reels, Shorts, Explore and algorithmically suggested content �
 parts you actually opened the app for: messages, the people you follow, and posting. When a
 friend sends you a reel you can watch *that* video. You just can't scroll to the next one.
 
+Eight services: **Instagram** and **YouTube** are probe-verified against the live sites;
+**X, TikTok, Facebook, LinkedIn, Snapchat** and **Reddit** ship as beta and are labelled so in
+the app.
+
 > Status: **pre-release.** The engine, rule bundles, both native shells and the shield layers are
 > written and tested, and both the iPhone and Android apps build and run. Not yet submitted to either store —
 > see [What's not done](#whats-not-done).
@@ -29,7 +33,7 @@ Android AccessibilityService), which makes the stripped version the way in rathe
 suggestion.
 
 ```
-engine/    TypeScript → one 7.6 KB IIFE. The entire blocking implementation.
+engine/    TypeScript → one IIFE. The entire blocking implementation.
 rules/     Signed JSON rule bundles. Data, not code — updatable without an app release.
 ios/       Swift. WKWebView shell + FamilyControls + three Screen Time extensions
            + a WidgetKit extension (home-screen shortcuts via noscroll://open/<service>).
@@ -39,6 +43,16 @@ tools/     Bundle signing, cross-language canonicalisation check, engine sync.
 ```
 
 The engine is byte-identical on both platforms. Everything platform-specific stays in the shells.
+
+### The app
+
+First run is a narrative, not a checklist: how much you scroll → how old you are → **your life in
+weeks**, with every band and the percentage derived from your two answers (at 18, scrolling 4.8h
+of a 5h daily surplus, that is 96% of your remaining free time). Then the permissions, then out.
+
+Home is one service at a time, with today's usage, that service's switches, and a five-tab shell —
+Sleep, everything-blocked, Home, Shield, You. A WidgetKit extension puts the same services on your
+home screen, opening through NoScroll via `noscroll://open/<service>`.
 
 ### Rules are data
 
@@ -145,6 +159,9 @@ Honestly, because a feature list that overpromises is the thing this project is 
   currently reads bundles from assets/cache without checking the signature. Do not ship without it.
 - **No notifications.** WKWebView cannot receive web push, and shielding an app suppresses that
   app's own notifications too. This is a scoped-out non-goal, not a bug.
+- **Screen Time does not work in the iOS Simulator at all.** The frameworks are non-functional
+  there, so the permission prompt can never appear; the app says so rather than failing quietly.
+  Testing that flow needs a real device *and* the entitlement below.
 - **Six of the eight services are beta.** Instagram and YouTube are probe-verified against the
   live sites; X, TikTok, Facebook, LinkedIn, Snapchat and Reddit have researched rules that no
   probe has confirmed yet. The app labels them BETA rather than listing eight logos as if they

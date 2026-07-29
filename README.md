@@ -137,6 +137,9 @@ Honestly, because a feature list that overpromises is the thing this project is 
 - **Not submitted to either store.** The iOS `com.apple.developer.family-controls` entitlement is
   gated by Apple, takes days-to-weeks, and can be denied — see [docs/ENTITLEMENT.md](docs/ENTITLEMENT.md).
   It has to be granted before the shield layer can run on a device.
+- **Android is only verified by unit tests and APK inspection, not on a device.** This machine
+  has no arm64 emulator image and not enough free disk to install one; the Kotlin logic is
+  covered by tests and the icon/manifest by `aapt`, but nobody has watched it run.
 - **The three Screen Time extensions are not yet targets in the Xcode project.** The app target
   builds and runs today; the shield extensions are written and typecheck against the iOS SDK, but
   adding them as targets is blocked on the entitlement above, since they cannot run without it.

@@ -15,6 +15,7 @@
 		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
 		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
 		A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */; };
+		8BBA0F12CFE98E6B7CEE26F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 847708244D2F2364D2D98223 /* Assets.xcassets */; };
 		0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */ = {isa = PBXBuildFile; fileRef = D2E4B2A875DB71820FEEF62C /* noscroll.js */; };
 		73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */ = {isa = PBXBuildFile; fileRef = F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */; };
 		31FBFF85D93B3B80D011FD31 /* instagram.json in Resources */ = {isa = PBXBuildFile; fileRef = E732E973BFB6A9589AC73386 /* instagram.json */; };
@@ -30,6 +31,7 @@
 		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RuleBundle.swift"; path = "NoScroll/Core/RuleBundle.swift"; sourceTree = "<group>"; };
 		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebSession.swift"; path = "NoScroll/Core/WebSession.swift"; sourceTree = "<group>"; };
 		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WrappedWebViewController.swift"; path = "NoScroll/Web/WrappedWebViewController.swift"; sourceTree = "<group>"; };
+		847708244D2F2364D2D98223 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Assets.xcassets"; path = "NoScroll/Assets.xcassets"; sourceTree = "<group>"; };
 		D2E4B2A875DB71820FEEF62C /* noscroll.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "noscroll.js"; path = "NoScroll/Resources/noscroll.js"; sourceTree = "<group>"; };
 		F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */ = {isa = PBXFileReference; lastKnownFileType = file; name = "rules-signing.pub.raw"; path = "NoScroll/Resources/rules-signing.pub.raw"; sourceTree = "<group>"; };
 		E732E973BFB6A9589AC73386 /* instagram.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "instagram.json"; path = "NoScroll/Resources/Rules/instagram.json"; sourceTree = "<group>"; };
@@ -69,6 +71,7 @@
 		307A90002D1285ED8C05A9E0 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				847708244D2F2364D2D98223 /* Assets.xcassets */,
 				D2E4B2A875DB71820FEEF62C /* noscroll.js */,
 				F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */,
 				E732E973BFB6A9589AC73386 /* instagram.json */,
@@ -138,6 +141,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8BBA0F12CFE98E6B7CEE26F4 /* Assets.xcassets in Resources */,
 				0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */,
 				73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */,
 				31FBFF85D93B3B80D011FD31 /* instagram.json in Resources */,

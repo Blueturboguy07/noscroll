@@ -94,6 +94,11 @@ struct ShieldTab: View {
                         Button("Grant Screen Time access") {
                             Task { await state.requestScreenTimeAccess() }
                         }
+                        Button("Open iOS Settings") { state.openSystemSettings() }
+                    } footer: {
+                        if let error = state.screenTimeError {
+                            Text(error).foregroundStyle(.red)
+                        }
                     }
                 }
 

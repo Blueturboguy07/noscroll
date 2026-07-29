@@ -66,6 +66,7 @@ struct WebViewContainer: UIViewControllerRepresentable {
         let session = WebSession(id: sessionID, service: service.id, displayName: service.name)
         return WrappedWebViewController(
             session: session,
+            startURL: service.home,
             dataStore: WKWebsiteDataStore(forIdentifier: sessionID),
             engineSource: engineSource,
             bundleRaw: bundleRaw,
@@ -91,14 +92,23 @@ struct WebViewContainer: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: WrappedWebViewController, context: Context) {}
 
-    /// Stable per-service identifier so the session survives cold launch.
-    /// iOS 17+ named data stores are what make this persistent AND isolated.
+    /// Stable, DISTINCT per-service identifier so each service keeps its own
+    /// persistent cookie jar and sessions survive a cold launch.
+    ///
+    /// Derived from the service id rather than a hand-maintained table: the
+    /// table listed two services and gave every other one the same UUID, which
+    /// meant six services shared a single cookie jar.
     private var sessionID: UUID {
-        switch service.id {
-        case "instagram": return UUID(uuidString: "A1B2C3D4-0001-4000-8000-000000000001")!
-        case "youtube": return UUID(uuidString: "A1B2C3D4-0002-4000-8000-000000000002")!
-        default: return UUID(uuidString: "A1B2C3D4-0000-4000-8000-000000000000")!
+        var bytes = [UInt8](repeating: 0, count: 16)
+        for (i, byte) in Array(service.id.utf8).enumerated() {
+            bytes[i % 16] = bytes[i % 16] &+ byte &* UInt8(truncatingIfNeeded: i &+ 1)
         }
+        // Stamp RFC-4122 version/variant bits so it is a well-formed UUID.
+        bytes[6] = (bytes[6] & 0x0F) | 0x40
+        bytes[8] = (bytes[8] & 0x3F) | 0x80
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5],
+                           bytes[6], bytes[7], bytes[8], bytes[9], bytes[10], bytes[11],
+                           bytes[12], bytes[13], bytes[14], bytes[15]))
     }
 }
 

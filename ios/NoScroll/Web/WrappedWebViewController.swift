@@ -11,6 +11,7 @@ import WebKit
 final class WrappedWebViewController: UIViewController {
 
     private let session: WebSession
+    private let startURL: URL
     private let engineSource: String
     private let bundleRaw: Data
     private let settings: [String: Bool]
@@ -21,6 +22,7 @@ final class WrappedWebViewController: UIViewController {
     private var restorationState: Data?
 
     init(session: WebSession,
+         startURL: URL,
          dataStore: WKWebsiteDataStore,
          engineSource: String,
          bundleRaw: Data,
@@ -28,6 +30,7 @@ final class WrappedWebViewController: UIViewController {
          telemetry: Bool,
          onBridge: @escaping (BridgeMessage) -> Void) {
         self.session = session
+        self.startURL = startURL
         self.engineSource = engineSource
         self.bundleRaw = bundleRaw
         self.settings = settings
@@ -128,13 +131,10 @@ final class WrappedWebViewController: UIViewController {
         }
     }
 
-    private func homeURL() -> URL {
-        switch session.service {
-        case "instagram": return URL(string: "https://www.instagram.com/")!
-        case "youtube": return URL(string: "https://m.youtube.com/")!
-        default: return URL(string: "https://www.instagram.com/")!
-        }
-    }
+    /// Supplied by the caller from the service definition. It used to be a
+    /// switch over two hardcoded cases with `default: instagram`, which sent
+    /// all six other services to Instagram.
+    private func homeURL() -> URL { startURL }
 }
 
 // MARK: - Navigation

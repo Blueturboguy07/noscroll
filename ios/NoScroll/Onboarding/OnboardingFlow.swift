@@ -1,3 +1,4 @@
+import FamilyControls
 import SwiftUI
 
 /// The first-run flow, in order:
@@ -111,6 +112,8 @@ struct PickAppsScreen: View {
     let onNext: () -> Void
     let onSkip: () -> Void
 
+    @State private var showPicker = false
+
     var body: some View {
         VStack(spacing: 0) {
             PageDots(count: 3, index: 0).padding(.top, 6)
@@ -144,8 +147,20 @@ struct PickAppsScreen: View {
 
             Spacer()
 
-            PrimaryButton(title: "Select the apps", action: onNext)
-                .padding(.horizontal, 20)
+            PrimaryButton(title: "Select the apps") {
+                // Apple's own picker. It can only present once Screen Time is
+                // authorised, so say that rather than opening an empty sheet.
+                if state.hasScreenTimeAccess {
+                    showPicker = true
+                } else {
+                    onNext()
+                }
+            }
+            .padding(.horizontal, 20)
+            .familyActivityPicker(isPresented: $showPicker, selection: $state.shieldSelection)
+            .onChange(of: showPicker) { _, presenting in
+                if !presenting { onNext() }
+            }
             Button("Skip for now", action: onSkip)
                 .font(Theme.body(17, .semibold))
                 .foregroundStyle(Theme.inkSoft)
@@ -259,16 +274,28 @@ struct ScreenTimeScreen: View {
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 10)
 
+            if let error = state.screenTimeError {
+                Text(error)
+                    .font(Theme.body(14))
+                    .foregroundStyle(Theme.scrolling)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 34)
+                    .padding(.top, 14)
+            }
+
             PrimaryButton(title: requesting ? "Requesting…" : "Grant access") {
                 requesting = true
                 Task {
                     await state.requestScreenTimeAccess()
                     requesting = false
-                    onNext()
+                    // Only advance on success; otherwise the message above
+                    // explains what happened instead of the page vanishing as
+                    // though something worked.
+                    if state.hasScreenTimeAccess { onNext() }
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 26)
+            .padding(.top, 20)
 
             Button("Skip for now", action: onSkip)
                 .font(Theme.body(17, .semibold))
@@ -284,6 +311,11 @@ struct ScreenTimeScreen: View {
 struct WidgetsScreen: View {
     let onSetUp: () -> Void
     let onLater: () -> Void
+
+    /// iOS exposes no way to open the widget gallery programmatically, so the
+    /// honest version of "Set it up" is to show the three steps rather than
+    /// pretend a button can do it.
+    @State private var showSteps = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -308,18 +340,45 @@ struct WidgetsScreen: View {
 
             Spacer()
 
-            widgetPreview
+            if showSteps {
+                VStack(alignment: .leading, spacing: 12) {
+                    step(1, "Touch and hold an empty part of your home screen")
+                    step(2, "Tap Edit, then Add Widget")
+                    step(3, "Search for NoScroll and add it")
+                }
+                .padding(.horizontal, 30)
+                .transition(.opacity)
+            } else {
+                widgetPreview
+            }
 
             Spacer()
 
-            PrimaryButton(title: "Set it up", action: onSetUp)
-                .padding(.horizontal, 20)
+            PrimaryButton(title: showSteps ? "Done" : "Set it up") {
+                if showSteps { onSetUp() } else { showSteps = true }
+            }
+            .padding(.horizontal, 20)
             SecondaryButton(title: "Maybe later", outlined: true, action: onLater)
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
         }
         .padding(.bottom, 18)
         .background(Theme.paper)
+    }
+
+    private func step(_ n: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(n)")
+                .font(Theme.display(15, .heavy))
+                .foregroundStyle(Theme.paperRaised)
+                .frame(width: 26, height: 26)
+                .background(Theme.ink, in: Circle())
+            Text(text)
+                .font(Theme.body(16))
+                .foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+        }
     }
 
     private var widgetPreview: some View {

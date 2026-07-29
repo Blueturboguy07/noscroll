@@ -14,12 +14,14 @@
 		D83AB944B5F8E0296DC5253D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F101DA5C9C1BF120AFC3D3D /* Theme.swift */; };
 		E3D2C8740D06E02BD6ABD35D /* TabScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3625EA0C0613FDC22D64C5DC /* TabScreens.swift */; };
 		33F5423E5FFE6DCC43DAFDA5 /* BrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98198764AB5B5DD6D6ED8722 /* BrandMark.swift */; };
+		C92F86E2B54AF053DA1925D8 /* BrandPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */; };
 		9A4AD3B553ADBA5EE081781C /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CFA9C35930C2FCC655A15D /* HomeView.swift */; };
 		DC66C7088500AC1FB21DACFC /* ServiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */; };
 		603FA5A9AC96BEBE2A841CB5 /* LifeGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E7317D5642AA8442B74BAB /* LifeGridView.swift */; };
 		19DCC1D3D44447917D6B61E9 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CE3A6C1231F824E6904289F /* OnboardingFlow.swift */; };
 		56C8F3D4FE6ACEC2335054A4 /* OnboardingScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED09C400A14FFD8B60B169E /* OnboardingScreens.swift */; };
 		FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */; };
+		024E40666AED54B036AF4364 /* SVGPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = F289B64C92194643788A6FA4 /* SVGPath.swift */; };
 		79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0730769F06E849F940D126 /* SleepSchedule.swift */; };
 		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
 		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
@@ -47,12 +49,14 @@
 		7F101DA5C9C1BF120AFC3D3D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Theme.swift"; path = "NoScroll/Design/Theme.swift"; sourceTree = "<group>"; };
 		3625EA0C0613FDC22D64C5DC /* TabScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TabScreens.swift"; path = "NoScroll/Home/TabScreens.swift"; sourceTree = "<group>"; };
 		98198764AB5B5DD6D6ED8722 /* BrandMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BrandMark.swift"; path = "NoScroll/Design/BrandMark.swift"; sourceTree = "<group>"; };
+		64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BrandPaths.swift"; path = "NoScroll/Design/BrandPaths.swift"; sourceTree = "<group>"; };
 		30CFA9C35930C2FCC655A15D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HomeView.swift"; path = "NoScroll/Home/HomeView.swift"; sourceTree = "<group>"; };
 		D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ServiceSettingsView.swift"; path = "NoScroll/Home/ServiceSettingsView.swift"; sourceTree = "<group>"; };
 		B2E7317D5642AA8442B74BAB /* LifeGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LifeGridView.swift"; path = "NoScroll/Onboarding/LifeGridView.swift"; sourceTree = "<group>"; };
 		1CE3A6C1231F824E6904289F /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnboardingFlow.swift"; path = "NoScroll/Onboarding/OnboardingFlow.swift"; sourceTree = "<group>"; };
 		CED09C400A14FFD8B60B169E /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnboardingScreens.swift"; path = "NoScroll/Onboarding/OnboardingScreens.swift"; sourceTree = "<group>"; };
 		9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LifeInWeeks.swift"; path = "NoScrollCore/Sources/NoScrollCore/LifeInWeeks.swift"; sourceTree = "<group>"; };
+		F289B64C92194643788A6FA4 /* SVGPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SVGPath.swift"; path = "NoScrollCore/Sources/NoScrollCore/SVGPath.swift"; sourceTree = "<group>"; };
 		AF0730769F06E849F940D126 /* SleepSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SleepSchedule.swift"; path = "NoScrollCore/Sources/NoScrollCore/SleepSchedule.swift"; sourceTree = "<group>"; };
 		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RuleBundle.swift"; path = "NoScroll/Core/RuleBundle.swift"; sourceTree = "<group>"; };
 		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebSession.swift"; path = "NoScroll/Core/WebSession.swift"; sourceTree = "<group>"; };
@@ -114,12 +118,14 @@
 				7F101DA5C9C1BF120AFC3D3D /* Theme.swift */,
 				3625EA0C0613FDC22D64C5DC /* TabScreens.swift */,
 				98198764AB5B5DD6D6ED8722 /* BrandMark.swift */,
+				64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */,
 				30CFA9C35930C2FCC655A15D /* HomeView.swift */,
 				D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */,
 				B2E7317D5642AA8442B74BAB /* LifeGridView.swift */,
 				1CE3A6C1231F824E6904289F /* OnboardingFlow.swift */,
 				CED09C400A14FFD8B60B169E /* OnboardingScreens.swift */,
 				9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */,
+				F289B64C92194643788A6FA4 /* SVGPath.swift */,
 				AF0730769F06E849F940D126 /* SleepSchedule.swift */,
 				54BD89AE0AFB93182037786A /* RuleBundle.swift */,
 				6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */,
@@ -284,12 +290,14 @@
 				D83AB944B5F8E0296DC5253D /* Theme.swift in Sources */,
 				E3D2C8740D06E02BD6ABD35D /* TabScreens.swift in Sources */,
 				33F5423E5FFE6DCC43DAFDA5 /* BrandMark.swift in Sources */,
+				C92F86E2B54AF053DA1925D8 /* BrandPaths.swift in Sources */,
 				9A4AD3B553ADBA5EE081781C /* HomeView.swift in Sources */,
 				DC66C7088500AC1FB21DACFC /* ServiceSettingsView.swift in Sources */,
 				603FA5A9AC96BEBE2A841CB5 /* LifeGridView.swift in Sources */,
 				19DCC1D3D44447917D6B61E9 /* OnboardingFlow.swift in Sources */,
 				56C8F3D4FE6ACEC2335054A4 /* OnboardingScreens.swift in Sources */,
 				FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */,
+				024E40666AED54B036AF4364 /* SVGPath.swift in Sources */,
 				79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */,
 				01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */,
 				49A807443D5252C9D186CD14 /* WebSession.swift in Sources */,

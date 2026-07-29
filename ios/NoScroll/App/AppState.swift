@@ -1,5 +1,7 @@
+import FamilyControls
 import Foundation
 import SwiftUI
+import UIKit
 
 /// App-wide state: the verified rule bundles, the engine source, and per-surface
 /// user settings.
@@ -114,18 +116,43 @@ final class AppState: ObservableObject {
         return "v\(v)"
     }
 
-    /// Requests Screen Time authorisation.
+    /// Why the last Screen Time request failed, shown to the user.
     ///
-    /// Compiled out until the FamilyControls entitlement is granted: without it
-    /// the framework is unavailable and linking it fails the build. See
-    /// docs/ENTITLEMENT.md — this is the one thing on the critical path.
+    /// This used to be a silent no-op behind a compile flag, so tapping
+    /// "Grant access" did nothing at all and looked like the app was broken.
+    /// It now calls the real API and reports whatever comes back.
+    @Published var screenTimeError: String?
+
+    /// Apps the user picked in Apple's FamilyActivityPicker.
+    @Published var shieldSelection = FamilyActivitySelection()
+
     func requestScreenTimeAccess() async {
-        #if NOSCROLL_SHIELD
-        await shield.requestAuthorization()
-        hasScreenTimeAccess = shield.authorization == .approved
-        #else
+        #if targetEnvironment(simulator)
+        // Not a limitation of this app: the Screen Time frameworks are simply
+        // not functional in the Simulator, so the system prompt can never
+        // appear there. Say so rather than failing mysteriously.
+        screenTimeError = "Screen Time isn't available in the iOS Simulator. "
+            + "Run NoScroll on a real iPhone to grant it."
         hasScreenTimeAccess = false
+        #else
+        do {
+            try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
+            hasScreenTimeAccess = AuthorizationCenter.shared.authorizationStatus == .approved
+            screenTimeError = hasScreenTimeAccess
+                ? nil
+                : "Screen Time access was declined. You can turn it on in Settings."
+        } catch {
+            // The usual cause is the missing entitlement — see docs/ENTITLEMENT.md.
+            screenTimeError = error.localizedDescription
+            hasScreenTimeAccess = false
+        }
         #endif
+    }
+
+    /// Opens this app's page in Settings. Works everywhere, no entitlement.
+    func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     init() {

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Gated by Apple: request at
+	  https://developer.apple.com/contact/request/family-controls-distribution
+	  Development builds can use it once the capability is enabled on the App ID;
+	  distribution needs the written approval described in docs/ENTITLEMENT.md.
+
+	  NOTE: the Screen Time APIs do NOT work on the Simulator at all. Testing the
+	  permission prompt requires a real device.
+	-->
+	<key>com.apple.developer.family-controls</key>
+	<true/>
+</dict>
+</plist>

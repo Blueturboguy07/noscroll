@@ -31,7 +31,8 @@ suggestion.
 ```
 engine/    TypeScript → one 7.6 KB IIFE. The entire blocking implementation.
 rules/     Signed JSON rule bundles. Data, not code — updatable without an app release.
-ios/       Swift. WKWebView shell + FamilyControls + three Screen Time extensions.
+ios/       Swift. WKWebView shell + FamilyControls + three Screen Time extensions
+           + a WidgetKit extension (home-screen shortcuts via noscroll://open/<service>).
 android/   Kotlin. WebView shell + AccessibilityService.
 probe/     Playwright smoke tests, run every 6h against live Instagram and YouTube.
 tools/     Bundle signing, cross-language canonicalisation check, engine sync.
@@ -144,8 +145,12 @@ Honestly, because a feature list that overpromises is the thing this project is 
   currently reads bundles from assets/cache without checking the signature. Do not ship without it.
 - **No notifications.** WKWebView cannot receive web push, and shielding an app suppresses that
   app's own notifications too. This is a scoped-out non-goal, not a bug.
-- **Instagram and YouTube only.** Six other services would be six other route maps; two done
-  properly beats eight half-broken.
+- **Six of the eight services are beta.** Instagram and YouTube are probe-verified against the
+  live sites; X, TikTok, Facebook, LinkedIn, Snapchat and Reddit have researched rules that no
+  probe has confirmed yet. The app labels them BETA rather than listing eight logos as if they
+  were equal.
+- **Per-app usage and the app picker need the entitlement.** Usage reads "—" instead of a number
+  until a DeviceActivityReport extension can run.
 - **Posting Reels, stories, DM media, calls** — not available on the mobile web, so not available
   here. Post Mode temporarily lifts the shield so you can post in the real app.
 - **The logged-in probe is skipped** unless you supply `PROBE_IG_STATE`. Use a dedicated probe

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>NoScroll</string>
+
+	<!-- Widget taps arrive as noscroll://open/<service>. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.noscroll</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>noscroll</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- The wrapped sites ask for these when you post. Without the strings the
+	     pickers fail silently, which is the "can't upload a video" complaint. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Instagram uses your camera when you take a photo or story inside NoScroll.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Instagram uses your microphone when you record video inside NoScroll.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose photos to upload inside NoScroll.</string>
+
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>

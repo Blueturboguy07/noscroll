@@ -33,12 +33,18 @@ struct HomeView: View {
                     .padding(.horizontal, 18)
                     .padding(.bottom, 10)
             }
-
-            tabBar
         }
         .background(Theme.paper.ignoresSafeArea())
         .fullScreenCover(item: $openService) { WebScreen(service: $0) }
         .sheet(item: $showSettingsFor) { ServiceSettingsView(service: $0) }
+        // A widget tap lands here: select that service and open it straight
+        // away, so the shortcut is one tap rather than two.
+        .onChange(of: state.pendingService) { _, id in
+            guard let id, let service = AppState.service(id) else { return }
+            selection = id
+            openService = service
+            state.pendingService = nil
+        }
     }
 
     // MARK: - Pieces
@@ -159,31 +165,6 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    private var tabBar: some View {
-        HStack {
-            ForEach(TabItem.allCases, id: \.self) { item in
-                Image(systemName: item.symbol)
-                    .font(.system(size: 20, weight: item == .home ? .bold : .regular))
-                    .foregroundStyle(item == .home ? Theme.ink : Theme.inkSoft)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(.top, 12)
-        .padding(.bottom, 4)
-    }
-
-    private enum TabItem: CaseIterable {
-        case sleep, adjust, home, shield, profile
-        var symbol: String {
-            switch self {
-            case .sleep: return "moon"
-            case .adjust: return "slider.horizontal.3"
-            case .home: return "house.fill"
-            case .shield: return "shield"
-            case .profile: return "person"
-            }
-        }
-    }
 }
 
 /// One service in the carousel.
@@ -197,11 +178,7 @@ struct ServiceTile: View {
                 RoundedRectangle(cornerRadius: 34, style: .continuous)
                     .fill(service.gradient)
                     .frame(width: 152, height: 152)
-                    .overlay {
-                        Image(systemName: service.symbol)
-                            .font(.system(size: 58, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
+                    .overlay { BrandMark(service: service.id, size: 62) }
                     .overlay(alignment: .bottom) {
                         if service.beta {
                             Text("BETA")

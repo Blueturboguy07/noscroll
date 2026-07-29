@@ -54,6 +54,66 @@ final class AppState: ObservableObject {
 
     @Published private(set) var screenTimeMinutes: [String: Int] = [:]
 
+    // MARK: - Navigation
+
+    enum Tab: Hashable { case sleep, adjust, home, shield, profile }
+    @Published var tab: Tab = .home
+    /// Set by a widget tap; HomeView opens this service's browser.
+    @Published var pendingService: String?
+
+    /// noscroll://open/<service> — the widget's whole job.
+    func handle(url: URL) {
+        guard url.scheme == "noscroll", url.host == "open" else { return }
+        let id = url.lastPathComponent
+        guard Self.service(id) != nil else { return }
+        tab = .home
+        pendingService = id
+    }
+
+    // MARK: - Sleep Mode
+
+    @Published var sleepEnabled = UserDefaults.standard.bool(forKey: "noscroll.sleep.on") {
+        didSet { UserDefaults.standard.set(sleepEnabled, forKey: "noscroll.sleep.on") }
+    }
+    @Published var sleepStart = AppState.time(hour: 22)
+    @Published var sleepEnd = AppState.time(hour: 7)
+
+    /// Recomputed on read, never cached — see SleepSchedule.
+    var sleepActiveNow: Bool {
+        let cal = Calendar.current
+        let s = cal.component(.hour, from: sleepStart) * 60 + cal.component(.minute, from: sleepStart)
+        let e = cal.component(.hour, from: sleepEnd) * 60 + cal.component(.minute, from: sleepEnd)
+        return SleepSchedule(startMinute: s, endMinute: e, enabled: sleepEnabled, weekdays: [])
+            .isActive(at: Date())
+    }
+
+    private static func time(hour: Int) -> Date {
+        Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date()
+    }
+
+    // MARK: - Post Mode
+
+    @Published private(set) var postModeUnlocksRemaining = 4
+
+    func beginPostMode() {
+        guard postModeUnlocksRemaining > 0 else { return }
+        postModeUnlocksRemaining -= 1
+        #if NOSCROLL_SHIELD
+        shield.beginPostMode()
+        #endif
+    }
+
+    // MARK: - Telemetry
+
+    @Published var telemetryEnabled = UserDefaults.standard.bool(forKey: "noscroll.telemetry") {
+        didSet { UserDefaults.standard.set(telemetryEnabled, forKey: "noscroll.telemetry") }
+    }
+
+    func bundleVersion(for serviceID: String) -> String {
+        guard let v = bundles[serviceID]?.version else { return "unavailable" }
+        return "v\(v)"
+    }
+
     /// Requests Screen Time authorisation.
     ///
     /// Compiled out until the FamilyControls entitlement is granted: without it

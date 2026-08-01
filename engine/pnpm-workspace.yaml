@@ -1,0 +1,37 @@
+# pnpm settings for the engine package.
+#
+# Why this file exists: pnpm 10 and later refuse to run *any* dependency's
+# install/postinstall script unless the package is explicitly approved, and
+# instead greet anyone following the README's build steps with what looks like
+# a fatal error:
+#
+#   [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.21.5, esbuild@0.24.2
+#
+# esbuild is the only dependency in this tree that has a build script. Its
+# postinstall links the platform-native esbuild binary into
+# node_modules/esbuild/bin/esbuild (and repairs installs where the optional
+# @esbuild/<platform> package never landed). Without approval, esbuild is left
+# running through its slow JS shim at best, and unusable at worst.
+#
+# Both approval keys are needed, and neither is redundant -- verified against
+# real pnpm releases, not guessed:
+#   onlyBuiltDependencies - honoured by pnpm 10.5+, silently ignored by pnpm 11
+#   allowBuilds           - honoured by pnpm 11 and late 10.x, ignored by 10.4
+# pnpm 9 (what CI pins) understands neither and runs build scripts anyway, but
+# it does hard-fail on a pnpm-workspace.yaml with no `packages` key -- hence the
+# single-entry list below. These settings cannot live in package.json instead:
+# pnpm 11 no longer reads its "pnpm" field at all, and says so out loud. That
+# leaves pnpm 10.4 and older, which read the setting *only* from package.json,
+# unsupported here; upgrade pnpm if you are on one of those.
+#
+# Keep the approval lists minimal. Add a package only if it genuinely needs to
+# run a build script.
+
+packages:
+  - '.'
+
+onlyBuiltDependencies:
+  - esbuild
+
+allowBuilds:
+  esbuild: true

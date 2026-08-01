@@ -72,6 +72,12 @@ you can fix it yourself — see [docs/RULES.md](docs/RULES.md).
 
 ## Build
 
+Use pnpm 9, or 10.5 or newer. pnpm 10 and 11 block dependency build scripts by
+default; `engine/pnpm-workspace.yaml` pre-approves the one dependency that needs
+one (esbuild, whose postinstall links its native binary). pnpm 10.4 and older
+read that approval from a different place and will still print
+`[ERR_PNPM_IGNORED_BUILDS]` — upgrade pnpm rather than working around it.
+
 ```bash
 # Engine — 42 tests, no device needed
 cd engine && pnpm install && pnpm test && pnpm build

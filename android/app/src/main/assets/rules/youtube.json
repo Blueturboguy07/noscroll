@@ -48,10 +48,8 @@
           "selectors": [
             "ytd-mini-guide-entry-renderer:has(a[title='Shorts'])",
             "ytd-guide-entry-renderer:has(a[href='/shorts'])",
-            "ytm-pivot-bar-item-renderer:has(div[aria-label='Shorts'])",
-            "ytm-pivot-bar-item-renderer:has(a[href^='/shorts'])",
-            "a.pivot-shorts",
-            "[role='tab'][aria-label='Shorts']"
+            "ytm-pivot-bar-item-renderer.pivot-shorts",
+            "ytm-pivot-bar-item-renderer:has(.pivot-shorts)"
           ],
           "afterRemove": "rejustify",
           "observe": true,
@@ -137,5 +135,5 @@
       ]
     }
   },
-  "signature": "d5f+bjI4RICmS3demmGRgpJFWTflHQ5+2reAXSc9UyUFiXg+pDWaCdQIB0rn5XWtxS6CxtPBTXPZCn535VuEAA=="
+  "signature": "AyaR/i48P2dsX5BehVjp2puOkEn4zPdZY24k+M6J5i3peXySqLZYN/U8bxEIar907OcxZDaFhWz4/x+3a34rBw=="
 }

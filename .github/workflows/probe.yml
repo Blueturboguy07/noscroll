@@ -17,7 +17,7 @@ jobs:
         with: { node-version: 22 }
       - run: pnpm install --dir engine && pnpm --dir engine build
       - run: pnpm install --dir probe
-      - run: pnpm --dir probe exec playwright install --with-deps chromium
+      - run: pnpm --dir probe exec playwright install --with-deps webkit
       - run: pnpm --dir probe exec playwright test
       - uses: actions/upload-artifact@v4
         if: always()

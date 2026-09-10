@@ -116,18 +116,32 @@ test.describe('Instagram', () => {
     await expect(page.locator('#noscroll-css')).toHaveCount(1);
   });
 
-  test('the engine is INERT on the login page', async ({ page }) => {
+  test('the engine is INERT on the login page', async ({ page, context }) => {
     // The invariant, verified against the real page: on an auth surface nothing
     // is injected, nothing is removed, and the password field is untouched.
-    await page.goto('https://www.instagram.com/accounts/login/', {
-      waitUntil: 'domcontentloaded',
-    });
+    const LOGIN = 'https://www.instagram.com/accounts/login/';
+    await page.goto(LOGIN, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
     const styleInjected = await page.locator('#noscroll-css').count();
     expect(styleInjected, 'blocking CSS must never be injected on an auth surface').toBe(0);
 
     const passwordField = await page.locator("input[type='password']").count();
+    if (passwordField === 0) {
+      // Instagram does not always serve the login form to a headless browser on
+      // a datacenter IP. Load the same URL in a control page that has NO engine
+      // (init scripts are per-page, so a sibling page in this context is clean).
+      // Form missing there too: the platform withheld it and there is nothing
+      // to assert. Form present there but not here: the engine removed it,
+      // which is the exact regression this test exists to catch.
+      const control = await context.newPage();
+      await control.goto(LOGIN, { waitUntil: 'domcontentloaded' });
+      await control.waitForTimeout(3000);
+      const controlField = await control.locator("input[type='password']").count();
+      const landed = `${control.url()} (${await control.title()})`;
+      await control.close();
+      test.skip(controlField === 0, `Instagram did not serve the login form to this runner; it landed on ${landed}`);
+    }
     expect(passwordField, 'the login form must be intact').toBeGreaterThan(0);
   });
 

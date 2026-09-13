@@ -11,6 +11,8 @@
 
     <string name="status_button">Status</string>
     <string name="switch_service_button">Switch to %1$s</string>
+    <string name="hide_controls_button">›</string>
+    <string name="show_controls_button">‹</string>
     <string name="status_title">Blocking status</string>
     <string name="status_enabled">Blocking is ON</string>
     <string name="status_disabled">Blocking is OFF</string>

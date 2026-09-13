@@ -2,11 +2,15 @@ package app.noscroll
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.webkit.WebView
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import app.noscroll.shield.ShieldSettings
@@ -43,6 +47,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cookieJar: SessionCookieJar
     private lateinit var settings: ShieldSettings
     private lateinit var switchServiceButton: Button
+    private lateinit var statusButton: Button
+    private lateinit var toggleControlsButton: Button
+    private var controlsVisible = false
 
     private var currentService = "instagram"
 
@@ -75,39 +82,76 @@ class MainActivity : AppCompatActivity() {
             addJavascriptInterface(EngineInjector.Bridge(), "NoScrollAndroid")
         }
 
-        switchServiceButton = Button(this).apply {
+        switchServiceButton = pillButton().apply {
             setOnClickListener { switchService(otherService(currentService)) }
+        }
+
+        // Blocking failures used to be silent — no screen anywhere told
+        // you whether the accessibility permission was granted or
+        // whether anything was actually marked as shielded. This is
+        // the way in to that answer, always reachable regardless of
+        // which service is loaded.
+        statusButton = pillButton().apply {
+            text = getString(R.string.status_button)
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, StatusActivity::class.java))
+            }
+        }
+
+        // A small round handle docked to the middle of the right edge — the one
+        // spot on both Instagram and YouTube's mobile layouts with no real nav
+        // chrome (their own controls live in the top bar and bottom tab strip).
+        // Earlier top-corner placement sat directly on top of YouTube's search
+        // icon and Instagram's follow button — this fixes that, not just the look.
+        toggleControlsButton = Button(this).apply {
+            isAllCaps = false
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            minWidth = 0
+            minHeight = 0
+            stateListAnimator = null
+            setPadding(0, 0, 0, 0)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(PANEL_FILL)
+                setStroke(dp(1), PANEL_STROKE)
+            }
+            setOnClickListener { setControlsVisible(!controlsVisible) }
+        }
+
+        val controlsPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.END
+            addView(
+                switchServiceButton,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = dp(8) },
+            )
+            addView(
+                statusButton,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = dp(8) },
+            )
+            addView(toggleControlsButton, LinearLayout.LayoutParams(dp(40), dp(40)))
         }
 
         setContentView(
             FrameLayout(this).apply {
                 addView(webView)
                 addView(
-                    switchServiceButton,
+                    controlsPanel,
                     FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.WRAP_CONTENT,
                         FrameLayout.LayoutParams.WRAP_CONTENT,
-                    ).apply { gravity = Gravity.TOP or Gravity.START; topMargin = 32; leftMargin = 24 },
-                )
-                // Blocking failures used to be silent — no screen anywhere told
-                // you whether the accessibility permission was granted or
-                // whether anything was actually marked as shielded. This is
-                // the way in to that answer, always reachable regardless of
-                // which service is loaded.
-                addView(
-                    Button(this@MainActivity).apply {
-                        text = getString(R.string.status_button)
-                        setOnClickListener {
-                            startActivity(Intent(this@MainActivity, StatusActivity::class.java))
-                        }
-                    },
-                    FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.WRAP_CONTENT,
-                        FrameLayout.LayoutParams.WRAP_CONTENT,
-                    ).apply { gravity = Gravity.TOP or Gravity.END; topMargin = 32; rightMargin = 24 },
+                    ).apply { gravity = Gravity.END or Gravity.CENTER_VERTICAL; rightMargin = dp(12) },
                 )
             },
         )
+        setControlsVisible(false)
 
         lifecycleScope.launch {
             cookieJar.switchTo(DEFAULT_ACCOUNT)
@@ -128,6 +172,36 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl(homeUrl(service))
     }
 
+    private fun setControlsVisible(visible: Boolean) {
+        controlsVisible = visible
+        switchServiceButton.visibility = if (visible) View.VISIBLE else View.GONE
+        statusButton.visibility = if (visible) View.VISIBLE else View.GONE
+        // Panel is right-edge-docked: '‹' points inward (tap to reveal), '›'
+        // points to the edge (tap to tuck away).
+        toggleControlsButton.text = getString(
+            if (visible) R.string.hide_controls_button else R.string.show_controls_button,
+        )
+    }
+
+    /** Flat, semi-transparent dark pill — no AppCompat button chrome (caps, shadow, tint). */
+    private fun pillButton(): Button = Button(this).apply {
+        isAllCaps = false
+        setTextColor(Color.WHITE)
+        textSize = 13f
+        minWidth = 0
+        minHeight = 0
+        stateListAnimator = null
+        setPadding(dp(16), dp(8), dp(16), dp(8))
+        background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(18).toFloat()
+            setColor(PANEL_FILL)
+            setStroke(dp(1), PANEL_STROKE)
+        }
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
     private fun homeUrl(service: String) = when (service) {
         "youtube" -> "https://m.youtube.com/"
         else -> "https://www.instagram.com/"
@@ -147,5 +221,10 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val DEFAULT_ACCOUNT = "default"
+
+        // Dark glass, not flat Material chrome — reads as an overlay you summon,
+        // not another app screen fighting the page underneath for attention.
+        private const val PANEL_FILL = 0xCC1B1B1F.toInt()
+        private const val PANEL_STROKE = 0x33FFFFFF
     }
 }

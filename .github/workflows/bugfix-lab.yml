@@ -23,6 +23,14 @@ name: bugfix-lab
 
 on:
   workflow_dispatch: {}
+  # workflow_dispatch alone 404s via `gh workflow run` until the file exists
+  # on the repo's default branch. Since this branch isn't merged yet, also
+  # trigger on push to this fix branch (prior art: sibling bugfix-lab session
+  # 2026-09-19, branch fix/publik-guide-npm-ps1-execution-policy-windows,
+  # commit f506ed4).
+  push:
+    branches:
+      - fix/noscroll-windows-bash-sync-engine-script
 
 jobs:
   oracle:

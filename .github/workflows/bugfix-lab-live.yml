@@ -1,0 +1,261 @@
+name: bugfix-lab-live
+
+# Oracle (round 2) for cluster noscroll-windows-bash-sync-engine-script.
+#
+# Round 1 ran ONE hardcoded command inside an actions/checkout tree. This round
+# takes a different angle on purpose:
+#
+#  1. The commands are not hardcoded. In mode "today" the runner FETCHES the
+#     guide from the live production API (https://publikhq.com/api/iris/guides/
+#     noscroll) at run time and executes whatever the windows branch actually
+#     serves. That is the artifact the reporters' population -- Windows guide
+#     installers driving Iris -- is handed today, rather than what publik's
+#     source tree says it should be.
+#  2. It runs the guide's whole Windows chain from a bare machine: clone into
+#     ~, enter the folder, pin the reviewed commit, install the engine's
+#     dependencies, then the build-engine step. No actions/checkout of the app.
+#     A failure before build-engine is reported as INCONCLUSIVE (exit 2), never
+#     as this cluster's bug.
+#  3. PATH is shaped like a DEFAULT Git-for-Windows install instead of having
+#     git removed wholesale: Git's `cmd` directory (git.exe) is kept, Git's
+#     `bin` and `usr\bin` directories (bash.exe) are dropped. That is precisely
+#     the machine both reporters were on -- they had git and ran the guide's
+#     git steps fine, and 1073ac93's own workaround was to invoke Git's bash by
+#     its full path, which is only necessary when that directory is off PATH.
+#
+# Mode "negative-control" replays the artifact the reporters really had: the
+# pre-Aug-10 guide (version 1, sourceCommit 6e033662, build-engine command
+# `bash tools/sync-engine.sh`), rendered from publik b9e2b41^ and committed at
+# scripts/bugfix-lab/plan-negative-control.json.
+#
+# Both modes run in both shells, because the two reporters used different ones:
+# 48fd5003 was at a cmd.exe prompt (C:\Users\Kanishk>), 1073ac93 at a PowerShell
+# prompt (PS C:\Users\LENOVO\noscroll>).
+#
+# Classification is on the functional outcome the guide itself declares -- the
+# step's verifier is the line "engine + rules synced to both shells". Anything
+# else (a "not recognized" error, the System32 WSL launcher stub's no-distro
+# message, a build failure) is the reader still being stuck at this step.
+
+on:
+  workflow_dispatch: {}
+  # workflow_dispatch alone 404s through `gh workflow run` until the workflow
+  # file exists on the repo's default branch, and this fix branch is not
+  # merged. A push trigger on the branch dispatches it either way.
+  push:
+    branches:
+      - fix/noscroll-windows-bash-sync-engine-script
+
+jobs:
+  oracle:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [today, negative-control]
+        shell_kind: [pwsh, cmd]
+    steps:
+      # Stands in for the guide's own `install-node` setup step. The guide
+      # sends readers to nodejs.org for the current LTS.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Only the negative-control plan is read from the repo; the "today" plan
+      # comes off the live API. Checked out into a side directory so it cannot
+      # be confused with the clone the guide itself makes in ~.
+      - uses: actions/checkout@v4
+        with:
+          path: _lab
+
+      - name: Resolve the guide plan this leg will execute
+        shell: pwsh
+        run: |
+          $mode = "${{ matrix.mode }}"
+          if ($mode -eq "today") {
+            $url = "https://publikhq.com/api/iris/guides/noscroll"
+            Write-Host "Fetching the LIVE guide this population is served: $url"
+            $guide = Invoke-RestMethod -Uri $url -Headers @{ "Accept" = "application/json" }
+            $branch = $guide.branches | Where-Object { $_.platform -eq "windows" -and $_.steps.Count -gt 0 } | Select-Object -First 1
+            if (-not $branch) { Write-Host "BUGFIX_LAB_INCONCLUSIVE: live guide has no windows branch with steps"; exit 2 }
+            $commands = @{}
+            foreach ($s in $branch.steps) {
+              if ($s.command) { $commands[$s.id] = [string]$s.command }
+            }
+            $plan = [ordered]@{
+              source       = $url
+              version      = $guide.version
+              sourceCommit = $guide.sourceCommit
+              branchLabel  = $branch.label
+              commands     = $commands
+            }
+          } else {
+            $planPath = "_lab/scripts/bugfix-lab/plan-negative-control.json"
+            Write-Host "Reading the pre-Aug-10 guide plan from $planPath"
+            $raw = Get-Content -Raw -Path $planPath | ConvertFrom-Json
+            $commands = @{}
+            foreach ($p in $raw.commands.PSObject.Properties) { $commands[$p.Name] = [string]$p.Value }
+            $plan = [ordered]@{
+              source       = $planPath
+              version      = $raw.version
+              sourceCommit = $raw.sourceCommit
+              branchLabel  = "Windows + Android (pre-Aug-10)"
+              commands     = $commands
+            }
+          }
+
+          Write-Host "plan source       : $($plan.source)"
+          Write-Host "plan guide version: $($plan.version)"
+          Write-Host "plan sourceCommit : $($plan.sourceCommit)"
+          foreach ($id in @("clone","enter-folder","pin-source","engine-deps","build-engine")) {
+            Write-Host "step[$id] = $($plan.commands[$id])"
+          }
+
+          $plan | ConvertTo-Json -Depth 6 | Set-Content -Path "$env:RUNNER_TEMP\plan.json" -Encoding utf8
+
+      - name: Shape PATH like a default Git-for-Windows install (git yes, bash no)
+        shell: pwsh
+        run: |
+          $before = Get-Command bash -ErrorAction SilentlyContinue
+          if ($before) { Write-Host "BEFORE: bash resolves at $($before.Source)" } else { Write-Host "BEFORE: bash does not resolve" }
+          $gitBefore = Get-Command git -ErrorAction SilentlyContinue
+          if ($gitBefore) { Write-Host "BEFORE: git resolves at $($gitBefore.Source)" } else { Write-Host "BEFORE: git does not resolve" }
+
+          # The stock Git for Windows installer puts <Git>\cmd on PATH and
+          # leaves <Git>\bin and <Git>\usr\bin OFF it -- which is exactly why a
+          # Windows reader has git but not bash. The runner image adds those
+          # extra directories; drop just those.
+          $parts = $env:PATH -split ';' | Where-Object { $_.Length -gt 0 }
+          $kept = @()
+          $dropped = @()
+          foreach ($p in $parts) {
+            if ($p -match '(?i)git' -and $p -notmatch '(?i)[\\/]cmd[\\/]?$') { $dropped += $p } else { $kept += $p }
+          }
+          $newPath = ($kept -join ';')
+          Add-Content -Path $env:GITHUB_ENV -Value "PATH=$newPath"
+          $env:PATH = $newPath
+          foreach ($d in $dropped) { Write-Host "dropped from PATH: $d" }
+
+          # Best effort: the built-in WSL launcher stub at System32\bash.exe is
+          # owned by TrustedInstaller, so this usually fails. It is not load
+          # bearing -- classification is on the guide's success line, so the
+          # stub's "no installed distributions" message counts as the same
+          # functional failure as "not recognized".
+          $wslStub = "$env:WINDIR\System32\bash.exe"
+          if (Test-Path $wslStub) {
+            & takeown.exe /f $wslStub 2>&1 | Out-Null
+            & icacls.exe $wslStub /grant "$($env:USERNAME):F" 2>&1 | Out-Null
+            try {
+              Rename-Item -Path $wslStub -NewName "bash.exe.bugfixlab-disabled" -ErrorAction Stop
+              Write-Host "Renamed the System32 WSL bash stub aside."
+            } catch {
+              Write-Host "Could not rename the System32 WSL bash stub ($($_.Exception.Message)); classifying on the guide's success line instead."
+            }
+          } else {
+            Write-Host "No System32 WSL bash stub present."
+          }
+
+          $after = Get-Command bash -ErrorAction SilentlyContinue
+          if ($after) { Write-Host "AFTER: bash resolves at $($after.Source)" } else { Write-Host "AFTER: bash does not resolve -- matches the reporters' machines" }
+          $gitAfter = Get-Command git -ErrorAction SilentlyContinue
+          if ($gitAfter) { Write-Host "AFTER: git resolves at $($gitAfter.Source)" } else { Write-Host "AFTER: git does NOT resolve -- emulation is wrong, the guide's own git steps cannot run" }
+
+      - name: Guide step - install pnpm
+        shell: pwsh
+        run: |
+          # The guide's own install-pnpm command for Windows, verbatim.
+          npm.cmd install -g pnpm
+          if ($LASTEXITCODE -ne 0) { Write-Host "BUGFIX_LAB_INCONCLUSIVE: install-pnpm failed"; exit 2 }
+          pnpm.cmd --version
+
+      - name: Guide steps - clone, enter folder, pin the reviewed commit, install engine deps
+        shell: pwsh
+        run: |
+          $plan = Get-Content -Raw -Path "$env:RUNNER_TEMP\plan.json" | ConvertFrom-Json
+          $c = $plan.commands
+
+          # The clone step is authored in the guide's POSIX form on the Windows
+          # branch too. Iris-on-Windows does NOT type it verbatim: it rewrites
+          # the `if [ ! -d X/.git ]; then ... fi` idiom to PowerShell in
+          # iris-windows/src/services/autopilot/guide-recipe.ts
+          # (commandNeedsPosixTranslation / translatePosixShellToPowerShell).
+          # Applying the same rewrite here keeps this leg faithful to what the
+          # reader's machine actually executes, so this oracle measures the
+          # build-engine step and not a clone-step defect that belongs to
+          # another cluster.
+          function Convert-PosixToPowerShell([string]$command) {
+            ($command -split "`n" | ForEach-Object {
+              $trimmed = $_.Trim()
+              if ($trimmed -eq "fi") { "}" }
+              elseif ($trimmed -eq "then") { "{" }
+              else {
+                ($_ -replace '(?i)\bif\s*\[\s*!\s*-[defsxLrwe]\s+([^\]\s]+)\s*\]\s*;?\s*(then\b)?', 'if (-not (Test-Path $1)) {') `
+                   -replace '(?i)\bif\s*\[\s*-[defsxLrwe]\s+([^\]\s]+)\s*\]\s*;?\s*(then\b)?', 'if (Test-Path $1) {'
+              }
+            }) -join "`n"
+          }
+
+          function Invoke-GuideStep([string]$id, [string]$command) {
+            $toRun = $command
+            if ($command -match '\[\s*!?\s*-[defsxLrwe]\s+\S' -or ($command -split "`n" | Where-Object { $_.Trim() -eq 'fi' -or $_.Trim() -eq 'then' })) {
+              $toRun = Convert-PosixToPowerShell $command
+              Write-Host "step[$id] rewritten by the Iris windows derivation to:`n$toRun"
+            } else {
+              Write-Host "step[$id] running verbatim:`n$toRun"
+            }
+            Invoke-Expression $toRun
+            if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
+              Write-Host "BUGFIX_LAB_INCONCLUSIVE: guide step '$id' failed with exit $LASTEXITCODE, before the build-engine step this oracle measures"
+              exit 2
+            }
+          }
+
+          Set-Location $HOME
+          Invoke-GuideStep "clone"        $c.'clone'
+          Set-Location $HOME
+          Invoke-GuideStep "enter-folder" $c.'enter-folder'
+          Invoke-GuideStep "pin-source"   $c.'pin-source'
+          Write-Host "HEAD is now: $(git rev-parse HEAD)"
+          Invoke-GuideStep "engine-deps"  $c.'engine-deps'
+          Write-Host "workdir after setup: $(Get-Location)"
+          Add-Content -Path $env:GITHUB_ENV -Value "LAB_WORKDIR=$((Get-Location).Path)"
+
+      - name: Guide step - build-engine, then classify
+        shell: pwsh
+        run: |
+          $plan = Get-Content -Raw -Path "$env:RUNNER_TEMP\plan.json" | ConvertFrom-Json
+          $cmd = [string]$plan.commands.'build-engine'
+          $shellKind = "${{ matrix.shell_kind }}"
+          Set-Location $env:LAB_WORKDIR
+          Write-Host "workdir: $(Get-Location)"
+          Write-Host "guide version $($plan.version), sourceCommit $($plan.sourceCommit)"
+          Write-Host "build-engine command, as $shellKind receives it: $cmd"
+
+          $output = ""
+          if ($shellKind -eq "cmd") {
+            # Reporter 48fd5003 was at a cmd.exe prompt. Exercise cmd.exe's own
+            # command resolution, which is what produced their exact wording
+            # ("'bash' is not recognized as an internal or external command").
+            $output = (& cmd.exe /c "$cmd 2>&1" | Out-String)
+          } else {
+            # Reporter 1073ac93 was at a PowerShell prompt. An unresolvable
+            # command here is a terminating CommandNotFoundException, not a
+            # nonzero exit, so it has to be caught.
+            try { $output = (Invoke-Expression "$cmd 2>&1" | Out-String) }
+            catch { $output = $_.Exception.Message }
+          }
+
+          Write-Host "----- captured output -----"
+          Write-Host $output
+          Write-Host "---------------------------"
+
+          # The guide's own verifier for this step is
+          # 'It prints "engine + rules synced to both shells"'.
+          $marker = "engine + rules synced to both shells"
+          if ($output -match [regex]::Escape($marker)) {
+            Write-Host "BUGFIX_LAB_ABSENT mode=${{ matrix.mode }} shell=$shellKind guideVersion=$($plan.version)"
+            exit 0
+          } else {
+            Write-Host "BUGFIX_LAB_PRESENT mode=${{ matrix.mode }} shell=$shellKind guideVersion=$($plan.version)"
+            exit 1
+          }

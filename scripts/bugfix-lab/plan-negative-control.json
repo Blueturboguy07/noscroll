@@ -1,0 +1,12 @@
+{
+  "note": "Pre-Aug-10 noscroll guide, windows branch, rendered from publik b9e2b41^ (b7ea16b) with bin/render-guide.mts. This is the exact artifact the two reporters were served (2026-08-04 and 2026-08-07).",
+  "version": 1,
+  "sourceCommit": "6e033662b03ed0b8adb7fba5d2dac2f23cf06468",
+  "commands": {
+    "clone": "cd ~\ngit clone https://github.com/Blueturboguy07/noscroll.git",
+    "enter-folder": "cd noscroll",
+    "pin-source": "git checkout 6e033662b03ed0b8adb7fba5d2dac2f23cf06468",
+    "engine-deps": "pnpm.cmd install --dir engine",
+    "build-engine": "bash tools/sync-engine.sh"
+  }
+}

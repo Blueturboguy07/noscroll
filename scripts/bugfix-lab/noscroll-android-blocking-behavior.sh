@@ -66,11 +66,25 @@ fi
 echo "=== is the service actually bound? (dumpsys accessibility) ==="
 adb shell dumpsys accessibility 2>&1 | grep -iE "noscroll|ForegroundAppMonitor|Service\[" | head -20
 
-echo "=== step 3: 'restarting phone / pairing again' -- force-stop + relaunch ==="
-adb shell am force-stop "$PKG"
-sleep 2
-adb shell am start -W -n "${PKG}/.MainActivity"
-sleep 5
+# NOSCROLL_SKIP_RESTART=1 isolates the region this cluster's REGION.json
+# actually scoped: MINIMIZE proved (run 35447520354, mode=guide-nostop, and
+# REPRODUCE's mode=behavior-nostop run 35447028416) that the force-stop +
+# relaunch below is NOT load-bearing for THIS cluster's bug -- the missing
+# accessibility-permission step alone is necessary and sufficient. The
+# force-stop step models a real but explicitly out-of-region, still-open
+# lead (an AccessibilityService rebind gap on this emulator) that FIX round 1
+# re-confirmed (run 35448517323 / 35448792058) and declined to fold into this
+# guide-text region; see fix-log.md. Same gate already proven on the
+# diagnostic branch fix/noscroll-android-blocking-not-active-ctl (9080c16).
+if [ "${NOSCROLL_SKIP_RESTART:-0}" = "1" ]; then
+  echo "=== step 3: SKIPPED (no force-stop) -- isolating the restart as a confound ==="
+else
+  echo "=== step 3: 'restarting phone / pairing again' -- force-stop + relaunch ==="
+  adb shell am force-stop "$PKG"
+  sleep 2
+  adb shell am start -W -n "${PKG}/.MainActivity"
+  sleep 5
+fi
 
 echo "=== the app's own view of things (StatusActivity + prefs), informational only ==="
 adb shell run-as "$PKG" cat "/data/data/${PKG}/shared_prefs/noscroll.shield.xml" 2>&1 || true

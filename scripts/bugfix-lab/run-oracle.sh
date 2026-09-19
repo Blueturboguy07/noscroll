@@ -38,6 +38,26 @@ case "$MODE" in
     # report's own "restarting phone, pairing the phone again").
     bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh
     ;;
+  guide-v9-nostop)
+    # bugfix-lab FIX round 2 (cluster noscroll-android-blocking-not-active):
+    # this is mode=guide-v9 (grant the permission, matching the fixed v9
+    # guide's new "enable-accessibility" step) with the force-stop/relaunch
+    # step ALSO removed via NOSCROLL_SKIP_RESTART, so the scenario exercised
+    # here matches REGION.json's own minimal_repro exactly: "install the app
+    # built from the pinned commit, launch it once -- first run only, no
+    # restart, no re-pair -- then open a shielded app once." REGION.json
+    # explicitly found the restart/re-pair steps NOT load-bearing for this
+    # cluster's bug (MINIMIZE's guide-nostop probe, run 35447520354; and
+    # REPRODUCE's behavior-nostop, run 35447028416, both already CI-verified
+    # this before this branch existed). mode=guide-v9 (kept unchanged, above)
+    # additionally exercises the force-stop step, which round 1's cycle 1
+    # showed hits a SEPARATE, out-of-region AccessibilityService rebind gap
+    # (fix-log.md) -- that is real but is not this cluster's region, so it is
+    # not what this mode tests. Same NOSCROLL_SKIP_RESTART gate already
+    # proven correct on the read-only diagnostic branch
+    # fix/noscroll-android-blocking-not-active-ctl (commit 9080c16).
+    NOSCROLL_SKIP_RESTART=1 bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh
+    ;;
   *)
     echo "HARNESS_ERROR: unknown mode $MODE"
     echo "BUGFIX_LAB_UNRUNNABLE"

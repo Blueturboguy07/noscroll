@@ -42,17 +42,26 @@ echo "=== step 1: first launch (what the install guide ends with) ==="
 adb shell am start -W -n "${PKG}/.MainActivity"
 sleep 6
 
-echo "=== step 2: pairing -- grant the accessibility permission ==="
-adb shell settings put secure enabled_accessibility_services "$A11Y_SERVICE"
-adb shell settings put secure accessibility_enabled 1
-sleep 3
-ENABLED_RAW="$(adb shell settings get secure enabled_accessibility_services | tr -d '\r')"
-echo "enabled_accessibility_services = $ENABLED_RAW"
-echo "accessibility_enabled = $(adb shell settings get secure accessibility_enabled | tr -d '\r')"
-case "$ENABLED_RAW" in
-  *ForegroundAppMonitor*) : ;;
-  *) fail_harness "accessibility permission did not stick" ;;
-esac
+# NOSCROLL_SKIP_A11Y_GRANT=1 reproduces the GUIDE-INSTALLER path: the rendered
+# Android guide (publik lib/guides/noscroll.ts version 8) has 14 steps and not
+# one of them asks the reader to enable NoScroll in Android's Accessibility
+# settings, so a reader who follows it to the end never grants this.
+if [ "${NOSCROLL_SKIP_A11Y_GRANT:-0}" = "1" ]; then
+  echo "=== step 2: SKIPPED -- the Android guide never tells the reader to grant it ==="
+  echo "enabled_accessibility_services = $(adb shell settings get secure enabled_accessibility_services | tr -d '\r')"
+else
+  echo "=== step 2: pairing -- grant the accessibility permission ==="
+  adb shell settings put secure enabled_accessibility_services "$A11Y_SERVICE"
+  adb shell settings put secure accessibility_enabled 1
+  sleep 3
+  ENABLED_RAW="$(adb shell settings get secure enabled_accessibility_services | tr -d '\r')"
+  echo "enabled_accessibility_services = $ENABLED_RAW"
+  echo "accessibility_enabled = $(adb shell settings get secure accessibility_enabled | tr -d '\r')"
+  case "$ENABLED_RAW" in
+    *ForegroundAppMonitor*) : ;;
+    *) fail_harness "accessibility permission did not stick" ;;
+  esac
+fi
 
 echo "=== is the service actually bound? (dumpsys accessibility) ==="
 adb shell dumpsys accessibility 2>&1 | grep -iE "noscroll|ForegroundAppMonitor|Service\[" | head -20

@@ -1,16 +1,30 @@
 # bugfix-lab controlled environment for noscroll-android-blocking-not-active.
-# Manual dispatch only. Builds the debug APK, boots a real Android emulator
-# (a genuine mobile simulator, matching this cluster's repro_env), installs
-# the app, launches it once (first run), grants the accessibility permission
-# the way pairing does, and reads back the persisted shield-list store the
-# same way a reporter's own device would hold it.
+# Manual dispatch only. Boots a real Android emulator (a genuine mobile
+# simulator, matching this cluster's repro_env) and runs one of two oracles:
 #
-# Prints BUGFIX_LAB_PRESENT (exit 1) if the shield list is empty after first
-# launch, BUGFIX_LAB_ABSENT (exit 0) if the defaults populated.
+#   mode=prefs     (round 1) install + first launch + grant accessibility, then
+#                  read back the persisted shield-list store.
+#   mode=behavior  (round 2) the same setup, then OPEN A SHIELDED APP and see
+#                  whether NoScroll blocks it -- the thing the reporter actually
+#                  complained about ("nothing is blocked").
+#   mode=guide     (round 2) the guide-installer path with NO accessibility
+#                  grant, because the Android guide never tells the reader to
+#                  grant it. Then open a shielded app.
+#
+# Every mode prints BUGFIX_LAB_PRESENT (exit 1) / BUGFIX_LAB_ABSENT (exit 0).
 name: bugfix-lab
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: which oracle to run (prefs | behavior | guide)
+        required: false
+        default: prefs
+      api-level:
+        description: Android API level
+        required: false
+        default: "30"
 
 permissions:
   contents: read
@@ -18,7 +32,7 @@ permissions:
 jobs:
   android-oracle:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -28,29 +42,69 @@ jobs:
       - name: Build debug APK
         run: cd android && ./gradlew :app:assembleDebug --console=plain
 
+      - name: Build the shielded-app fixture (code-free APK named com.instagram.android)
+        run: |
+          set -euxo pipefail
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          BT="$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)"
+          PLATFORM="$(ls -d "$SDK"/platforms/android-3* | sort -V | tail -1)"
+          echo "build-tools: $BT   platform: $PLATFORM"
+          mkdir -p stub
+          cat > stub/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.instagram.android">
+            <application android:hasCode="false" android:label="IG Fixture">
+              <activity android:name="android.app.Activity" android:exported="true">
+                <intent-filter>
+                  <action android:name="android.intent.action.MAIN" />
+                  <category android:name="android.intent.category.LAUNCHER" />
+                </intent-filter>
+              </activity>
+            </application>
+          </manifest>
+          EOF
+          "$BT/aapt2" link -I "$PLATFORM/android.jar" \
+            --manifest stub/AndroidManifest.xml \
+            --min-sdk-version 26 --target-sdk-version 34 \
+            -o stub-unsigned.apk
+          keytool -genkeypair -keystore stub.jks -storepass android -keypass android \
+            -alias stub -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=bugfix-lab-stub"
+          "$BT/zipalign" -f 4 stub-unsigned.apk stub-aligned.apk
+          "$BT/apksigner" sign --ks stub.jks --ks-pass pass:android --key-pass pass:android \
+            --out stub-ig.apk stub-aligned.apk
+          "$BT/aapt2" dump packagename stub-ig.apk
+
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: AVD cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-30-google_apis-x86_64-v1
-
       - name: Boot emulator, run oracle
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          BUGFIX_LAB_MODE: ${{ github.event.inputs.mode || 'prefs' }}
         with:
-          api-level: 30
+          api-level: ${{ github.event.inputs.api-level || '30' }}
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          force-avd-creation: false
+          force-avd-creation: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: bash scripts/bugfix-lab/noscroll-android-blocking-not-active.sh
+          script: |
+            case "$BUGFIX_LAB_MODE" in
+              prefs)    bash scripts/bugfix-lab/noscroll-android-blocking-not-active.sh ;;
+              behavior) bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh ;;
+              guide)    NOSCROLL_SKIP_A11Y_GRANT=1 bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh ;;
+              *) echo "unknown mode $BUGFIX_LAB_MODE"; exit 2 ;;
+            esac
+
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shield-check-${{ github.event.inputs.mode || 'prefs' }}-${{ github.event.inputs.api-level || '30' }}
+          path: shield-check.png
+          if-no-files-found: ignore

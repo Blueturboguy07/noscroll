@@ -1,6 +1,6 @@
 {
  "slug": "noscroll",
- "version": 8,
+ "version": 9,
  "sourceCommit": "7d1c27ae8e11c551c1c11f82125a29b3f9bbf505",
  "platform": "android",
  "steps": [
@@ -204,11 +204,19 @@
   },
   {
    "n": 14,
+   "id": "enable-accessibility",
+   "kind": "permission",
+   "title": "Turn on NoScroll's Accessibility Service",
+   "body": "Open NoScroll, tap Status, then tap Open Accessibility Settings. Find NoScroll and turn it on.",
+   "verifierLabel": "NoScroll's Status screen says Blocking is ON"
+  },
+  {
+   "n": 15,
    "id": "verify",
    "kind": "verify",
    "title": "Check that it works",
-   "body": "Open NoScroll — a simple wrapper is correct on Android. Sign in to Instagram: no Reels icon.",
-   "verifierLabel": "There is no Reels icon in the row along the bottom"
+   "body": "Open Instagram or another shielded app. NoScroll's shield screen should cover it instead.",
+   "verifierLabel": "NoScroll's shield screen covers the blocked app"
   }
  ]
 }

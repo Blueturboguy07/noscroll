@@ -8,8 +8,14 @@
 #                  whether NoScroll blocks it -- the thing the reporter actually
 #                  complained about ("nothing is blocked").
 #   mode=guide     (round 2) the guide-installer path with NO accessibility
-#                  grant, because the Android guide never tells the reader to
-#                  grant it. Then open a shielded app.
+#                  grant, because publik guide v8's Android branch never told
+#                  the reader to grant it. Then open a shielded app. Kept
+#                  as-is as a standing negative control -- do not edit.
+#   mode=guide-v9  (FIX round) the guide-installer path per publik guide v9,
+#                  which adds the missing "enable-accessibility" step -- so
+#                  this mode grants the permission, same as mode=behavior,
+#                  then runs the same force-stop+relaunch+open-shielded-app
+#                  sequence mode=behavior always has.
 #
 # Every mode prints BUGFIX_LAB_PRESENT (exit 1) / BUGFIX_LAB_ABSENT (exit 0).
 name: bugfix-lab
@@ -18,7 +24,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: which oracle to run (prefs | behavior | guide)
+        description: which oracle to run (prefs | behavior | guide | guide-v9)
         required: false
         default: prefs
       api-level:

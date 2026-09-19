@@ -1,0 +1,158 @@
+name: bugfix-lab
+
+# Oracle for cluster noscroll-windows-bash-sync-engine-script.
+#
+# Reporters (Aug 4 + Aug 7 2026, pre-Aug-10 guide pin) hit the guide's
+# build-engine step running `bash tools/sync-engine.sh` on a plain Windows
+# box where bash was not on PATH -- one from cmd.exe, one from PowerShell.
+# The guide was repinned Aug 10 (commit b9e2b41 in publik) to run
+# `node tools/sync-engine.mjs` instead, at noscroll commit 7d1c27ae.
+#
+# This workflow tests BOTH commits, in BOTH shells:
+#   mode "today"             -> ref 7d1c27ae..., command `node tools/sync-engine.mjs`
+#                                (what a guide-installer runs right now)
+#   mode "negative-control"  -> ref 6e033662..., command `bash tools/sync-engine.sh`
+#                                (what the guide made them run before Aug 10)
+#
+# A "sanitize PATH" step removes any PATH entry that mentions git, because
+# GitHub's windows-latest runner ships Git for Windows with its bin dirs
+# already on PATH (bash resolves there by default) -- unlike the reporters'
+# machines, where bash plainly did not resolve. Stripping those entries is
+# what makes the negative-control leg actually observe the reported failure
+# instead of silently succeeding on CI's different PATH.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  oracle:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: today
+            shell_kind: pwsh
+            ref: 7d1c27ae8e11c551c1c11f82125a29b3f9bbf505
+            command: node tools/sync-engine.mjs
+          - mode: today
+            shell_kind: cmd
+            ref: 7d1c27ae8e11c551c1c11f82125a29b3f9bbf505
+            command: node tools/sync-engine.mjs
+          - mode: negative-control
+            shell_kind: pwsh
+            ref: 6e033662b03ed0b8adb7fba5d2dac2f23cf06468
+            command: bash tools/sync-engine.sh
+          - mode: negative-control
+            shell_kind: cmd
+            ref: 6e033662b03ed0b8adb7fba5d2dac2f23cf06468
+            command: bash tools/sync-engine.sh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: engine/pnpm-lock.yaml
+
+      - name: Diagnostic - bash resolution and PATH before sanitizing
+        shell: pwsh
+        run: |
+          Write-Host "PATH before sanitizing:"
+          $env:PATH -split ';' | ForEach-Object { Write-Host "  $_" }
+          Write-Host "---"
+          $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
+          if ($bashCmd) {
+            Write-Host "bash resolves on this runner's default PATH at: $($bashCmd.Source)"
+          } else {
+            Write-Host "bash does NOT resolve on this runner's default PATH"
+          }
+
+      - name: Sanitize PATH to emulate a plain Windows box (no Git-for-Windows bash on PATH)
+        shell: pwsh
+        run: |
+          $parts = $env:PATH -split ';' | Where-Object { $_.Length -gt 0 }
+          $filtered = $parts | Where-Object { $_ -notmatch '(?i)git' }
+          $removed = $parts.Count - $filtered.Count
+          $newPath = ($filtered -join ';')
+          Add-Content -Path $env:GITHUB_ENV -Value "PATH=$newPath"
+          Write-Host "Removed $removed PATH entr$(if ($removed -eq 1) {'y'} else {'ies'}) mentioning 'git' (this is what makes bash resolve on the reporters' machines but not here)"
+
+      - name: Diagnostic - bash resolution after sanitizing
+        shell: pwsh
+        run: |
+          $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
+          if ($bashCmd) {
+            Write-Host "bash STILL resolves at: $($bashCmd.Source) -- sanitizing did not remove it"
+          } else {
+            Write-Host "bash does not resolve -- PATH now matches the reporters' machines"
+          }
+
+      - name: Install engine dependencies (guide step 6)
+        shell: pwsh
+        run: |
+          pnpm install --dir engine
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "engine dependency install failed (exit $LASTEXITCODE) -- cannot evaluate the build-engine step"
+            Write-Host "BUGFIX_LAB_INCONCLUSIVE"
+            exit 2
+          }
+
+      - name: Run guide step 8 command (PowerShell)
+        if: matrix.shell_kind == 'pwsh'
+        shell: pwsh
+        run: |
+          $cmd = "${{ matrix.command }}"
+          Write-Host "Running (as PowerShell would run this guide step): $cmd"
+          $output = ""
+          try {
+            $output = (Invoke-Expression $cmd 2>&1 | Out-String)
+          } catch {
+            $output = $_.Exception.Message
+          }
+          Write-Host "----- captured output -----"
+          Write-Host $output
+          Write-Host "----- end captured output -----"
+
+          if ($output -match "is not recognized as the name of a cmdlet" -or $output -match "is not recognized as a name of a cmdlet") {
+            Write-Host "BUGFIX_LAB_PRESENT (PowerShell: bash not recognized)"
+            exit 1
+          } elseif ($output -match [regex]::Escape("engine + rules synced to both shells")) {
+            Write-Host "BUGFIX_LAB_ABSENT (build-engine step succeeded)"
+            exit 0
+          } else {
+            Write-Host "Neither the bash-not-recognized error nor the success line appeared -- inconclusive"
+            Write-Host "BUGFIX_LAB_INCONCLUSIVE"
+            exit 2
+          }
+
+      - name: Run guide step 8 command (cmd.exe)
+        if: matrix.shell_kind == 'cmd'
+        shell: cmd
+        run: |
+          echo Running (as cmd.exe would run this guide step): ${{ matrix.command }}
+          ${{ matrix.command }} > step8_output.txt 2>&1
+          set STEP8_EXIT=%ERRORLEVEL%
+          echo ----- captured output -----
+          type step8_output.txt
+          echo ----- end captured output, exit=%STEP8_EXIT% -----
+
+          findstr /C:"is not recognized as an internal or external command" step8_output.txt >nul
+          if %ERRORLEVEL%==0 (
+            echo BUGFIX_LAB_PRESENT (cmd.exe: bash not recognized)
+            exit /b 1
+          )
+          findstr /C:"engine + rules synced to both shells" step8_output.txt >nul
+          if %ERRORLEVEL%==0 (
+            echo BUGFIX_LAB_ABSENT (build-engine step succeeded)
+            exit /b 0
+          )
+          echo Neither the bash-not-recognized error nor the success line appeared -- inconclusive
+          echo BUGFIX_LAB_INCONCLUSIVE
+          exit /b 2

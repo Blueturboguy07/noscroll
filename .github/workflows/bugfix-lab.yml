@@ -93,13 +93,7 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            case "$BUGFIX_LAB_MODE" in
-              prefs)    bash scripts/bugfix-lab/noscroll-android-blocking-not-active.sh ;;
-              behavior) bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh ;;
-              guide)    NOSCROLL_SKIP_A11Y_GRANT=1 bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh ;;
-              *) echo "unknown mode $BUGFIX_LAB_MODE"; exit 2 ;;
-            esac
+          script: bash scripts/bugfix-lab/run-oracle.sh
 
       - name: Upload screenshot
         if: always()

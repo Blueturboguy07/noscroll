@@ -15,6 +15,9 @@ case "$MODE" in
   guide)
     NOSCROLL_SKIP_A11Y_GRANT=1 bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh
     ;;
+  behavior-nostop)
+    NOSCROLL_SKIP_RESTART=1 bash scripts/bugfix-lab/noscroll-android-blocking-behavior.sh
+    ;;
   *)
     echo "HARNESS_ERROR: unknown mode $MODE"
     echo "BUGFIX_LAB_UNRUNNABLE"

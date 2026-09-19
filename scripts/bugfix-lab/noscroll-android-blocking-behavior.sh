@@ -66,11 +66,15 @@ fi
 echo "=== is the service actually bound? (dumpsys accessibility) ==="
 adb shell dumpsys accessibility 2>&1 | grep -iE "noscroll|ForegroundAppMonitor|Service\[" | head -20
 
-echo "=== step 3: 'restarting phone / pairing again' -- force-stop + relaunch ==="
-adb shell am force-stop "$PKG"
-sleep 2
-adb shell am start -W -n "${PKG}/.MainActivity"
-sleep 5
+if [ "${NOSCROLL_SKIP_RESTART:-0}" = "1" ]; then
+  echo "=== step 3: SKIPPED (no force-stop) -- isolating the restart as a confound ==="
+else
+  echo "=== step 3: 'restarting phone / pairing again' -- force-stop + relaunch ==="
+  adb shell am force-stop "$PKG"
+  sleep 2
+  adb shell am start -W -n "${PKG}/.MainActivity"
+  sleep 5
+fi
 
 echo "=== the app's own view of things (StatusActivity + prefs), informational only ==="
 adb shell run-as "$PKG" cat "/data/data/${PKG}/shared_prefs/noscroll.shield.xml" 2>&1 || true
@@ -78,6 +82,10 @@ adb shell run-as "$PKG" cat "/data/data/${PKG}/shared_prefs/noscroll.shield.xml"
 echo "=== go home, settle ==="
 adb shell input keyevent KEYCODE_HOME
 sleep 3
+
+echo "=== is the service STILL bound right before the test? ==="
+adb shell dumpsys accessibility 2>&1 | grep -E "Bound services|Enabled services" | head -4
+echo "noscroll process: $(adb shell pidof app.noscroll | tr -d '\r')"
 
 echo "=== THE TEST: open the shielded app, exactly as the reporter would ==="
 adb shell am start -W -n "${STUB_PKG}/android.app.Activity" 2>&1

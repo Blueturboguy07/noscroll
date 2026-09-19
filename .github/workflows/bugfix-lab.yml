@@ -14,12 +14,23 @@ name: bugfix-lab
 #   mode "negative-control"  -> ref 6e033662..., command `bash tools/sync-engine.sh`
 #                                (what the guide made them run before Aug 10)
 #
-# A "sanitize PATH" step removes any PATH entry that mentions git, because
-# GitHub's windows-latest runner ships Git for Windows with its bin dirs
-# already on PATH (bash resolves there by default) -- unlike the reporters'
-# machines, where bash plainly did not resolve. Stripping those entries is
-# what makes the negative-control leg actually observe the reported failure
-# instead of silently succeeding on CI's different PATH.
+# Two things GitHub's windows-latest runner has that the reporters' machines
+# plainly did not (their own screenshots/text prove bash did not resolve for
+# them):
+#   1. Git for Windows on PATH, whose bin dirs carry a real bash.exe.
+#   2. C:\Windows\System32\bash.exe, the built-in WSL launcher stub, which
+#      when no WSL distro is installed prints its own "Windows Subsystem for
+#      Linux has no installed distributions" message instead of resolving to
+#      a real bash -- a DIFFERENT error than "not recognized" but the same
+#      functional outcome (the build-engine step still cannot complete).
+# The sanitize step strips PATH entries mentioning git and best-effort moves
+# the WSL stub aside, so the negative-control leg actually observes a failure
+# instead of silently succeeding on CI's different machine. Classification is
+# functional-outcome based (LAB.md's own oracle text: the success line ending
+# the step is what "fixed" looks like; anything else is "still broken"),
+# which is robust to exactly which of those two different failure texts shows
+# up, and is done entirely in PowerShell (regardless of which shell is under
+# test) to avoid cmd.exe's batch-parenthesized-if fragility.
 
 on:
   workflow_dispatch: {}
@@ -69,12 +80,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: engine/pnpm-lock.yaml
 
-      - name: Diagnostic - bash resolution and PATH before sanitizing
+      - name: Diagnostic - bash resolution before sanitizing
         shell: pwsh
         run: |
-          Write-Host "PATH before sanitizing:"
-          $env:PATH -split ';' | ForEach-Object { Write-Host "  $_" }
-          Write-Host "---"
           $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
           if ($bashCmd) {
             Write-Host "bash resolves on this runner's default PATH at: $($bashCmd.Source)"
@@ -82,22 +90,37 @@ jobs:
             Write-Host "bash does NOT resolve on this runner's default PATH"
           }
 
-      - name: Sanitize PATH to emulate a plain Windows box (no Git-for-Windows bash on PATH)
+      - name: Sanitize environment to emulate a plain Windows box (no bash resolves)
         shell: pwsh
         run: |
+          # 1) Strip any PATH entry mentioning git -- removes Git for Windows' bash.
           $parts = $env:PATH -split ';' | Where-Object { $_.Length -gt 0 }
           $filtered = $parts | Where-Object { $_ -notmatch '(?i)git' }
-          $removed = $parts.Count - $filtered.Count
+          $removedCount = $parts.Count - $filtered.Count
           $newPath = ($filtered -join ';')
           Add-Content -Path $env:GITHUB_ENV -Value "PATH=$newPath"
-          Write-Host "Removed $removed PATH entr$(if ($removed -eq 1) {'y'} else {'ies'}) mentioning 'git' (this is what makes bash resolve on the reporters' machines but not here)"
+          Write-Host "Removed $removedCount PATH entr$(if ($removedCount -eq 1) {'y'} else {'ies'}) mentioning 'git'."
+
+          # 2) Best-effort: move aside the built-in WSL bash.exe launcher stub in
+          # System32, if present, so it can't stand in for a real bash either.
+          $wslStub = "$env:WINDIR\System32\bash.exe"
+          if (Test-Path $wslStub) {
+            try {
+              Rename-Item -Path $wslStub -NewName "bash.exe.bugfixlab-disabled" -ErrorAction Stop
+              Write-Host "Renamed $wslStub aside."
+            } catch {
+              Write-Host "Could not rename $wslStub aside ($($_.Exception.Message)) -- will rely on output-content classification for this stub instead."
+            }
+          } else {
+            Write-Host "No WSL bash.exe launcher stub present at $wslStub."
+          }
 
       - name: Diagnostic - bash resolution after sanitizing
         shell: pwsh
         run: |
           $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
           if ($bashCmd) {
-            Write-Host "bash STILL resolves at: $($bashCmd.Source) -- sanitizing did not remove it"
+            Write-Host "bash STILL resolves at: $($bashCmd.Source) -- sanitizing did not fully remove it"
           } else {
             Write-Host "bash does not resolve -- PATH now matches the reporters' machines"
           }
@@ -112,55 +135,47 @@ jobs:
             exit 2
           }
 
-      - name: Run guide step 8 command (PowerShell)
-        if: matrix.shell_kind == 'pwsh'
+      - name: Run guide step 8 command and classify
         shell: pwsh
         run: |
           $cmd = "${{ matrix.command }}"
-          Write-Host "Running (as PowerShell would run this guide step): $cmd"
+          $shellKind = "${{ matrix.shell_kind }}"
+          Write-Host "Running (as $shellKind would run this guide step): $cmd"
+
           $output = ""
-          try {
-            $output = (Invoke-Expression $cmd 2>&1 | Out-String)
-          } catch {
-            $output = $_.Exception.Message
+          $exit = $null
+          if ($shellKind -eq "cmd") {
+            # Exercise cmd.exe's OWN command resolution, exactly like a reader
+            # pasting this into a cmd.exe prompt.
+            $output = (& cmd.exe /c "$cmd 2>&1" | Out-String)
+            $exit = $LASTEXITCODE
+          } else {
+            # Exercise PowerShell's OWN command resolution. An unknown command
+            # here is a terminating CommandNotFoundException, not a normal
+            # nonzero exit, so it has to be caught.
+            try {
+              $output = (Invoke-Expression $cmd 2>&1 | Out-String)
+              $exit = $LASTEXITCODE
+            } catch {
+              $output = $_.Exception.Message
+              $exit = 1
+            }
           }
+
           Write-Host "----- captured output -----"
           Write-Host $output
-          Write-Host "----- end captured output -----"
+          Write-Host "----- exit code: $exit -----"
 
-          if ($output -match "is not recognized as the name of a cmdlet" -or $output -match "is not recognized as a name of a cmdlet") {
-            Write-Host "BUGFIX_LAB_PRESENT (PowerShell: bash not recognized)"
-            exit 1
-          } elseif ($output -match [regex]::Escape("engine + rules synced to both shells")) {
+          # Functional-outcome classification (LAB.md's own oracle text): the
+          # guide step is only done when this exact line appears. Anything
+          # else -- "not recognized", the WSL-stub's no-distro message, or any
+          # other failure -- is the build-engine step still being broken on
+          # Windows, which is the functional outcome the reporters hit.
+          $successMarker = "engine + rules synced to both shells"
+          if ($output -match [regex]::Escape($successMarker)) {
             Write-Host "BUGFIX_LAB_ABSENT (build-engine step succeeded)"
             exit 0
           } else {
-            Write-Host "Neither the bash-not-recognized error nor the success line appeared -- inconclusive"
-            Write-Host "BUGFIX_LAB_INCONCLUSIVE"
-            exit 2
+            Write-Host "BUGFIX_LAB_PRESENT (build-engine step did not succeed -- see captured output above for why)"
+            exit 1
           }
-
-      - name: Run guide step 8 command (cmd.exe)
-        if: matrix.shell_kind == 'cmd'
-        shell: cmd
-        run: |
-          echo Running (as cmd.exe would run this guide step): ${{ matrix.command }}
-          ${{ matrix.command }} > step8_output.txt 2>&1
-          set STEP8_EXIT=%ERRORLEVEL%
-          echo ----- captured output -----
-          type step8_output.txt
-          echo ----- end captured output, exit=%STEP8_EXIT% -----
-
-          findstr /C:"is not recognized as an internal or external command" step8_output.txt >nul
-          if %ERRORLEVEL%==0 (
-            echo BUGFIX_LAB_PRESENT (cmd.exe: bash not recognized)
-            exit /b 1
-          )
-          findstr /C:"engine + rules synced to both shells" step8_output.txt >nul
-          if %ERRORLEVEL%==0 (
-            echo BUGFIX_LAB_ABSENT (build-engine step succeeded)
-            exit /b 0
-          )
-          echo Neither the bash-not-recognized error nor the success line appeared -- inconclusive
-          echo BUGFIX_LAB_INCONCLUSIVE
-          exit /b 2

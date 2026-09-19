@@ -25,6 +25,18 @@ STUB_APK="${GITHUB_WORKSPACE:-$PWD}/stub-ig.apk"
 STUB_PKG="com.instagram.android"
 A11Y_SERVICE="${PKG}/app.noscroll.shield.ForegroundAppMonitor"
 
+# The rendered publik install guide this reader is following. Regenerate with
+#   cd <publik worktree> && npx tsx ~/bugfix-lab/bin/render-guide.mts noscroll android --json
+# and commit the output verbatim, so this file is always the guide's real
+# user-visible content and never a hand-written paraphrase of it.
+GUIDE_JSON="${NOSCROLL_GUIDE_JSON:-scripts/bugfix-lab/rendered-guide-android.json}"
+A11Y_MODE="${NOSCROLL_A11Y:-grant}"
+RESTART_MODE="${NOSCROLL_RESTART:-force-stop}"
+# Round 1/2 flag names, still honoured so their runs stay reproducible.
+[ "${NOSCROLL_SKIP_A11Y_GRANT:-0}" = "1" ] && A11Y_MODE="skip"
+[ "${NOSCROLL_SKIP_RESTART:-0}" = "1" ] && RESTART_MODE="none"
+echo "harness config: A11Y=$A11Y_MODE RESTART=$RESTART_MODE GUIDE_JSON=$GUIDE_JSON"
+
 fail_harness() { echo "HARNESS_ERROR: $*"; echo "BUGFIX_LAB_UNRUNNABLE"; exit 2; }
 
 echo "=== devices ==="
@@ -42,15 +54,27 @@ echo "=== step 1: first launch (what the install guide ends with) ==="
 adb shell am start -W -n "${PKG}/.MainActivity"
 sleep 6
 
-# NOSCROLL_SKIP_A11Y_GRANT=1 reproduces the GUIDE-INSTALLER path: the rendered
-# Android guide (publik lib/guides/noscroll.ts version 8) has 14 steps and not
-# one of them asks the reader to enable NoScroll in Android's Accessibility
-# settings, so a reader who follows it to the end never grants this.
-if [ "${NOSCROLL_SKIP_A11Y_GRANT:-0}" = "1" ]; then
-  echo "=== step 2: SKIPPED -- the Android guide never tells the reader to grant it ==="
-  echo "enabled_accessibility_services = $(adb shell settings get secure enabled_accessibility_services | tr -d '\r')"
-else
-  echo "=== step 2: pairing -- grant the accessibility permission ==="
+# ---------------------------------------------------------------------------
+# What the simulated reader does about the Accessibility permission.
+#
+#   NOSCROLL_A11Y=guide   read the rendered publik install guide committed at
+#                         $GUIDE_JSON and do what IT says: if a step tells the
+#                         reader to turn NoScroll's accessibility service on,
+#                         the reader turns it on; if no step does, the reader
+#                         never does, because nothing ever told them it
+#                         existed. This is the guide-installer path and it is
+#                         the only one whose behaviour depends on the guide.
+#   NOSCROLL_A11Y=grant   grant it unconditionally (the generous control that
+#                         isolates guide text from app code).
+#   NOSCROLL_A11Y=skip    never grant it (frozen negative control).
+#
+# The reader's physical act -- flipping NoScroll's switch in Settings >
+# Accessibility -- is modelled by writing the two secure settings that switch
+# sets, because CI cannot reliably tap a toggle in the Settings UI. The screen
+# the guide step actually sends them to is opened first, so the path is the
+# one the step names, and everything after this point is ordinary emulator
+# behaviour.
+grant_the_permission() {
   adb shell settings put secure enabled_accessibility_services "$A11Y_SERVICE"
   adb shell settings put secure accessibility_enabled 1
   sleep 3
@@ -61,30 +85,96 @@ else
     *ForegroundAppMonitor*) : ;;
     *) fail_harness "accessibility permission did not stick" ;;
   esac
-fi
+}
+
+case "$A11Y_MODE" in
+  guide)
+    [ -f "$GUIDE_JSON" ] || fail_harness "rendered guide $GUIDE_JSON is missing"
+    echo "=== step 2: what does the guide this reader is following tell them to do? ==="
+    GUIDE_OUT="$(python3 scripts/bugfix-lab/guide-reader.py "$GUIDE_JSON")" \
+      || fail_harness "could not read $GUIDE_JSON"
+    echo "$GUIDE_OUT"
+    A11Y_STEP="$(printf '%s\n' "$GUIDE_OUT" | sed -n 's/^A11Y_STEP: //p')"
+    if [ -n "$A11Y_STEP" ] && [ "$A11Y_STEP" != "NONE" ]; then
+      echo "=== step 2: guide step $A11Y_STEP tells the reader to turn the service on -- the reader does ==="
+      adb shell am start -a android.settings.ACCESSIBILITY_SETTINGS >/dev/null 2>&1 || true
+      sleep 3
+      grant_the_permission
+      adb shell input keyevent KEYCODE_HOME
+      sleep 2
+    else
+      echo "=== step 2: SKIPPED -- no step in this guide tells the reader to turn the service on ==="
+      echo "enabled_accessibility_services = $(adb shell settings get secure enabled_accessibility_services | tr -d '\r')"
+    fi
+    ;;
+  skip)
+    echo "=== step 2: SKIPPED -- this mode never grants the permission ==="
+    echo "enabled_accessibility_services = $(adb shell settings get secure enabled_accessibility_services | tr -d '\r')"
+    ;;
+  grant)
+    echo "=== step 2: pairing -- grant the accessibility permission ==="
+    grant_the_permission
+    ;;
+  *)
+    fail_harness "unknown NOSCROLL_A11Y=$A11Y_MODE"
+    ;;
+esac
 
 echo "=== is the service actually bound? (dumpsys accessibility) ==="
 adb shell dumpsys accessibility 2>&1 | grep -iE "noscroll|ForegroundAppMonitor|Service\[" | head -20
 
-# NOSCROLL_SKIP_RESTART=1 isolates the region this cluster's REGION.json
-# actually scoped: MINIMIZE proved (run 35447520354, mode=guide-nostop, and
-# REPRODUCE's mode=behavior-nostop run 35447028416) that the force-stop +
-# relaunch below is NOT load-bearing for THIS cluster's bug -- the missing
-# accessibility-permission step alone is necessary and sufficient. The
-# force-stop step models a real but explicitly out-of-region, still-open
-# lead (an AccessibilityService rebind gap on this emulator) that FIX round 1
-# re-confirmed (run 35448517323 / 35448792058) and declined to fold into this
-# guide-text region; see fix-log.md. Same gate already proven on the
-# diagnostic branch fix/noscroll-android-blocking-not-active-ctl (9080c16).
-if [ "${NOSCROLL_SKIP_RESTART:-0}" = "1" ]; then
-  echo "=== step 3: SKIPPED (no force-stop) -- isolating the restart as a confound ==="
-else
-  echo "=== step 3: 'restarting phone / pairing again' -- force-stop + relaunch ==="
-  adb shell am force-stop "$PKG"
-  sleep 2
-  adb shell am start -W -n "${PKG}/.MainActivity"
-  sleep 5
-fi
+# ---------------------------------------------------------------------------
+# "Tried ... restarting phone ..." -- the reporter's own words.
+#
+#   NOSCROLL_RESTART=reboot      a REAL emulator reboot (adb reboot). This is
+#                                what the reporter did and it is the default
+#                                for the guide-installer path.
+#   NOSCROLL_RESTART=force-stop  `am force-stop` + relaunch, which is what
+#                                rounds 1-2 of this cluster used. Kept so their
+#                                runs stay reproducible: force-stop is NOT a
+#                                reboot -- it leaves the package in the stopped
+#                                state and AccessibilityManagerService does not
+#                                re-bind an enabled service until something
+#                                pokes it, which is a separate, still-open lead
+#                                (see fix-log.md), not this cluster's bug.
+#   NOSCROLL_RESTART=none        no restart at all (REGION.json's minimal repro).
+case "$RESTART_MODE" in
+  reboot)
+    echo "=== step 3: the report's 'restarting phone' -- a real reboot of the device ==="
+    adb reboot
+    sleep 10
+    adb wait-for-device || fail_harness "device never came back after reboot"
+    BOOTED=""
+    for _ in $(seq 1 60); do
+      BOOTED="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+      [ "$BOOTED" = "1" ] && break
+      sleep 5
+    done
+    [ "$BOOTED" = "1" ] || fail_harness "emulator never finished booting after the reboot"
+    sleep 15
+    adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+    adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+    sleep 3
+    echo "post-reboot enabled_accessibility_services = $(adb shell settings get secure enabled_accessibility_services | tr -d '\r')"
+    echo "post-reboot accessibility bind state:"
+    adb shell dumpsys accessibility 2>&1 | grep -iE "noscroll|ForegroundAppMonitor|Service\[|Bound services|Enabled services" | head -20
+    adb shell am start -W -n "${PKG}/.MainActivity"
+    sleep 5
+    ;;
+  force-stop)
+    echo "=== step 3: 'restarting phone / pairing again' -- force-stop + relaunch ==="
+    adb shell am force-stop "$PKG"
+    sleep 2
+    adb shell am start -W -n "${PKG}/.MainActivity"
+    sleep 5
+    ;;
+  none)
+    echo "=== step 3: SKIPPED (no restart) -- isolating the restart as a confound ==="
+    ;;
+  *)
+    fail_harness "unknown NOSCROLL_RESTART=$RESTART_MODE"
+    ;;
+esac
 
 echo "=== the app's own view of things (StatusActivity + prefs), informational only ==="
 adb shell run-as "$PKG" cat "/data/data/${PKG}/shared_prefs/noscroll.shield.xml" 2>&1 || true

@@ -7,15 +7,17 @@
 #   mode=behavior  (round 2) the same setup, then OPEN A SHIELDED APP and see
 #                  whether NoScroll blocks it -- the thing the reporter actually
 #                  complained about ("nothing is blocked").
-#   mode=guide     (round 2) the guide-installer path with NO accessibility
-#                  grant, because publik guide v8's Android branch never told
-#                  the reader to grant it. Then open a shielded app. Kept
-#                  as-is as a standing negative control -- do not edit.
-#   mode=guide-v9  (FIX round) the guide-installer path per publik guide v9,
-#                  which adds the missing "enable-accessibility" step -- so
-#                  this mode grants the permission, same as mode=behavior,
-#                  then runs the same force-stop+relaunch+open-shielded-app
-#                  sequence mode=behavior always has.
+#   mode=guide     (default) the guide-installer path, driven by the rendered
+#                  publik Android guide committed at scripts/bugfix-lab/
+#                  rendered-guide-android.json: the simulated reader turns the
+#                  accessibility service on if and only if a step of that guide
+#                  tells them to, then the phone is REBOOTED (the reporter's
+#                  own "restarting phone"), then a shielded app is opened.
+#   mode=guide-nostop      the same, cut to REGION.json's minimal repro (no restart).
+#   mode=guide-v8-frozen   the same, against a frozen copy of the v8 rendering:
+#                  the standing negative control that the bug was real.
+#   mode=guide-v9 / guide-v9-nostop  FIX rounds 1-2's modes, kept so their runs
+#                  stay reproducible (unconditional grant, force-stop / no restart).
 #
 # Every mode prints BUGFIX_LAB_PRESENT (exit 1) / BUGFIX_LAB_ABSENT (exit 0).
 name: bugfix-lab
@@ -24,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: which oracle to run (prefs | behavior | guide | guide-v9)
+        description: which oracle to run (prefs | behavior | guide | guide-nostop | guide-v8-frozen | guide-v9 | guide-v9-nostop)
         required: false
         default: prefs
       api-level:

@@ -1,0 +1,214 @@
+{
+ "slug": "noscroll",
+ "version": 8,
+ "sourceCommit": "7d1c27ae8e11c551c1c11f82125a29b3f9bbf505",
+ "platform": "android",
+ "steps": [
+  {
+   "n": 1,
+   "id": "open-shell",
+   "kind": "terminal",
+   "title": "Open Terminal",
+   "body": "Keep it open beside Iris.",
+   "verifierLabel": "Terminal is open"
+  },
+  {
+   "n": 2,
+   "id": "check-tools",
+   "kind": "check",
+   "title": "Check Git and Node",
+   "body": "Git and the current Node LTS are required.",
+   "command": "git --version\nnode --version",
+   "verifierLabel": "Git and Node respond with version numbers",
+   "watch": {
+    "expect": [
+     {
+      "type": "toolVersion",
+      "tool": "git"
+     },
+     {
+      "type": "toolVersion",
+      "tool": "node"
+     }
+    ]
+   }
+  },
+  {
+   "n": 3,
+   "id": "install-pnpm",
+   "kind": "terminal",
+   "title": "Install pnpm",
+   "body": "The blocking engine is built with pnpm.",
+   "command": "mkdir -p \"$HOME/.npm-global/bin\"\nnpm install -g --prefix \"$HOME/.npm-global\" pnpm\ngrep -qsxF 'export PATH=\"$HOME/.npm-global/bin:$PATH\"' \"$HOME/.zshrc\" || echo 'export PATH=\"$HOME/.npm-global/bin:$PATH\"' >> \"$HOME/.zshrc\"\nexport PATH=\"$HOME/.npm-global/bin:$PATH\"",
+   "verifierLabel": "pnpm responds with a version number",
+   "watch": {
+    "expect": [
+     {
+      "type": "toolVersion",
+      "tool": "pnpm"
+     },
+     {
+      "type": "visual",
+      "prompt": "In the shell, has `npm install -g pnpm` finished — a summary line such as \"added 1 package\" or \"changed 1 package\", with the prompt back and no error? Answer not done while it is still downloading, or if it stopped on a permissions error such as EACCES."
+     }
+    ],
+    "hints": [
+     "If npm refused for lack of permission, reinstall Node from nodejs.org rather than re-running this with more privileges.",
+     "Finished but still not found? Open a fresh shell window so the new PATH is picked up."
+    ]
+   }
+  },
+  {
+   "n": 4,
+   "id": "clone",
+   "workingDirectory": "~",
+   "kind": "terminal",
+   "title": "Copy NoScroll to this Mac",
+   "body": "",
+   "command": "cd ~\nif [ ! -d noscroll/.git ]; then\ngit clone https://github.com/Blueturboguy07/noscroll.git\nfi",
+   "verifierLabel": "A noscroll folder appears",
+   "watch": {
+    "expect": [
+     {
+      "type": "toolVersion",
+      "tool": "git"
+     }
+    ]
+   }
+  },
+  {
+   "n": 5,
+   "id": "enter-folder",
+   "workingDirectory": "~",
+   "kind": "terminal",
+   "title": "Open the noscroll folder",
+   "body": "",
+   "command": "cd noscroll",
+   "verifierLabel": "Your terminal prompt is inside the noscroll folder"
+  },
+  {
+   "n": 6,
+   "id": "pin-source",
+   "workingDirectory": "~/noscroll",
+   "kind": "terminal",
+   "title": "Use the reviewed version",
+   "body": "",
+   "command": "(\nif ! git config --get remote.origin.url 2>/dev/null | sed -E 's#^git@github\\.com:#https://github.com/#; s#\\.git$##' | grep -qxF \"https://github.com/Blueturboguy07/noscroll\"; then\n  echo \"~/noscroll already exists and is not a clean copy of this app's source. Move or rename that folder, then press Try again.\"\n  exit 1\nfi\nif git status --porcelain 2>/dev/null | grep -q .; then\n  echo \"~/noscroll already exists and is not a clean copy of this app's source. Move or rename that folder, then press Try again.\"\n  exit 1\nfi\ngit checkout 7d1c27ae8e11c551c1c11f82125a29b3f9bbf505\n)",
+   "verifierLabel": "Git reports the reviewed commit"
+  },
+  {
+   "n": 7,
+   "id": "engine-deps",
+   "workingDirectory": "~/noscroll",
+   "kind": "terminal",
+   "title": "Install the engine's dependencies",
+   "body": "",
+   "command": "pnpm install --dir engine",
+   "verifierLabel": "The command finishes without an error"
+  },
+  {
+   "n": 8,
+   "id": "engine-tests",
+   "workingDirectory": "~/noscroll",
+   "kind": "terminal",
+   "title": "Check the blocking rules still work",
+   "body": "42 tests over saved copies of the sites. Failures mean the rules need a fix.",
+   "command": "pnpm --dir engine test",
+   "verifierLabel": "All 42 tests pass",
+   "watch": {
+    "expect": [
+     {
+      "type": "visual",
+      "prompt": "Does the terminal show a finished vitest run reporting 42 tests passed with no failing tests?"
+     }
+    ],
+    "hints": [
+     "If it says the engine has no node_modules, run the install step above again — it must finish without an error first.",
+     "A failing test names the rule file to fix; docs/RULES.md in the repo explains the format."
+    ]
+   }
+  },
+  {
+   "n": 9,
+   "id": "build-engine",
+   "workingDirectory": "~/noscroll",
+   "kind": "terminal",
+   "title": "Build the engine into both apps",
+   "body": "Compiles the engine and copies it, with the rule files, into both phone projects.",
+   "command": "node tools/sync-engine.mjs",
+   "verifierLabel": "It prints \"engine + rules synced to both shells\"",
+   "watch": {
+    "expect": [
+     {
+      "type": "visual",
+      "prompt": "Does the terminal show the line \"engine + rules synced to both shells\" followed by a byte count?"
+     }
+    ],
+    "hints": [
+     "If node is not recognised, the Node install from setup didn't finish — reopen the terminal and check `node --version`.",
+     "If it stops on the build line, the engine's dependencies did not install; go back two steps."
+    ]
+   }
+  },
+  {
+   "n": 10,
+   "id": "install-studio",
+   "kind": "open",
+   "title": "Install Android Studio",
+   "body": "It brings the Android tools and Java with it. Open it once and let it finish setup.",
+   "href": "https://developer.android.com/studio",
+   "actionLabel": "Open download",
+   "verifierLabel": "Android Studio opens to its welcome screen",
+   "watch": {
+    "expect": [
+     {
+      "type": "foregroundApp",
+      "bundleId": "com.google.android.studio"
+     }
+    ]
+   }
+  },
+  {
+   "n": 11,
+   "id": "open-project",
+   "kind": "open",
+   "title": "Open the android folder in it",
+   "body": "Choose Open, then pick the android folder inside noscroll. Let it finish syncing.",
+   "actionLabel": "Project opened",
+   "verifierLabel": "Android Studio finishes syncing without an error",
+   "point": {
+    "descriptor": "the Open button on Android Studio's welcome screen",
+    "inApp": "com.google.android.studio"
+   }
+  },
+  {
+   "n": 12,
+   "id": "enable-usb",
+   "kind": "permission",
+   "title": "Turn on USB debugging",
+   "body": "Settings, About phone, tap Build number 7 times. Then Developer options, USB debugging.",
+   "verifierLabel": "USB debugging is switched on"
+  },
+  {
+   "n": 13,
+   "id": "run",
+   "kind": "open",
+   "title": "Press Run",
+   "body": "Connect with a USB cable, accept the phone's debugging prompt, pick it in the menu, hit Run.",
+   "actionLabel": "Run pressed",
+   "verifierLabel": "NoScroll appears in your app list",
+   "point": {
+    "descriptor": "the green Run button in Android Studio's toolbar, at the top right",
+    "inApp": "com.google.android.studio"
+   }
+  },
+  {
+   "n": 14,
+   "id": "verify",
+   "kind": "verify",
+   "title": "Check that it works",
+   "body": "Open NoScroll — a simple wrapper is correct on Android. Sign in to Instagram: no Reels icon.",
+   "verifierLabel": "There is no Reels icon in the row along the bottom"
+  }
+ ]
+}

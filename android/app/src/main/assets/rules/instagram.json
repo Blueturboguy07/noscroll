@@ -46,7 +46,7 @@
           "kind": "dom-remove",
           "label": "Block Reels tray in feed",
           "selectors": [
-            "section:has(div > a[href^='/reels/'])",
+            "section:has(div > a[href^='/reels/']):not(:has(article))",
             "article:has(a[href^='/reels/'][role='link'])"
           ],
           "observe": true,

@@ -25,6 +25,22 @@ Off by default. When on, a message contains exactly:
 Never a URL. Never page content. Never an identifier. Enforced in `engine/src/bridge.ts`, where
 diagnostic message types are gated on the opt-in flag.
 
+## Tier 3 — Sign in with publik and usage counting
+
+NoScroll is listed on publik (publikhq.com). The app opens with **Sign in with publik**, and the
+publik module counts its users. The code is `ios/NoScroll/Publik/Publik.swift` and
+`android/app/src/main/java/app/noscroll/publik/Publik.kt`.
+
+- At first start, the app gets a key for this device from publik (`POST /api/v1/installs`). It
+  sends the app name and version, the system (`ios` or `android`), a random install ID, the device
+  name and the processor type. The key stays in the app's own files.
+- You sign in on publik's own page, in the browser. NoScroll never sees your publik password.
+- After you sign in, the app sends two events: `app_opened` at start, and `active_session` every
+  30 minutes while the app is on screen. Each event holds the app name, a random install ID, the
+  event name, the app version, the system and the processor type, with the device's publik key.
+  Never a URL, never page content, never anything from Instagram, YouTube or the other services.
+- NoScroll calls no AI model. publik's words on app usage: https://publikhq.com/privacy#app-usage
+
 ## What is not present
 
 - No analytics SDK.

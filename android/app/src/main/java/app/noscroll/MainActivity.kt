@@ -9,6 +9,8 @@ import android.widget.Button
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import app.noscroll.publik.Publik
+import app.noscroll.publik.PublikGateView
 import app.noscroll.shield.ShieldSettings
 import app.noscroll.shield.StatusActivity
 import app.noscroll.web.EngineInjector
@@ -46,10 +48,23 @@ class MainActivity : AppCompatActivity() {
 
     private var currentService = "instagram"
 
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Sign in with publik comes first (publik/Publik.kt). NoScroll's own screen starts only
+        // after the gate lets the person through.
+        Publik.watchForeground(application)
+        Publik.launchArguments = Publik.launchArgumentsFrom(intent?.extras)
+        val gate = PublikGateView(this)
+        setContentView(gate.view)
+        lifecycleScope.launch {
+            Publik.ensureSignedIn(this@MainActivity, gate)
+            startApp()
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun startApp() {
         cookieJar = SessionCookieJar(this)
         settings = ShieldSettings(this)
         // Fresh installs must block by default (README: "the core ones —
@@ -135,6 +150,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        if (!::cookieJar.isInitialized) return // still on Sign in with publik
         // Persist the outgoing session before anything else can touch the
         // process-global jar.
         cookieJar.currentAccountId()?.let { cookieJar.save(it) }
@@ -142,7 +158,7 @@ class MainActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
+        if (::webView.isInitialized && webView.canGoBack()) webView.goBack() else super.onBackPressed()
     }
 
     companion object {

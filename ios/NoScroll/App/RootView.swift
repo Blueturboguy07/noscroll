@@ -3,13 +3,22 @@ import SwiftUI
 @main
 struct NoScrollApp: App {
     @StateObject private var state = AppState()
+    /// Sign in with publik (Publik/Publik.swift): the first screen, before any screen of NoScroll's own.
+    @StateObject private var gate = PublikGateModel()
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environmentObject(state)
-                // Widgets deep-link straight into a service: noscroll://open/instagram
-                .onOpenURL { state.handle(url: $0) }
+            Group {
+                if gate.signedIn {
+                    RootView()
+                        .environmentObject(state)
+                } else {
+                    PublikGateView(model: gate)
+                }
+            }
+            // Widgets deep-link straight into a service: noscroll://open/instagram
+            // A link that comes during the sign-in waits in AppState until Home shows.
+            .onOpenURL { state.handle(url: $0) }
         }
     }
 }

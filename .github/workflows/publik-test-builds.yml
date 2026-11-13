@@ -1,0 +1,92 @@
+# Test builds with Sign in with publik: an iOS Simulator app and an Android debug APK, each
+# self-tested once against publik (PUBLIK_SELF_TEST: one POST /installs and one GET /wallet,
+# then the app exits). The artifacts are for testing only. They are not a release: the iOS
+# app is unsigned and runs only in the Simulator; the APK is signed with the debug key.
+#
+# PUBLIK_APP_TOKEN (repo secret) is the publik app token (pat_). It is public by design (it
+# only mints capped keys for this app), but it is never printed here.
+name: publik test builds
+
+on:
+  push:
+    branches: [signin-gate]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # A CI run is not a user (publikhq.com/skills/telemetry.md, section 6).
+  DO_NOT_TRACK: "1"
+
+jobs:
+  ios-sim-app:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the Simulator app (Release, arm64, unsigned)
+        env:
+          PUBLIK_APP_TOKEN: ${{ secrets.PUBLIK_APP_TOKEN }}
+        run: |
+          xcodebuild -version
+          xcodebuild -project ios/NoScroll.xcodeproj -target NoScroll -configuration Release \
+            -sdk iphonesimulator -arch arm64 ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            SYMROOT="$PWD/ios/build" -quiet build
+          APP=ios/build/Release-iphonesimulator/NoScroll.app
+          test -x "$APP/NoScroll"
+          test -s "$APP/publik-app-token.txt" || { echo "::error::The publik app token is not in the app bundle."; exit 1; }
+          lipo -archs "$APP/NoScroll"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist"
+
+      - name: Zip the Simulator app
+        run: ditto -c -k --sequesterRsrc --keepParent ios/build/Release-iphonesimulator/NoScroll.app NoScroll-iossim-arm64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-sim-app
+          path: NoScroll-iossim-arm64.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Self-test the built app in the Simulator
+        run: bash .github/scripts/ios-self-test.sh ios/build/Release-iphonesimulator/NoScroll.app
+
+  android-debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+
+      - name: Build the debug APK
+        env:
+          PUBLIK_APP_TOKEN: ${{ secrets.PUBLIK_APP_TOKEN }}
+        run: cd android && ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Self-test the debug APK in an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash .github/scripts/android-self-test.sh android/app/build/outputs/apk/debug/app-debug.apk

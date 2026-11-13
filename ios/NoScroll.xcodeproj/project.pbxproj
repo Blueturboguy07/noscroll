@@ -26,6 +26,8 @@
 		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
 		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
 		A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */; };
+		2A26EEF3C7B7A46C30908F19 /* Publik.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC25B1C44E7EFD3BA98BE479 /* Publik.swift */; };
+		CB61FC5EBB6AB920F2CD353A /* PublikGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE4E19A38278296C23E2BE6 /* PublikGateView.swift */; };
 		8BBA0F12CFE98E6B7CEE26F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 847708244D2F2364D2D98223 /* Assets.xcassets */; };
 		0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */ = {isa = PBXBuildFile; fileRef = D2E4B2A875DB71820FEEF62C /* noscroll.js */; };
 		73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */ = {isa = PBXBuildFile; fileRef = F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */; };
@@ -61,6 +63,8 @@
 		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RuleBundle.swift"; path = "NoScroll/Core/RuleBundle.swift"; sourceTree = "<group>"; };
 		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebSession.swift"; path = "NoScroll/Core/WebSession.swift"; sourceTree = "<group>"; };
 		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WrappedWebViewController.swift"; path = "NoScroll/Web/WrappedWebViewController.swift"; sourceTree = "<group>"; };
+		EC25B1C44E7EFD3BA98BE479 /* Publik.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Publik.swift"; path = "NoScroll/Publik/Publik.swift"; sourceTree = "<group>"; };
+		9AE4E19A38278296C23E2BE6 /* PublikGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PublikGateView.swift"; path = "NoScroll/Publik/PublikGateView.swift"; sourceTree = "<group>"; };
 		847708244D2F2364D2D98223 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Assets.xcassets"; path = "NoScroll/Assets.xcassets"; sourceTree = "<group>"; };
 		D2E4B2A875DB71820FEEF62C /* noscroll.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "noscroll.js"; path = "NoScroll/Resources/noscroll.js"; sourceTree = "<group>"; };
 		F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */ = {isa = PBXFileReference; lastKnownFileType = file; name = "rules-signing.pub.raw"; path = "NoScroll/Resources/rules-signing.pub.raw"; sourceTree = "<group>"; };
@@ -130,6 +134,8 @@
 				54BD89AE0AFB93182037786A /* RuleBundle.swift */,
 				6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */,
 				F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */,
+				EC25B1C44E7EFD3BA98BE479 /* Publik.swift */,
+				9AE4E19A38278296C23E2BE6 /* PublikGateView.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -180,6 +186,7 @@
 				FCA229C23F166EBB0BA5029E,
 				4F6F5CC3FCCF73F75AE9CCF4,
 				B9C6EB6F79FC54535ACB3053,
+				A98CF45B9EB258742F1A12D7 /* publik app token */,
 				425893CE4AEDF359C5F0F0D7,
 			);
 			buildRules = ();
@@ -278,6 +285,24 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A98CF45B9EB258742F1A12D7 /* publik app token */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "publik app token";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Sign in with publik needs the app token (pat_) in the bundle: Publik.swift reads publik-app-token.txt.\n# The token is public by design: it only mints capped keys for this app. Never put a pk_ key here.\n# PUBLIK_APP_TOKEN at build time (CI: the repo secret), else publik-app-token.txt at the repo root.\nOUT=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/publik-app-token.txt\"\nif [ -n \"${PUBLIK_APP_TOKEN:-}\" ]; then\n  printf '%s' \"$PUBLIK_APP_TOKEN\" > \"$OUT\"\nelif [ -f \"${SRCROOT}/../publik-app-token.txt\" ]; then\n  cp \"${SRCROOT}/../publik-app-token.txt\" \"$OUT\"\nelse\n  rm -f \"$OUT\"\n  echo \"warning: no publik app token (set PUBLIK_APP_TOKEN or add publik-app-token.txt); the app will ask for a new build.\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		FCA229C23F166EBB0BA5029E = {
 			isa = PBXSourcesBuildPhase;
@@ -302,6 +327,8 @@
 				01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */,
 				49A807443D5252C9D186CD14 /* WebSession.swift in Sources */,
 				A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */,
+				2A26EEF3C7B7A46C30908F19 /* Publik.swift in Sources */,
+				CB61FC5EBB6AB920F2CD353A /* PublikGateView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -338,12 +365,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				NOSCROLL_ENTITLEMENTS = "";
 				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
 				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -355,11 +382,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -389,12 +416,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				NOSCROLL_ENTITLEMENTS = "";
 				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
 				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -406,11 +433,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

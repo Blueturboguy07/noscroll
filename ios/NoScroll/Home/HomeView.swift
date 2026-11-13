@@ -39,12 +39,16 @@ struct HomeView: View {
         .sheet(item: $showSettingsFor) { ServiceSettingsView(service: $0) }
         // A widget tap lands here: select that service and open it straight
         // away, so the shortcut is one tap rather than two.
-        .onChange(of: state.pendingService) { _, id in
-            guard let id, let service = AppState.service(id) else { return }
-            selection = id
-            openService = service
-            state.pendingService = nil
-        }
+        .onChange(of: state.pendingService) { _, id in openPending(id) }
+        // A tap that came while Sign in with publik was on screen is already set.
+        .onAppear { openPending(state.pendingService) }
+    }
+
+    private func openPending(_ id: String?) {
+        guard let id, let service = AppState.service(id) else { return }
+        selection = id
+        openService = service
+        state.pendingService = nil
     }
 
     // MARK: - Pieces

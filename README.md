@@ -156,6 +156,9 @@ app:
 2. **Rule-health telemetry is opt-in and anonymous.** It reports `{ruleId, expected, actual,
    bundleVersion}` — never a URL, never page content. See
    [`engine/src/bridge.ts`](engine/src/bridge.ts).
+3. **Sign in with publik.** The app opens with Sign in with publik, and counts its users with two
+   events (`app_opened`, `active_session`) — never a URL, never page content. See
+   [docs/PRIVACY.md](docs/PRIVACY.md#tier-3--sign-in-with-publik-and-usage-counting).
 
 No analytics SDK. No ad pixel. No crash reporter carrying identifiers. No tracking on the website
 or the legal pages.

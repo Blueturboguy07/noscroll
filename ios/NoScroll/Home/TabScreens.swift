@@ -84,14 +84,14 @@ struct ProfileTab: View {
             PublikBrowser(url: page.url).ignoresSafeArea()
         }
         .confirmationDialog("Sign out of publik?", isPresented: $confirmSignOut, titleVisibility: .visible) {
-            Button("Sign out", role: .destructive) { Task { await gate.signOut() } }
+            Button("Sign out", role: .destructive) { gate.signOut() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(signOutMessage)
         }
         // Delete account, step 1: say what is deleted.
         .alert("Delete your publik account?", isPresented: $confirmDelete) {
-            Button("Delete account", role: .destructive) { Task { await gate.deleteAccount() } }
+            Button("Delete account", role: .destructive) { gate.deleteAccount() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This deletes your publik account for all publik apps, not only for \(AppState.appName). First, \(AppState.appName) signs you out and deletes its publik data on this iPhone. Then the publik page opens. Confirm the deletion on that page.")
@@ -101,7 +101,7 @@ struct ProfileTab: View {
     private var signOutMessage: String {
         gate.mode == .required
             ? "\(AppState.appName) asks you to sign in with publik again before you can use it."
-            : "publik stops counting app use until you sign in again."
+            : "The app stops telling publik about app use until you sign in again."
     }
 
     private var publikSection: some View {
@@ -117,7 +117,7 @@ struct ProfileTab: View {
         } header: {
             Text("publik account")
         } footer: {
-            Text("When you are signed in, publik counts when \(AppState.appName) opens and each 30 minutes that it stays open. publik does not see what you look at. Turn off Count app use to stop this.")
+            Text("When you are signed in, \(AppState.appName) tells publik when it opens and each 30 minutes that it stays open, so publik can count app use. It sends nothing about what you look at. Turn off Count app use to stop this.")
         }
     }
 

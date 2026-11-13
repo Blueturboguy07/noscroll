@@ -299,7 +299,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Sign in with publik needs the app token (pat_) in the bundle: Publik.swift reads publik-app-token.txt.\n# The token is public by design: it only mints capped keys for this app. Never put a pk_ key here.\n# PUBLIK_APP_TOKEN at build time (CI: the repo secret), else publik-app-token.txt at the repo root.\nOUT=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/publik-app-token.txt\"\nif [ -n \"${PUBLIK_APP_TOKEN:-}\" ]; then\n  printf '%s' \"$PUBLIK_APP_TOKEN\" > \"$OUT\"\nelif [ -f \"${SRCROOT}/../publik-app-token.txt\" ]; then\n  cp \"${SRCROOT}/../publik-app-token.txt\" \"$OUT\"\nelse\n  rm -f \"$OUT\"\n  echo \"warning: no publik app token (set PUBLIK_APP_TOKEN or add publik-app-token.txt); the app will ask for a new build.\"\nfi\n";
+			shellScript = "# Sign in with publik needs the app token (pat_) in the bundle: Publik.swift reads publik-app-token.txt.\n# The token is public by design: it only mints capped keys for this app. Never put a pk_ key here. Never print it.\n# PUBLIK_APP_TOKEN at build time (CI: the repo secret), else publik-app-token.txt at the repo root.\n# A Release build without a pat_ token FAILS. A Debug build only warns.\nOUT=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/publik-app-token.txt\"\nTOKEN=$(printf '%s' \"${PUBLIK_APP_TOKEN:-}\" | tr -d '[:space:]')\nif [ -z \"$TOKEN\" ] && [ -f \"${SRCROOT}/../publik-app-token.txt\" ]; then\n  TOKEN=$(tr -d '[:space:]' < \"${SRCROOT}/../publik-app-token.txt\")\nfi\ncase \"$TOKEN\" in\n  pat_*)\n    printf '%s' \"$TOKEN\" > \"$OUT\"\n    ;;\n  *)\n    rm -f \"$OUT\"\n    if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n      echo \"error: Release build without a publik app token (pat_). Set PUBLIK_APP_TOKEN or add publik-app-token.txt at the repo root.\"\n      exit 1\n    fi\n    echo \"warning: no publik app token (pat_); this Debug build will ask for a new build.\"\n    ;;\nesac\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -354,7 +355,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				PUBLIK_TEST_HOOKS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(PUBLIK_TEST_HOOKS_CONDITION_$(PUBLIK_TEST_HOOKS))";
 				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
@@ -406,6 +408,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(PUBLIK_TEST_HOOKS_CONDITION_$(PUBLIK_TEST_HOOKS))";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};

@@ -152,7 +152,7 @@ class StatusActivity : Activity() {
         })
         root.addView(TextView(this).apply {
             textSize = 13f
-            text = "When you are signed in, publik counts when $appName opens and each 30 minutes that it stays open. publik does not see what you look at. Turn off Count app use to stop this."
+            text = "When you are signed in, $appName tells publik when it opens and each 30 minutes that it stays open, so publik can count app use. It sends nothing about what you look at. Turn off Count app use to stop this."
             setPadding(0, 4, 0, 16)
         })
         root.addView(Button(this).apply {
@@ -185,10 +185,11 @@ class StatusActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("Sign out of publik?")
             .setMessage(
-                if (Publik.GATE_OPTIONAL) "publik stops counting app use until you sign in again."
+                if (Publik.GATE_OPTIONAL) "The app stops telling publik about app use until you sign in again."
                 else "$appName asks you to sign in with publik again before you can use it.",
             )
-            .setPositiveButton("Sign out") { _, _ -> scope.launch { Publik.signOut(this@StatusActivity); afterSignOut() } }
+            // Publik.signOut deletes the key file at once and revokes the key in an app-wide scope (not this screen's).
+            .setPositiveButton("Sign out") { _, _ -> Publik.signOut(this@StatusActivity); afterSignOut() }
             .setNegativeButton("Cancel", null)
             .show()
     }
@@ -202,15 +203,13 @@ class StatusActivity : Activity() {
                     "and deletes its publik data on this device. Then the publik page opens. Confirm the deletion on that page.",
             )
             .setPositiveButton("Delete account") { _, _ ->
-                scope.launch {
-                    Publik.deleteLocalData(this@StatusActivity)
-                    deletePending = true
-                    val url = Uri.parse(Publik.deleteAccountUrl)
-                    try {
-                        CustomTabsIntent.Builder().build().launchUrl(this@StatusActivity, url)
-                    } catch (e: ActivityNotFoundException) {
-                        try { startActivity(Intent(Intent.ACTION_VIEW, url)) } catch (e2: ActivityNotFoundException) { deletePending = false; afterSignOut() }
-                    }
+                Publik.deleteLocalData(this@StatusActivity)
+                deletePending = true
+                val url = Uri.parse(Publik.deleteAccountUrl)
+                try {
+                    CustomTabsIntent.Builder().build().launchUrl(this@StatusActivity, url)
+                } catch (e: ActivityNotFoundException) {
+                    try { startActivity(Intent(Intent.ACTION_VIEW, url)) } catch (e2: ActivityNotFoundException) { deletePending = false; afterSignOut() }
                 }
             }
             .setNegativeButton("Cancel", null)

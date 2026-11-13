@@ -11,8 +11,8 @@
 //   4. starts usage counting: app_opened now, active_session every 30 minutes (POST /api/v1/telemetry).
 // Settings: signOut() (POST /api/v1/installs/revoke), deleteLocalData() before deleteAccountURL, usageConsent.
 // iOS changes from the macOS page: os is "ios", the device name comes from UIDevice, the version comes
-// from the bundle, there is no terminal UI, and PUBLIK_API_BASE_URL (environment or launch argument)
-// points the module at a test publik.
+// from the bundle, there is no terminal UI, the key file is excluded from backups, and the test hooks
+// (PUBLIK_API_BASE_URL and the others, see hook()) exist only in builds with the PUBLIK_TEST_HOOKS flag.
 import Foundation
 import UIKit
 
@@ -34,18 +34,34 @@ enum Publik {
     static let gateMode: GateMode = (Bundle.main.object(forInfoDictionaryKey: "PublikGateMode") as? String)
         .flatMap { GateMode(rawValue: $0.trimmingCharacters(in: .whitespaces).lowercased()) } ?? .required
     /// Delete account, step 3: publik's own page, opened in the in-app browser.
-    static var deleteAccountURL: URL { URL(string: "\(origin)/settings/profile#delete-account-title")! }
-    /// The test hook of the blind test: PUBLIK_API_BASE_URL in the environment, or the launch argument
-    /// `-PUBLIK_API_BASE_URL <url>`, for example http://127.0.0.1:8787/api/v1. Unset: publik itself.
-    static let testBaseURL: String? = {
-        let raw = ProcessInfo.processInfo.environment["PUBLIK_API_BASE_URL"] ?? UserDefaults.standard.string(forKey: "PUBLIK_API_BASE_URL")
-        guard var base = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !base.isEmpty else { return nil }
-        while base.hasSuffix("/") { base.removeLast() }
-        return base
-    }()
+    static var deleteAccountURL: URL { URL(string: "\(origin)/settings/profile#delete-account-title") ?? publikDeleteAccountURL }
+    private static let publikDeleteAccountURL = URL(string: "https://publikhq.com/settings/profile#delete-account-title")!
+
+    /// The test hooks: PUBLIK_API_BASE_URL, PUBLIK_ORIGIN, PUBLIK_TELEMETRY_URL, PUBLIK_SELF_TEST, PUBLIK_API_KEY,
+    /// PUBLIK_APP_TOKEN, PUBLIK_TELEMETRY_INTERVAL_SECONDS and PUBLIK_TELEMETRY_DEBUG, from the environment or a launch
+    /// argument (`-NAME value`). They are compiled in only with the PUBLIK_TEST_HOOKS flag (ios/Config/App.xcconfig:
+    /// the Debug configuration and the CI test builds). The App Store Release build has none: it always talks to publik.
+    static func hook(_ name: String) -> String? {
+        #if PUBLIK_TEST_HOOKS
+        let raw = ProcessInfo.processInfo.environment[name] ?? UserDefaults.standard.string(forKey: name)
+        guard let value = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
+        return value
+        #else
+        return nil
+        #endif
+    }
+    /// A hook value that is an http(s) URL with a host, without a trailing "/". Any other value is ignored.
+    static func hookURL(_ name: String) -> String? {
+        guard var value = hook(name) else { return nil }
+        while value.hasSuffix("/") { value.removeLast() }
+        guard let url = URL(string: value), ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { return nil }
+        return value
+    }
+    /// The test hook of the blind test: PUBLIK_API_BASE_URL, for example http://127.0.0.1:8787/api/v1. Unset: publik itself.
+    static let testBaseURL: String? = hookURL("PUBLIK_API_BASE_URL")
     static let origin: String = {
         if let base = testBaseURL { return base.hasSuffix("/api/v1") ? String(base.dropLast("/api/v1".count)) : base }
-        return ProcessInfo.processInfo.environment["PUBLIK_ORIGIN"] ?? "https://publikhq.com" // PUBLIK_ORIGIN: tests only
+        return hookURL("PUBLIK_ORIGIN") ?? "https://publikhq.com" // PUBLIK_ORIGIN: tests only
     }()
     static let defaultBaseURL = "\(origin)/api/v1"
     /// Ask for a tier, never a vendor model name.
@@ -57,9 +73,10 @@ enum Publik {
     enum Provider { case own(baseURL: String, apiKey: String), publik(baseURL: String, apiKey: String), needsOwnKey }
     struct PublikError: LocalizedError { let message: String; var errorDescription: String? { message } }
 
-    /// PUBLIK_APP_TOKEN, else publik-app-token.txt in the app bundle (the "publik app token" build phase puts it there).
+    /// publik-app-token.txt in the app bundle (the "publik app token" build phase puts it there; a Release build
+    /// without it fails). The PUBLIK_APP_TOKEN hook comes first in test builds.
     static var appToken: String {
-        if let env = ProcessInfo.processInfo.environment["PUBLIK_APP_TOKEN"]?.trimmingCharacters(in: .whitespacesAndNewlines), !env.isEmpty { return env }
+        if let hooked = hook("PUBLIK_APP_TOKEN") { return hooked }
         guard let url = Bundle.main.url(forResource: "publik-app-token", withExtension: "txt"), let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -81,23 +98,32 @@ enum Publik {
     }
     private static func write(_ c: Credential?) throws {
         try FileManager.default.createDirectory(at: credentialURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        excludeFromBackup(publikDir)
         try (c.map { try JSONEncoder().encode($0) } ?? Data("{}".utf8)).write(to: credentialURL, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: credentialURL.path)
+        excludeFromBackup(credentialURL) // an atomic write makes a new file, so set it again each time
+    }
+    /// The key must not go to iCloud or computer backups: it belongs to this device only.
+    private static func excludeFromBackup(_ url: URL) {
+        var target = url
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? target.setResourceValues(values)
     }
     /// The person's answer to the plan screen: "publik", "own_key", or nil to ask again. Settings call it.
     static func setChoice(_ choice: String?) { if var c = readCredential() { c.choice = choice; try? write(c) } }
 
     /// The key this app uses: the stored choice decides. PUBLIK_API_KEY / PUBLIK_API_BASE_URL override (development).
     static func resolveProvider(userKey: (baseURL: String, apiKey: String)?) -> Provider {
-        let env = ProcessInfo.processInfo.environment
-        if let key = env["PUBLIK_API_KEY"], !key.isEmpty { return .publik(baseURL: defaultBaseURL, apiKey: key) } // defaultBaseURL follows PUBLIK_API_BASE_URL
+        if let key = hook("PUBLIK_API_KEY") { return .publik(baseURL: defaultBaseURL, apiKey: key) } // defaultBaseURL follows PUBLIK_API_BASE_URL
         if let c = readCredential(), c.choice == "publik" { return .publik(baseURL: c.base_url, apiKey: c.key) }
         if let u = userKey, !u.apiKey.isEmpty { return .own(baseURL: u.baseURL, apiKey: u.apiKey) }
         return .needsOwnKey
     }
 
     private static func request(_ method: String, _ url: String, body: [String: Any]? = nil, key: String? = nil, timeout: TimeInterval = 20) async throws -> (Int, [String: Any]) {
-        var req = URLRequest(url: URL(string: url)!, timeoutInterval: timeout)
+        guard let target = URL(string: url) else { throw PublikError(message: "publik address is not valid.") }
+        var req = URLRequest(url: target, timeoutInterval: timeout)
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "content-type")
         if let key { req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
@@ -187,7 +213,7 @@ enum Publik {
         let signedIn: @Sendable (Wallet) -> Bool = { $0.claimed }, hasPlan: @Sendable (Wallet) -> Bool = { $0.planKind != "none" || $0.balanceMicros > 0 }
         while true {
             if Task.isCancelled { return nil }
-            let envKey = ProcessInfo.processInfo.environment["PUBLIK_API_KEY"].flatMap { $0.isEmpty ? nil : $0 }
+            let envKey = hook("PUBLIK_API_KEY")
             let c: Credential, status: Int, wallet: Wallet?, message: String?
             do {
                 if let envKey { c = Credential(key: envKey, base_url: defaultBaseURL, install_id: "") } else if let saved = readCredential() { c = saved } else { c = try await provision() }
@@ -217,7 +243,7 @@ enum Publik {
                 choice = a == "connect" ? "publik" : "own_key"
                 setChoice(choice)
             }
-            startTelemetry()
+            await startTelemetry()
             return (c.key, w, choice)
         }
     }
@@ -229,31 +255,35 @@ enum Publik {
         guard let c = readCredential(), let read = try? await readWallet(c.key) else { return nil }
         if read.0 == 401 { try? write(nil); return nil } // a revoked key
         guard let w = read.1, w.claimed else { return nil }
-        startTelemetry()
+        await startTelemetry()
         return w
     }
 
-    /// Sign out: stop usage counting, revoke this device's publik key (POST /api/v1/installs/revoke, best effort),
-    /// and delete it from the device. The publik account stays.
-    static func signOut() async {
+    /// Sign out: stop usage counting, delete the key file FIRST, then revoke the key (POST /api/v1/installs/revoke)
+    /// with the key held in memory, in a detached task that no screen can cancel. Best effort; the publik account stays.
+    @MainActor static func signOut() {
         stopTelemetry()
-        if let c = readCredential() { _ = try? await request("POST", "\(origin)/api/v1/installs/revoke", key: c.key, timeout: 5) }
+        let key = readCredential()?.key
         try? FileManager.default.removeItem(at: credentialURL)
+        guard let key else { return }
+        let url = "\(origin)/api/v1/installs/revoke"
+        Task.detached(priority: .utility) { _ = try? await request("POST", url, key: key, timeout: 10) }
     }
 
     /// Delete account, step 2: sign out, then delete this app's publik data on the device (the key and the
-    /// usage-counting id). consent.json stays, so a "do not count" choice stays.
-    static func deleteLocalData() async {
-        await signOut()
+    /// usage-counting id, also the id in memory). consent.json stays, so a "do not count" choice stays.
+    @MainActor static func deleteLocalData() {
+        signOut()
         let fm = FileManager.default
         for url in (try? fm.contentsOfDirectory(at: publikDir, includingPropertiesForKeys: nil)) ?? [] where url.lastPathComponent != "consent.json" {
             try? fm.removeItem(at: url)
         }
+        resetTelemetryInstallID()
     }
 
-    /// PUBLIK_SELF_TEST=1: print the self-test line and exit (both gate modes).
+    /// The PUBLIK_SELF_TEST hook: print the self-test line and exit (both gate modes). Test builds only.
     static func selfTestIfAsked() async {
-        if ProcessInfo.processInfo.environment["PUBLIK_SELF_TEST"] != nil { print(await selfTest()); exit(0) }
+        if hook("PUBLIK_SELF_TEST") != nil { print(await selfTest()); exit(0) }
     }
 
     /// Builder check, run by the BUILT app: PUBLIK_SELF_TEST=1 makes ensureSignedIn() (or resume()) print this line and exit.
@@ -268,7 +298,8 @@ enum Publik {
     }
 
     // ---------- usage counting: /skills/telemetry.md sections 3-5 ----------
-    nonisolated(unsafe) private static var telemetryTask: Task<Void, Never>?
+    /// The one usage-counting timer. Only the main actor starts or stops it, so there are never two.
+    @MainActor private static var telemetryTask: Task<Void, Never>?
 
     /// The Settings switch: false writes {"usage": false} to <publik dir>/consent.json, and then no event is sent.
     static var usageConsent: Bool {
@@ -291,8 +322,25 @@ enum Publik {
               let consent = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return false }
         return consent["usage"] as? Bool == false
     }
-    /// One random UUID for this app on this device, in <publik dir>/telemetry.json (mode 0600). iOS keeps it inside the app's own container.
-    private static let telemetryInstallID: String = {
+    private static let telemetryIDLock = NSLock()
+    nonisolated(unsafe) private static var cachedTelemetryID: String?
+    /// One random UUID for this app on this device, in <publik dir>/telemetry.json (mode 0600), kept in memory after
+    /// the first read. iOS keeps it inside the app's own container.
+    private static func telemetryInstallID() -> String {
+        telemetryIDLock.lock()
+        defer { telemetryIDLock.unlock() }
+        if let id = cachedTelemetryID { return id }
+        let id = loadOrCreateTelemetryID()
+        cachedTelemetryID = id
+        return id
+    }
+    /// Delete account: forget the id in memory too, so a later count uses a new id.
+    static func resetTelemetryInstallID() {
+        telemetryIDLock.lock()
+        cachedTelemetryID = nil
+        telemetryIDLock.unlock()
+    }
+    private static func loadOrCreateTelemetryID() -> String {
         let file = publikDir.appendingPathComponent("telemetry.json")
         func saved() -> String? {
             guard let data = try? Data(contentsOf: file), let id = ((try? JSONSerialization.jsonObject(with: data)) as? [String: Any])?["install_id"] as? String,
@@ -302,6 +350,7 @@ enum Publik {
         if let id = saved() { return id }
         let fresh = UUID().uuidString.lowercased() // if the file cannot be saved, this ID lasts for this run only
         try? FileManager.default.createDirectory(at: publikDir, withIntermediateDirectories: true)
+        excludeFromBackup(publikDir)
         let created = ISO8601DateFormatter().string(from: Date())
         let text = Data("{\"install_id\":\"\(fresh)\",\"created_at\":\"\(created)\"}\n".utf8)
         let fd = open(file.path, O_WRONLY | O_CREAT | O_EXCL, 0o600) // never over a file that is there
@@ -309,22 +358,22 @@ enum Publik {
         let h = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         h.write(text); try? h.close()
         return fresh
-    }()
+    }
     private static func sendEvent(_ event: String) async {
-        let env = ProcessInfo.processInfo.environment
-        func say(_ result: String) { if env["PUBLIK_TELEMETRY_DEBUG"] == "1" { FileHandle.standardError.write(Data("publik-telemetry: \(event) -> \(result)\n".utf8)) } }
+        let debug = hook("PUBLIK_TELEMETRY_DEBUG") == "1"
+        func say(_ result: String) { if debug { FileHandle.standardError.write(Data("publik-telemetry: \(event) -> \(result)\n".utf8)) } }
         if usageOff() { return say("off (opt-out)") }
-        let key = env["PUBLIK_API_KEY"] ?? readCredential()?.key
-        var body: [String: Any] = ["v": 1, "app": appSlug, "install_id": telemetryInstallID, "event": event, "app_version": appVersion.hasPrefix("v") ? String(appVersion.dropFirst()) : appVersion, "os": "ios"]
+        let key = hook("PUBLIK_API_KEY") ?? readCredential()?.key
+        var body: [String: Any] = ["v": 1, "app": appSlug, "install_id": telemetryInstallID(), "event": event, "app_version": appVersion.hasPrefix("v") ? String(appVersion.dropFirst()) : appVersion, "os": "ios"]
         if let arch { body["arch"] = arch }
-        do { say(String(try await request("POST", env["PUBLIK_TELEMETRY_URL"] ?? "\(origin)/api/v1/telemetry", body: body, key: key?.hasPrefix("pk_") == true ? key : nil, timeout: 5).0)) }
+        do { say(String(try await request("POST", hookURL("PUBLIK_TELEMETRY_URL") ?? "\(origin)/api/v1/telemetry", body: body, key: key?.hasPrefix("pk_") == true ? key : nil, timeout: 5).0)) }
         catch { say((error as? URLError).map { "\($0.code.rawValue)" } ?? "error") }
     }
     /// Called by ensureSignedIn() and resume(): only after sign-in. app_opened now, active_session every 30 minutes;
     /// never fails the app, never blocks. iOS suspends the app in the background, so active_session counts time in the foreground.
-    static func startTelemetry() {
+    @MainActor static func startTelemetry() {
         if telemetryTask != nil { return }
-        let s = Double(ProcessInfo.processInfo.environment["PUBLIK_TELEMETRY_INTERVAL_SECONDS"] ?? "") ?? 0 // tests only
+        let s = Double(hook("PUBLIK_TELEMETRY_INTERVAL_SECONDS") ?? "") ?? 0 // tests only
         let interval = (1...86_400).contains(s) ? s : 1_800
         telemetryTask = Task.detached(priority: .background) {
             await sendEvent("app_opened")
@@ -336,7 +385,7 @@ enum Publik {
         }
     }
     /// Sign out and delete account stop usage counting.
-    static func stopTelemetry() {
+    @MainActor static func stopTelemetry() {
         telemetryTask?.cancel()
         telemetryTask = nil
     }

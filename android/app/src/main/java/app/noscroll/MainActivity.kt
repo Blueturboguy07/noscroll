@@ -56,6 +56,12 @@ class MainActivity : AppCompatActivity() {
         // on the Status screen, and a device that is already signed in starts usage counting.
         Publik.watchForeground(application)
         Publik.launchArguments = Publik.launchArgumentsFrom(intent?.extras)
+        // Signed in earlier in this process (for example, the Shield's "open" button or a recreated
+        // activity): go straight to the app; the gate does not show again.
+        if (Publik.signedInThisProcess) {
+            startApp()
+            return
+        }
         if (Publik.GATE_OPTIONAL) {
             startApp()
             lifecycleScope.launch { Publik.resume(this@MainActivity) }

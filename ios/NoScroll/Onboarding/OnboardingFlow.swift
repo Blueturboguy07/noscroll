@@ -21,7 +21,11 @@ struct OnboardingFlow: View {
 
     /// QA hook: `simctl launch app.noscroll --step life` opens a page directly,
     /// so screenshot runs don't depend on tapping through the whole flow.
+    /// Test builds only (PUBLIK_TEST_HOOKS); the App Store build has no hidden hooks.
     private var launchStep: Step? {
+        #if !PUBLIK_TEST_HOOKS
+        return nil
+        #else
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "--step"), i + 1 < args.count else { return nil }
         let names: [String: Step] = [
@@ -29,6 +33,7 @@ struct OnboardingFlow: View {
             "widgets": .widgets,
         ]
         return names[args[i + 1]]
+        #endif
     }
 
     var body: some View {

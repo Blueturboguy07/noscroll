@@ -48,7 +48,7 @@ jobs:
           xcodebuild -project ios/NoScroll.xcodeproj -target NoScroll -configuration Release \
             -sdk iphonesimulator -arch arm64 ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            PUBLIK_GATE_MODE="$MODE" \
+            PUBLIK_GATE_MODE="$MODE" PUBLIK_TEST_HOOKS=YES \
             SYMROOT="$PWD/ios/build" OBJROOT="$PWD/ios/build/obj" -quiet build
           APP=ios/build/Release-iphonesimulator/NoScroll.app
           test -x "$APP/NoScroll"
@@ -68,6 +68,16 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily:1' "$APP/Info.plist" >/dev/null 2>&1 && { echo "::error::The app is not iPhone only."; exit 1; }
           expect "$APP/PlugIns/NoScrollWidget.appex/Info.plist" CFBundleDisplayName NoScroll
 
+      - name: The App Store Release configuration has no test hooks; Debug has them
+        if: matrix.mode == 'required'
+        run: |
+          cond() { xcodebuild -project ios/NoScroll.xcodeproj -target NoScroll -configuration "$1" -showBuildSettings 2>/dev/null \
+            | sed -n 's/^ *SWIFT_ACTIVE_COMPILATION_CONDITIONS = //p' | head -n 1; }
+          RELEASE=$(cond Release); DEBUG=$(cond Debug)
+          echo "Release: '$RELEASE'"; echo "Debug: '$DEBUG'"
+          case " $RELEASE " in *" PUBLIK_TEST_HOOKS "*) echo "::error::Release has PUBLIK_TEST_HOOKS."; exit 1 ;; esac
+          case " $DEBUG " in *" PUBLIK_TEST_HOOKS "*) ;; *) echo "::error::Debug has no PUBLIK_TEST_HOOKS."; exit 1 ;; esac
+
       - name: Zip the Simulator app
         run: ditto -c -k --sequesterRsrc --keepParent ios/build/Release-iphonesimulator/NoScroll.app ${{ matrix.zip }}
 
@@ -80,6 +90,22 @@ jobs:
 
       - name: Self-test the built app in the Simulator
         run: bash .github/scripts/ios-self-test.sh ios/build/Release-iphonesimulator/NoScroll.app
+
+      # Last step: it removes the token from the built app. The zip above is already uploaded.
+      - name: A Release build without the app token fails
+        if: matrix.mode == 'required'
+        env:
+          MODE: ${{ matrix.mode }}
+        run: |
+          if xcodebuild -project ios/NoScroll.xcodeproj -target NoScroll -configuration Release \
+            -sdk iphonesimulator -arch arm64 ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            PUBLIK_GATE_MODE="$MODE" PUBLIK_TEST_HOOKS=YES \
+            SYMROOT="$PWD/ios/build" OBJROOT="$PWD/ios/build/obj" -quiet build > no-token.log 2>&1; then
+            echo "::error::A Release build without the publik app token did not fail."; exit 1
+          fi
+          grep -q "Release build without a publik app token" no-token.log || { tail -n 40 no-token.log; exit 1; }
+          echo "OK: the build failed with the expected error."
 
   android-debug-apk:
     runs-on: ubuntu-latest
@@ -94,6 +120,15 @@ jobs:
         env:
           PUBLIK_APP_TOKEN: ${{ secrets.PUBLIK_APP_TOKEN }}
         run: cd android && ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - name: A release build without the app token fails
+        run: |
+          cd android
+          if ./gradlew --no-daemon -q :app:preReleaseBuild > ../no-token.log 2>&1; then
+            echo "::error::A release build without the publik app token did not fail."; exit 1
+          fi
+          grep -q "no publik app token" ../no-token.log || { tail -n 40 ../no-token.log; exit 1; }
+          echo "OK: the release build failed with the expected error."
 
       - uses: actions/upload-artifact@v4
         with:

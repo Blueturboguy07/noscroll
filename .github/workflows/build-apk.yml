@@ -58,7 +58,10 @@ jobs:
       - run: pnpm install --dir engine
       - run: node tools/sync-engine.mjs
 
-      - run: cd android && ./gradlew :app:testDebugUnitTest ":app:${{ inputs.build_type }}"
+      # A release build fails without the publik app token (android/app/build.gradle.kts).
+      - env:
+          PUBLIK_APP_TOKEN: ${{ secrets.PUBLIK_APP_TOKEN }}
+        run: cd android && ./gradlew :app:testDebugUnitTest ":app:${{ inputs.build_type }}"
 
       - uses: actions/upload-artifact@v4
         with:

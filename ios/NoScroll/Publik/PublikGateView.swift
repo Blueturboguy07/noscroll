@@ -58,8 +58,8 @@ final class PublikGateModel: ObservableObject, PublikGateUI {
     }
 
     /// Settings > Sign out. Required mode then shows Sign in with publik again.
-    func signOut() async {
-        await Publik.signOut()
+    func signOut() {
+        Publik.signOut()
         handle = nil
         screen = nil
         signedIn = false
@@ -67,8 +67,8 @@ final class PublikGateModel: ObservableObject, PublikGateUI {
 
     /// Settings > Delete account (after the dialog, step 1). Step 2: sign out and delete the publik data on
     /// this device. Step 3: open publik's delete page in the in-app browser. finishDelete() runs when it closes.
-    func deleteAccount() async {
-        await Publik.deleteLocalData()
+    func deleteAccount() {
+        Publik.deleteLocalData()
         handle = nil
         deletePage = BrowserPage(url: Publik.deleteAccountURL)
     }
@@ -142,7 +142,7 @@ struct PublikGateView: View {
                             }
                         }
                         // Consent for usage counting (App Store guideline 5.1.1(ii)); the switch is in Settings.
-                        Text("publik counts when this app opens. You can turn this off in Settings.")
+                        Text("This app can tell publik when it opens. You can turn this off in Settings.")
                             .font(Theme.body(13))
                             .foregroundStyle(Theme.inkSoft)
                             .multilineTextAlignment(.center)

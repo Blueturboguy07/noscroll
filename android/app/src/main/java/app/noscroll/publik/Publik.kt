@@ -59,6 +59,11 @@ object Publik {
     const val USES_AI = false
     /** PUBLIK_GATE_MODE = optional: the app opens without Sign in with publik; it is on the Status screen. */
     val GATE_OPTIONAL: Boolean = BuildConfig.PUBLIK_GATE_MODE == "optional"
+    /** True once the person is signed in in this process: a recreated MainActivity does not show the gate again. Sign out clears it. */
+    @Volatile var signedInThisProcess = false
+        private set
+    /** Revoke calls run here: an app-wide scope that no screen can cancel. */
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     /** Delete account, step 3: publik's own page. */
     val deleteAccountUrl: String get() = "$origin/settings/profile#delete-account-title"
     const val TAG = "publik"
@@ -82,17 +87,24 @@ object Publik {
     /**
      * The launch's intent extras whose names start with PUBLIK_, for example
      * `adb shell am start -n app.noscroll/.MainActivity --es PUBLIK_SELF_TEST 1`. The environment comes first.
+     * DEBUG builds only: in a release build any other app can send extras, so they are never read.
      */
     @Volatile var launchArguments: Map<String, String> = emptyMap()
 
     fun launchArgumentsFrom(extras: Bundle?): Map<String, String> = try {
-        extras?.keySet().orEmpty().filter { it.startsWith("PUBLIK_") }.mapNotNull { k -> extras?.getString(k)?.let { k to it } }.toMap()
+        hookArguments(extras?.keySet().orEmpty().associateWith { extras?.getString(it) }, BuildConfig.DEBUG)
     } catch (e: RuntimeException) {
         emptyMap()
     }
 
+    /** The PUBLIK_ extras with a value; none at all when [debug] is false (a release build). */
+    internal fun hookArguments(extras: Map<String, String?>, debug: Boolean): Map<String, String> =
+        if (!debug) emptyMap()
+        else extras.mapNotNull { (k, v) -> if (k.startsWith("PUBLIK_") && !v.isNullOrEmpty()) k to v else null }.toMap()
+
     private fun env(name: String): String? = System.getenv(name)?.takeIf { it.isNotEmpty() }
-    private fun setting(name: String): String? = env(name) ?: launchArguments[name]?.takeIf { it.isNotEmpty() }
+    private fun setting(name: String): String? =
+        env(name) ?: if (BuildConfig.DEBUG) launchArguments[name]?.takeIf { it.isNotEmpty() } else null
 
     /**
      * The test hook of the blind test: PUBLIK_API_BASE_URL, for example http://10.0.2.2:8787/api/v1.
@@ -341,6 +353,7 @@ object Publik {
                 choice = if (a == "connect") "publik" else "own_key"
                 setChoice(app, choice)
             }
+            signedInThisProcess = true
             startTelemetry(app)
             return Gate(c.key, w, choice)
         }
@@ -354,22 +367,35 @@ object Publik {
         val (status, w, _) = try { readWallet(c.key) } catch (e: CancellationException) { throw e } catch (e: Exception) { return null }
         if (status == 401) { try { write(app, null) } catch (e: Exception) {}; return null } // a revoked key
         if (w == null || !w.claimed) return null
+        signedInThisProcess = true
         startTelemetry(app)
         return w
     }
 
-    /** Sign out: stop usage counting, revoke this device's publik key (POST /api/v1/installs/revoke, best effort), delete it. */
-    suspend fun signOut(context: Context) {
+    /**
+     * Sign out: stop usage counting, delete the key file FIRST, then revoke the key (POST /api/v1/installs/revoke)
+     * with the key held in memory, in the app-wide scope (no screen can cancel it). Best effort; the account stays.
+     */
+    fun signOut(context: Context) {
         val app = context.applicationContext
         stopTelemetry()
-        readCredential(app)?.let { c ->
-            try { request("POST", "$origin/api/v1/installs/revoke", key = c.key, timeoutMs = 5_000) } catch (e: CancellationException) { throw e } catch (e: Exception) {}
+        signedInThisProcess = false
+        val key = forgetKey(credentialFile(app)) ?: return
+        val url = "$origin/api/v1/installs/revoke"
+        backgroundScope.launch {
+            try { request("POST", url, key = key, timeoutMs = 10_000) } catch (e: Exception) {}
         }
-        credentialFile(app).delete()
+    }
+
+    /** Sign out, steps 1-2: read the key into memory, then delete the key file. Returns the key, or null. */
+    internal fun forgetKey(file: File): String? {
+        val key = try { JSONObject(file.readText()).str("key")?.takeIf { it.startsWith("pk_") } } catch (e: Exception) { null }
+        file.delete()
+        return key
     }
 
     /** Delete account, step 2: sign out, then delete this app's publik data on the device. consent.json stays. */
-    suspend fun deleteLocalData(context: Context) {
+    fun deleteLocalData(context: Context) {
         signOut(context)
         publikDir(context.applicationContext).listFiles()?.filter { it.name != "consent.json" }?.forEach { it.deleteRecursively() }
         telemetryId = null

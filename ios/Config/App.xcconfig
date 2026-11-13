@@ -9,3 +9,11 @@ APP_DISPLAY_NAME = NoScroll
 //             counting starts only after sign-in.
 // One build of each: xcodebuild ... PUBLIK_GATE_MODE=optional
 PUBLIK_GATE_MODE = required
+
+// Test hooks (Publik.hook(): PUBLIK_API_BASE_URL, PUBLIK_ORIGIN, PUBLIK_TELEMETRY_URL, PUBLIK_SELF_TEST, ...,
+// and the onboarding --step argument) are compiled in only when PUBLIK_TEST_HOOKS = YES: the Debug
+// configuration sets YES, and the CI test builds pass xcodebuild ... PUBLIK_TEST_HOOKS=YES.
+// The App Store Release build keeps NO: no hidden hooks.
+PUBLIK_TEST_HOOKS = NO
+PUBLIK_TEST_HOOKS_CONDITION_YES = PUBLIK_TEST_HOOKS
+PUBLIK_TEST_HOOKS_CONDITION_NO =

@@ -46,6 +46,20 @@ android {
     }
 }
 
+// A release build must carry the publik app token (pat_): without it, Sign in with publik cannot work.
+// Debug builds keep working without it (the app then asks for a new build).
+val checkPublikAppToken by tasks.registering {
+    val tokenOk = publikAppToken.startsWith("pat_")
+    doLast {
+        if (!tokenOk) {
+            throw GradleException(
+                "This release build has no publik app token (pat_). Set PUBLIK_APP_TOKEN or add publik-app-token.txt at the repo root.",
+            )
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach { dependsOn(checkPublikAppToken) }
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
@@ -54,4 +68,6 @@ dependencies {
     // Custom Tabs: the publik sign-in page opens in the browser, over the app.
     implementation("androidx.browser:browser:1.8.0")
     testImplementation("junit:junit:4.13.2")
+    // The real org.json for JVM unit tests (android.jar has only stubs).
+    testImplementation("org.json:json:20240303")
 }

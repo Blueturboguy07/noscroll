@@ -20,34 +20,61 @@ env:
   DO_NOT_TRACK: "1"
 
 jobs:
+  # One Simulator app per gate mode (PUBLIK_GATE_MODE, ios/Config/App.xcconfig):
+  # ios-sim-app = required (the app opens with Sign in with publik), ios-sim-app-optional = optional.
   ios-sim-app:
+    name: ${{ matrix.artifact }}
     runs-on: macos-15
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: required
+            artifact: ios-sim-app
+            zip: NoScroll-iossim-arm64.zip
+          - mode: optional
+            artifact: ios-sim-app-optional
+            zip: NoScroll-iossim-arm64-optional.zip
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build the Simulator app (Release, arm64, unsigned)
+      - name: Build the Simulator app (Release, arm64, unsigned, gate mode ${{ matrix.mode }})
         env:
           PUBLIK_APP_TOKEN: ${{ secrets.PUBLIK_APP_TOKEN }}
+          MODE: ${{ matrix.mode }}
         run: |
           xcodebuild -version
           xcodebuild -project ios/NoScroll.xcodeproj -target NoScroll -configuration Release \
             -sdk iphonesimulator -arch arm64 ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            SYMROOT="$PWD/ios/build" -quiet build
+            PUBLIK_GATE_MODE="$MODE" \
+            SYMROOT="$PWD/ios/build" OBJROOT="$PWD/ios/build/obj" -quiet build
           APP=ios/build/Release-iphonesimulator/NoScroll.app
           test -x "$APP/NoScroll"
           test -s "$APP/publik-app-token.txt" || { echo "::error::The publik app token is not in the app bundle."; exit 1; }
+          test -s "$APP/PrivacyInfo.xcprivacy" || { echo "::error::The privacy manifest is not in the app bundle."; exit 1; }
           lipo -archs "$APP/NoScroll"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist"
+          expect() { # plist key value
+            v=$(/usr/libexec/PlistBuddy -c "Print :$2" "$1")
+            echo "$2 = $v"
+            [ "$v" = "$3" ] || { echo "::error::$2 is '$v', not '$3'."; exit 1; }
+          }
+          expect "$APP/Info.plist" CFBundleShortVersionString 0.1.2
+          expect "$APP/Info.plist" PublikGateMode "$MODE"
+          expect "$APP/Info.plist" CFBundleDisplayName NoScroll
+          expect "$APP/Info.plist" ITSAppUsesNonExemptEncryption false
+          expect "$APP/Info.plist" UIDeviceFamily:0 1
+          /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily:1' "$APP/Info.plist" >/dev/null 2>&1 && { echo "::error::The app is not iPhone only."; exit 1; }
+          expect "$APP/PlugIns/NoScrollWidget.appex/Info.plist" CFBundleDisplayName NoScroll
 
       - name: Zip the Simulator app
-        run: ditto -c -k --sequesterRsrc --keepParent ios/build/Release-iphonesimulator/NoScroll.app NoScroll-iossim-arm64.zip
+        run: ditto -c -k --sequesterRsrc --keepParent ios/build/Release-iphonesimulator/NoScroll.app ${{ matrix.zip }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ios-sim-app
-          path: NoScroll-iossim-arm64.zip
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.zip }}
           if-no-files-found: error
           retention-days: 30
 

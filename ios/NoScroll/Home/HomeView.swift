@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The home screen: one service at a time in a horizontal carousel, with today's
-/// usage above it and that service's settings below.
+/// The home screen: one service at a time in a horizontal carousel, with the
+/// number of its blocks that are on above it and that service's settings below.
 ///
 /// One service per page rather than a grid, because the grid invites browsing —
 /// and an app about not browsing should open onto a decision, not a menu.
@@ -23,7 +23,7 @@ struct HomeView: View {
 
             Spacer(minLength: 0)
 
-            usage
+            blocks
             carousel
 
             Spacer(minLength: 0)
@@ -55,7 +55,7 @@ struct HomeView: View {
 
     private var titleBar: some View {
         HStack {
-            Text("NoScroll")
+            Text(AppState.appName)
                 .font(Theme.display(31))
                 .foregroundStyle(Theme.ink)
             Spacer()
@@ -107,18 +107,19 @@ struct HomeView: View {
         .background(Theme.paperRaised.opacity(0.75), in: Capsule())
     }
 
-    private var usage: some View {
-        VStack(spacing: 2) {
-            Text("\(AppState.service(selection)?.name.uppercased() ?? "") TODAY")
+    /// How many of this service's blocks are on. A real number from the
+    /// switches; this build has no Screen Time, so it shows no time figure.
+    private var blocks: some View {
+        let count = state.blockCount(for: selection)
+        return VStack(spacing: 2) {
+            Text("\(AppState.service(selection)?.name.uppercased() ?? "") BLOCKS ON")
                 .font(Theme.eyebrow(13))
                 .tracking(2.2)
                 .foregroundStyle(Theme.inkSoft)
-            Text(state.usageToday(for: selection))
+            Text("\(count.on) of \(count.total)")
                 .font(Theme.display(52))
                 .foregroundStyle(Theme.ink)
                 .contentTransition(.numericText())
-            // Requires the FamilyControls entitlement; until it lands this reads
-            // "—" rather than inventing a number.
             Button {
                 if let s = AppState.service(selection) { showSettingsFor = s }
             } label: {
@@ -182,7 +183,13 @@ struct ServiceTile: View {
                 RoundedRectangle(cornerRadius: 34, style: .continuous)
                     .fill(service.gradient)
                     .frame(width: 152, height: 152)
-                    .overlay { BrandMark(service: service.id, size: 62) }
+                    .overlay {
+                        // An SF Symbol, not the service's logo: the logos are not ours to copy.
+                        Image(systemName: service.symbol)
+                            .font(.system(size: 58, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                    .accessibilityLabel("Open \(service.name)")
                     .overlay(alignment: .bottom) {
                         if service.beta {
                             Text("BETA")
@@ -199,12 +206,10 @@ struct ServiceTile: View {
             }
             .buttonStyle(.plain)
 
-            if service.id == "instagram" {
-                Label("switch accounts", systemImage: "person.2.circle")
-                    .font(Theme.body(14, .medium))
-                    .foregroundStyle(Theme.inkSoft)
-                    .padding(.top, 14)
-            }
+            Text(service.name)
+                .font(Theme.body(15, .semibold))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 14)
         }
     }
 }

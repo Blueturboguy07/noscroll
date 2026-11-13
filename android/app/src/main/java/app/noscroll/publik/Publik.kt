@@ -1,9 +1,12 @@
 // Publik.kt — Sign in with publik, usage counting, and publik API as one provider option.
 // The publik module for Android: a Kotlin port of https://publikhq.com/sdk/publik.swift.md, with the
-// same gate words, endpoints and rules. At start-up, before any screen of the app's own:
-// `val gate = Publik.ensureSignedIn(context, ui)`. It
+// same gate words, endpoints and rules. Gate mode (PUBLIK_GATE_MODE, BuildConfig.PUBLIK_GATE_MODE):
+//   required (default): at start-up, before any screen of the app's own: `val gate = Publik.ensureSignedIn(context, ui)`;
+//   optional: the app opens without the gate; the Status screen has "Sign in with publik" (PublikSignInActivity),
+//             and at start-up `Publik.resume(context)` starts usage counting only for a device that is signed in.
+// ensureSignedIn(context, ui):
 //   1. loads or provisions this device's publik key (POST /api/v1/installs);
-//   2. shows Sign in with publik until GET /api/v1/wallet says "claimed" (no other way past it);
+//   2. shows Sign in with publik until GET /api/v1/wallet says "claimed" (required mode: no other way past it);
 //   3. when USES_AI: asks once how the app pays for AI and stores the answer (setChoice changes it);
 //   4. starts usage counting: app_opened now, active_session every 30 minutes (POST /api/v1/telemetry).
 package app.noscroll.publik
@@ -54,6 +57,10 @@ object Publik {
     val APP_VERSION: String = BuildConfig.VERSION_NAME
     /** false: the app calls no model. It still signs in and counts users; it skips the plan screen. */
     const val USES_AI = false
+    /** PUBLIK_GATE_MODE = optional: the app opens without Sign in with publik; it is on the Status screen. */
+    val GATE_OPTIONAL: Boolean = BuildConfig.PUBLIK_GATE_MODE == "optional"
+    /** Delete account, step 3: publik's own page. */
+    val deleteAccountUrl: String get() = "$origin/settings/profile#delete-account-title"
     const val TAG = "publik"
     /** Ask for a tier, never a vendor model name. */
     val MODELS = mapOf("fast" to "publik-fast", "balanced" to "publik-balanced", "smart" to "publik-smart")
@@ -181,6 +188,10 @@ object Publik {
                 if (body != null) {
                     conn.doOutput = true
                     conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+                } else if (method == "POST") { // an empty body (POST /installs/revoke)
+                    conn.doOutput = true
+                    conn.setFixedLengthStreamingMode(0)
+                    conn.outputStream.close()
                 }
                 val status = conn.responseCode
                 val text = (if (status >= 400) conn.errorStream else conn.inputStream)?.bufferedReader()?.use { it.readText() } ?: ""
@@ -286,12 +297,7 @@ object Publik {
     /** The gate (see the top of the file). Returns once the person is signed in; `choice` is null when USES_AI is false. */
     suspend fun ensureSignedIn(context: Context, ui: PublikGateUI): Gate {
         val app = context.applicationContext
-        if (setting("PUBLIK_SELF_TEST") != null) {
-            val line = selfTest(app)
-            println(line)
-            Log.i(TAG, line)
-            exitProcess(0)
-        }
+        selfTestIfAsked(app)
         var signNote: String? = null
         var signPoll = true
         var planNote: String? = null
@@ -340,8 +346,58 @@ object Publik {
         }
     }
 
+    /** Optional mode, at start-up: no screen. A saved key that GET /wallet says is signed in starts usage counting. */
+    suspend fun resume(context: Context): Wallet? {
+        val app = context.applicationContext
+        selfTestIfAsked(app)
+        val c = readCredential(app) ?: return null
+        val (status, w, _) = try { readWallet(c.key) } catch (e: CancellationException) { throw e } catch (e: Exception) { return null }
+        if (status == 401) { try { write(app, null) } catch (e: Exception) {}; return null } // a revoked key
+        if (w == null || !w.claimed) return null
+        startTelemetry(app)
+        return w
+    }
+
+    /** Sign out: stop usage counting, revoke this device's publik key (POST /api/v1/installs/revoke, best effort), delete it. */
+    suspend fun signOut(context: Context) {
+        val app = context.applicationContext
+        stopTelemetry()
+        readCredential(app)?.let { c ->
+            try { request("POST", "$origin/api/v1/installs/revoke", key = c.key, timeoutMs = 5_000) } catch (e: CancellationException) { throw e } catch (e: Exception) {}
+        }
+        credentialFile(app).delete()
+    }
+
+    /** Delete account, step 2: sign out, then delete this app's publik data on the device. consent.json stays. */
+    suspend fun deleteLocalData(context: Context) {
+        signOut(context)
+        publikDir(context.applicationContext).listFiles()?.filter { it.name != "consent.json" }?.forEach { it.deleteRecursively() }
+        telemetryId = null
+    }
+
+    /** The Status screen switch: false writes {"usage": false} to <publik dir>/consent.json, and then no event is sent. */
+    fun usageConsent(context: Context): Boolean =
+        try { JSONObject(File(publikDir(context), "consent.json").readText()).opt("usage") != false } catch (e: Exception) { true }
+
+    fun setUsageConsent(context: Context, on: Boolean) {
+        try {
+            publikDir(context).mkdirs()
+            File(publikDir(context), "consent.json").writeText("{\"usage\":$on}\n")
+        } catch (e: Exception) {}
+    }
+
+    /** PUBLIK_SELF_TEST=1: print the self-test line (stdout and logcat) and exit, in both gate modes. */
+    private suspend fun selfTestIfAsked(app: Context) {
+        if (setting("PUBLIK_SELF_TEST") != null) {
+            val line = selfTest(app)
+            println(line)
+            Log.i(TAG, line)
+            exitProcess(0)
+        }
+    }
+
     /**
-     * Builder check, run by the BUILT app: PUBLIK_SELF_TEST=1 makes ensureSignedIn() print this line
+     * Builder check, run by the BUILT app: PUBLIK_SELF_TEST=1 makes ensureSignedIn() (or resume()) print this line
      * (stdout and logcat, tag "publik") and exit. On a device or emulator:
      * `adb shell am start -n app.noscroll/.MainActivity --es PUBLIK_SELF_TEST 1`, then `adb logcat -d -s publik`.
      */
@@ -358,7 +414,7 @@ object Publik {
     }
 
     // ---------- usage counting: /skills/telemetry.md sections 3-5 ----------
-    @Volatile private var telemetryStarted = false
+    @Volatile private var telemetryJob: Job? = null
     @Volatile private var telemetryId: String? = null
     private val telemetryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -415,14 +471,14 @@ object Publik {
         }
     }
 
-    /** Called by ensureSignedIn(). app_opened now, active_session every 30 minutes in the foreground; never fails the app, never blocks. */
+    /** Called by ensureSignedIn() and resume(): only after sign-in. app_opened now, active_session every 30 minutes in the foreground; never fails the app, never blocks. */
+    @Synchronized
     fun startTelemetry(context: Context) {
-        if (telemetryStarted) return
-        telemetryStarted = true
+        if (telemetryJob != null) return
         val app = context.applicationContext
         val s = env("PUBLIK_TELEMETRY_INTERVAL_SECONDS")?.toDoubleOrNull() ?: 0.0 // tests only
         val interval = if (s in 1.0..86_400.0) s else 1_800.0
-        telemetryScope.launch {
+        telemetryJob = telemetryScope.launch {
             sendEvent(app, "app_opened")
             while (true) {
                 delay((interval * 1000).toLong())
@@ -430,6 +486,13 @@ object Publik {
                 sendEvent(app, "active_session")
             }
         }
+    }
+
+    /** Sign out and delete account stop usage counting. */
+    @Synchronized
+    fun stopTelemetry() {
+        telemetryJob?.cancel()
+        telemetryJob = null
     }
 
     // ---------- publik API calls ----------

@@ -3,17 +3,19 @@ import SwiftUI
 @main
 struct NoScrollApp: App {
     @StateObject private var state = AppState()
-    /// Sign in with publik (Publik/Publik.swift): the first screen, before any screen of NoScroll's own.
+    /// Sign in with publik (Publik/Publik.swift). PUBLIK_GATE_MODE (ios/Config/App.xcconfig) decides:
+    /// required = the first screen, before any screen of the app's own; optional = a row in Settings.
     @StateObject private var gate = PublikGateModel()
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if gate.signedIn {
+                if gate.showsWall {
+                    PublikGateView(model: gate)
+                } else {
                     RootView()
                         .environmentObject(state)
-                } else {
-                    PublikGateView(model: gate)
+                        .environmentObject(gate)
                 }
             }
             // Widgets deep-link straight into a service: noscroll://open/instagram
@@ -23,27 +25,26 @@ struct NoScrollApp: App {
     }
 }
 
-/// Shell: five tabs, with first-run onboarding over the top.
+/// Shell: three tabs (what's blocked, home, settings), with first-run onboarding over the top.
 struct RootView: View {
     @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var gate: PublikGateModel
 
     var body: some View {
         TabView(selection: $state.tab) {
-            SleepTab().tag(AppState.Tab.sleep)
-                .tabItem { Image(systemName: "moon") }
             AllSettingsTab().tag(AppState.Tab.adjust)
-                .tabItem { Image(systemName: "slider.horizontal.3") }
+                .tabItem { Label("Blocks", systemImage: "slider.horizontal.3") }
             HomeView().tag(AppState.Tab.home)
-                .tabItem { Image(systemName: "house.fill") }
-            ShieldTab().tag(AppState.Tab.shield)
-                .tabItem { Image(systemName: "shield") }
+                .tabItem { Label("Home", systemImage: "house.fill") }
             ProfileTab().tag(AppState.Tab.profile)
-                .tabItem { Image(systemName: "person") }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
         .tint(Theme.ink)
         .fullScreenCover(isPresented: $state.needsOnboarding) {
             OnboardingFlow(isPresented: $state.needsOnboarding)
                 .environmentObject(state)
         }
+        // Optional mode: no wall. A device that is already signed in starts usage counting.
+        .task { await gate.resume() }
     }
 }

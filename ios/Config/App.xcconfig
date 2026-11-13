@@ -1,0 +1,11 @@
+// Build settings for both targets (the app and the widget), set on the project.
+
+// The name under the icon and in the app's own screens. A rename is this one line.
+APP_DISPLAY_NAME = NoScroll
+
+// Sign in with publik (NoScroll/Publik/Publik.swift reads it from the Info.plist key PublikGateMode).
+//   required: the app opens with Sign in with publik, with no way past it (today's behaviour).
+//   optional: the app opens without it. "Sign in with publik" is in Settings, and usage
+//             counting starts only after sign-in.
+// One build of each: xcodebuild ... PUBLIK_GATE_MODE=optional
+PUBLIK_GATE_MODE = required

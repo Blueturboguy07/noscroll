@@ -17,7 +17,7 @@ struct WelcomeScreen: View {
             .ignoresSafeArea()
 
             VStack {
-                Text("NoScroll")
+                Text(AppState.appName)
                     .font(Theme.display(40))
                     .tracking(3)
                     .foregroundStyle(.white)
@@ -202,75 +202,5 @@ struct AgeSheet: View {
         .background(Theme.paperRaised, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
         .padding(.horizontal, 16)
         .shadow(color: .black.opacity(0.22), radius: 30, y: 10)
-    }
-}
-
-// MARK: - Ad blocking
-
-/// Per-service switches presented as brand-tinted cards.
-struct AdBlockingScreen: View {
-    @EnvironmentObject private var state: AppState
-    let onContinue: () -> Void
-    let onSkip: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            PageDots(count: 3, index: 1).padding(.top, 6)
-
-            Text("Turn on Ad Blocking")
-                .font(Theme.display(31))
-                .foregroundStyle(Theme.ink)
-                .padding(.top, 22)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    ForEach(AppState.services.filter(\.hasAdBlocking)) { service in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("\(service.name):")
-                                .font(Theme.display(17, .bold))
-                                .foregroundStyle(Theme.ink)
-                            adCard(service)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 22)
-            }
-
-            PrimaryButton(title: "Continue", action: onContinue)
-                .padding(.horizontal, 20)
-            Button("Skip", action: onSkip)
-                .font(Theme.body(17, .semibold))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 12)
-        }
-        .padding(.bottom, 18)
-        .background(Theme.paper)
-    }
-
-    private func adCard(_ service: AppState.Service) -> some View {
-        let binding = state.binding(service: service.id, surfaces: service.adSurfaces)
-        return HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(.white.opacity(0.9))
-                .frame(width: 42, height: 42)
-                .overlay {
-                    Image(systemName: service.symbol)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(service.tint)
-                }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(service.name)
-                    .font(Theme.display(21, .bold))
-                    .foregroundStyle(.white)
-                Text(binding.wrappedValue ? service.adCopyOn : service.adCopyOff)
-                    .font(Theme.body(14))
-                    .foregroundStyle(.white.opacity(0.85))
-            }
-            Spacer()
-            Toggle("", isOn: binding).labelsHidden().tint(.white.opacity(0.35))
-        }
-        .padding(16)
-        .background(service.gradient, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }

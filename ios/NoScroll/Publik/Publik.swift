@@ -1,10 +1,15 @@
 // Publik.swift — Sign in with publik, usage counting, and publik API as one provider option.
 // The publik module from https://publikhq.com/sdk/publik.swift.md, for iOS (the iPhone app of NoScroll).
-// At launch, before any screen of the app's own: `let gate = await Publik.ensureSignedIn(ui)`. It
+// Gate mode (PUBLIK_GATE_MODE in ios/Config/App.xcconfig, Info.plist key PublikGateMode):
+//   required (default): at launch, before any screen of the app's own: `let gate = await Publik.ensureSignedIn(ui)`;
+//   optional: the app opens without the gate; Settings has "Sign in with publik", which runs ensureSignedIn(ui),
+//             and at launch `await Publik.resume()` starts usage counting only for a device that is signed in.
+// ensureSignedIn(ui):
 //   1. loads or provisions this device's publik key (POST /api/v1/installs);
-//   2. shows Sign in with publik until GET /api/v1/wallet says "claimed" (no other way past it);
+//   2. shows Sign in with publik until GET /api/v1/wallet says "claimed" (required mode: no other way past it);
 //   3. when usesAI: asks once how the app pays for AI and stores the answer (setChoice changes it);
 //   4. starts usage counting: app_opened now, active_session every 30 minutes (POST /api/v1/telemetry).
+// Settings: signOut() (POST /api/v1/installs/revoke), deleteLocalData() before deleteAccountURL, usageConsent.
 // iOS changes from the macOS page: os is "ios", the device name comes from UIDevice, the version comes
 // from the bundle, there is no terminal UI, and PUBLIK_API_BASE_URL (environment or launch argument)
 // points the module at a test publik.
@@ -23,6 +28,13 @@ enum Publik {
     static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0.0.0"
     /// false: the app calls no model. It still signs in and counts users; it skips the plan screen.
     static let usesAI = false
+    /// required: Sign in with publik is the first screen, with no way past it. optional: the app opens without it,
+    /// and Sign in with publik is in Settings. Set by PUBLIK_GATE_MODE (build setting) through the Info.plist key PublikGateMode.
+    enum GateMode: String { case required, optional }
+    static let gateMode: GateMode = (Bundle.main.object(forInfoDictionaryKey: "PublikGateMode") as? String)
+        .flatMap { GateMode(rawValue: $0.trimmingCharacters(in: .whitespaces).lowercased()) } ?? .required
+    /// Delete account, step 3: publik's own page, opened in the in-app browser.
+    static var deleteAccountURL: URL { URL(string: "\(origin)/settings/profile#delete-account-title")! }
     /// The test hook of the blind test: PUBLIK_API_BASE_URL in the environment, or the launch argument
     /// `-PUBLIK_API_BASE_URL <url>`, for example http://127.0.0.1:8787/api/v1. Unset: publik itself.
     static let testBaseURL: String? = {
@@ -168,11 +180,13 @@ enum Publik {
     }
 
     /// The gate (see the top of the file). Returns once the person is signed in; `choice` is nil when usesAI is false.
-    static func ensureSignedIn(_ ui: PublikGateUI) async -> (key: String, wallet: Wallet, choice: String?) {
-        if ProcessInfo.processInfo.environment["PUBLIK_SELF_TEST"] != nil { print(await selfTest()); exit(0) }
+    /// Returns nil only when its task is cancelled (optional mode: the person closed the sign-in sheet).
+    static func ensureSignedIn(_ ui: PublikGateUI) async -> (key: String, wallet: Wallet, choice: String?)? {
+        await selfTestIfAsked()
         var signNote: String?, signPoll = true, planNote: String?, planPoll = false
         let signedIn: @Sendable (Wallet) -> Bool = { $0.claimed }, hasPlan: @Sendable (Wallet) -> Bool = { $0.planKind != "none" || $0.balanceMicros > 0 }
         while true {
+            if Task.isCancelled { return nil }
             let envKey = ProcessInfo.processInfo.environment["PUBLIK_API_KEY"].flatMap { $0.isEmpty ? nil : $0 }
             let c: Credential, status: Int, wallet: Wallet?, message: String?
             do {
@@ -208,7 +222,41 @@ enum Publik {
         }
     }
 
-    /// Builder check, run by the BUILT app: PUBLIK_SELF_TEST=1 makes ensureSignedIn() print this line and exit.
+    /// Optional mode, at launch: no screen. A saved key that GET /wallet says is signed in starts usage counting.
+    /// Returns the wallet when signed in; nil when not signed in, or when publik is not reachable.
+    static func resume() async -> Wallet? {
+        await selfTestIfAsked()
+        guard let c = readCredential(), let read = try? await readWallet(c.key) else { return nil }
+        if read.0 == 401 { try? write(nil); return nil } // a revoked key
+        guard let w = read.1, w.claimed else { return nil }
+        startTelemetry()
+        return w
+    }
+
+    /// Sign out: stop usage counting, revoke this device's publik key (POST /api/v1/installs/revoke, best effort),
+    /// and delete it from the device. The publik account stays.
+    static func signOut() async {
+        stopTelemetry()
+        if let c = readCredential() { _ = try? await request("POST", "\(origin)/api/v1/installs/revoke", key: c.key, timeout: 5) }
+        try? FileManager.default.removeItem(at: credentialURL)
+    }
+
+    /// Delete account, step 2: sign out, then delete this app's publik data on the device (the key and the
+    /// usage-counting id). consent.json stays, so a "do not count" choice stays.
+    static func deleteLocalData() async {
+        await signOut()
+        let fm = FileManager.default
+        for url in (try? fm.contentsOfDirectory(at: publikDir, includingPropertiesForKeys: nil)) ?? [] where url.lastPathComponent != "consent.json" {
+            try? fm.removeItem(at: url)
+        }
+    }
+
+    /// PUBLIK_SELF_TEST=1: print the self-test line and exit (both gate modes).
+    static func selfTestIfAsked() async {
+        if ProcessInfo.processInfo.environment["PUBLIK_SELF_TEST"] != nil { print(await selfTest()); exit(0) }
+    }
+
+    /// Builder check, run by the BUILT app: PUBLIK_SELF_TEST=1 makes ensureSignedIn() (or resume()) print this line and exit.
     /// In the Simulator: `SIMCTL_CHILD_PUBLIK_SELF_TEST=1 xcrun simctl launch --console-pty booted app.noscroll`.
     static func selfTest() async -> String {
         do {
@@ -220,7 +268,20 @@ enum Publik {
     }
 
     // ---------- usage counting: /skills/telemetry.md sections 3-5 ----------
-    nonisolated(unsafe) private static var telemetryStarted = false
+    nonisolated(unsafe) private static var telemetryTask: Task<Void, Never>?
+
+    /// The Settings switch: false writes {"usage": false} to <publik dir>/consent.json, and then no event is sent.
+    static var usageConsent: Bool {
+        get {
+            guard let data = try? Data(contentsOf: publikDir.appendingPathComponent("consent.json")),
+                  let consent = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return true }
+            return consent["usage"] as? Bool != false
+        }
+        set {
+            try? FileManager.default.createDirectory(at: publikDir, withIntermediateDirectories: true)
+            try? Data("{\"usage\":\(newValue)}\n".utf8).write(to: publikDir.appendingPathComponent("consent.json"), options: .atomic)
+        }
+    }
 
     private static func usageOff() -> Bool {
         let env = ProcessInfo.processInfo.environment
@@ -259,17 +320,25 @@ enum Publik {
         do { say(String(try await request("POST", env["PUBLIK_TELEMETRY_URL"] ?? "\(origin)/api/v1/telemetry", body: body, key: key?.hasPrefix("pk_") == true ? key : nil, timeout: 5).0)) }
         catch { say((error as? URLError).map { "\($0.code.rawValue)" } ?? "error") }
     }
-    /// Called by ensureSignedIn(). app_opened now, active_session every 30 minutes; never fails the app, never blocks.
-    /// iOS suspends the app in the background, so active_session counts time in the foreground.
+    /// Called by ensureSignedIn() and resume(): only after sign-in. app_opened now, active_session every 30 minutes;
+    /// never fails the app, never blocks. iOS suspends the app in the background, so active_session counts time in the foreground.
     static func startTelemetry() {
-        if telemetryStarted { return }
-        telemetryStarted = true
+        if telemetryTask != nil { return }
         let s = Double(ProcessInfo.processInfo.environment["PUBLIK_TELEMETRY_INTERVAL_SECONDS"] ?? "") ?? 0 // tests only
         let interval = (1...86_400).contains(s) ? s : 1_800
-        Task.detached(priority: .background) {
+        telemetryTask = Task.detached(priority: .background) {
             await sendEvent("app_opened")
-            while true { try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000)); await sendEvent("active_session") }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                if Task.isCancelled { break }
+                await sendEvent("active_session")
+            }
         }
+    }
+    /// Sign out and delete account stop usage counting.
+    static func stopTelemetry() {
+        telemetryTask?.cancel()
+        telemetryTask = nil
     }
 
     // ---------- publik API calls ----------

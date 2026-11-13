@@ -2,8 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- APP_DISPLAY_NAME and PUBLIK_GATE_MODE come from ios/Config/App.xcconfig. -->
 	<key>CFBundleDisplayName</key>
-	<string>NoScroll</string>
+	<string>$(APP_DISPLAY_NAME)</string>
+	<key>PublikGateMode</key>
+	<string>$(PUBLIK_GATE_MODE)</string>
+
+	<!-- HTTPS through the OS and a signature check of the rule files only: exempt. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 
 	<!-- Widget taps arrive as noscroll://open/<service>. -->
 	<key>CFBundleURLTypes</key>
@@ -21,11 +28,11 @@
 	<!-- The wrapped sites ask for these when you post. Without the strings the
 	     pickers fail silently, which is the "can't upload a video" complaint. -->
 	<key>NSCameraUsageDescription</key>
-	<string>Instagram uses your camera when you take a photo or story inside NoScroll.</string>
+	<string>$(APP_DISPLAY_NAME) lets the web site you open use your camera when you take a photo or video in $(APP_DISPLAY_NAME).</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Instagram uses your microphone when you record video inside NoScroll.</string>
+	<string>$(APP_DISPLAY_NAME) lets the web site you open use your microphone when you record a video in $(APP_DISPLAY_NAME).</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Choose photos to upload inside NoScroll.</string>
+	<string>$(APP_DISPLAY_NAME) lets you choose photos to upload to the web site you open in $(APP_DISPLAY_NAME).</string>
 
 	<key>UILaunchScreen</key>
 	<dict/>

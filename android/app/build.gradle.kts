@@ -12,6 +12,13 @@ val publikAppToken: String = (
         ?: ""
     ).filter { it.isLetterOrDigit() || it == '_' || it == '-' }
 
+// Sign in with publik gate mode, one setting: "required" (default: the app opens with Sign in with
+// publik, with no way past it) or "optional" (the app opens without it; Sign in with publik is on
+// the Status screen, and usage counting starts only after sign-in). PUBLIK_GATE_MODE at build
+// time, or ./gradlew -PpublikGateMode=optional.
+val publikGateMode: String = (System.getenv("PUBLIK_GATE_MODE") ?: findProperty("publikGateMode")?.toString() ?: "required")
+    .trim().lowercase().let { if (it == "optional") "optional" else "required" }
+
 android {
     namespace = "app.noscroll"
     compileSdk = 34
@@ -20,9 +27,10 @@ android {
         applicationId = "app.noscroll"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
         buildConfigField("String", "PUBLIK_APP_TOKEN", "\"$publikAppToken\"")
+        buildConfigField("String", "PUBLIK_GATE_MODE", "\"$publikGateMode\"")
     }
 
     compileOptions {

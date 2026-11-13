@@ -51,10 +51,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Sign in with publik comes first (publik/Publik.kt). NoScroll's own screen starts only
-        // after the gate lets the person through.
+        // Sign in with publik (publik/Publik.kt). Required mode: it comes first, and NoScroll's own
+        // screen starts only after the gate lets the person through. Optional mode: no wall; it is
+        // on the Status screen, and a device that is already signed in starts usage counting.
         Publik.watchForeground(application)
         Publik.launchArguments = Publik.launchArgumentsFrom(intent?.extras)
+        if (Publik.GATE_OPTIONAL) {
+            startApp()
+            lifecycleScope.launch { Publik.resume(this@MainActivity) }
+            return
+        }
         val gate = PublikGateView(this)
         setContentView(gate.view)
         lifecycleScope.launch {

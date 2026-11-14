@@ -36,6 +36,10 @@
 
 	<key>UILaunchScreen</key>
 	<dict/>
+	<!-- Light only, on purpose: the design is ink on warm paper, and its colours are not made for dark
+	     appearance. The app keeps this look when the phone is in dark mode. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

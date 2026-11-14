@@ -64,6 +64,10 @@ public struct LifeInWeeks: Equatable, Sendable {
 
     public var scrollPercent: Int { Int((scrollShare * 100).rounded()) }
 
+    /// True when the scrolling hours are more than all the free hours in a day. The share then stops
+    /// at 100%, and the grid has no free band left: the screen says so.
+    public var scrollExceedsFreeTime: Bool { scrollHoursPerDay > assumptions.freeHoursPerDay }
+
     /// Years of remaining free time that scrolling will take.
     public var yearsLostToScrolling: Double {
         bands.first { $0.kind == .scrolling }?.years ?? 0

@@ -21,6 +21,15 @@ struct WelcomeScreen: View {
                     .font(Theme.display(40))
                     .tracking(3)
                     .foregroundStyle(.white)
+                    #if PUBLIK_TEST_HOOKS
+                    .background {
+                        GeometryReader { g in
+                            Color.clear
+                                .onAppear { LayoutProbe.titleY = g.frame(in: .global).minY }
+                                .onChange(of: g.frame(in: .global).minY) { _, y in LayoutProbe.titleY = y }
+                        }
+                    }
+                    #endif
                     .padding(.top, 12)
 
                 Spacer()
@@ -83,6 +92,8 @@ struct ScrollTimeScreen: View {
                     Label("Back", systemImage: "chevron.left")
                         .font(Theme.body(17, .semibold))
                         .foregroundStyle(Theme.inkSoft)
+                        .padding(.trailing, 12)
+                        .tapTarget()
                 }
                 .buttonStyle(.plain)
                 Spacer()
@@ -114,15 +125,17 @@ struct ScrollTimeScreen: View {
             .padding(.top, 30)
 
             VStack(spacing: 8) {
-                if abs(hours - average) < 0.25 {
-                    Text("This is the average")
-                        .font(Theme.body(13, .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Theme.scrolling, in: Capsule())
-                        .transition(.scale.combined(with: .opacity))
-                }
+                // Always in the layout (only its opacity changes), so the slider never moves under the finger.
+                let atAverage = abs(hours - average) < 0.25
+                Text("This is the average")
+                    .font(Theme.body(13, .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Theme.scrolling, in: Capsule())
+                    .scaleEffect(atAverage ? 1 : 0.85)
+                    .opacity(atAverage ? 1 : 0)
+                    .accessibilityHidden(!atAverage)
                 Slider(value: $hours, in: range, step: 0.1)
                     .tint(Theme.ink)
                 HStack {
@@ -174,7 +187,7 @@ struct AgeSheet: View {
                 .foregroundStyle(Theme.ink)
                 .padding(.top, 14)
 
-            Text("Used only to draw your life. No data collected or sent anywhere.")
+            Text("Used only to draw your life. Your age stays on this phone.")
                 .font(Theme.body(16))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
@@ -194,10 +207,14 @@ struct AgeSheet: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 4)
 
-            Button("Skip", action: onSkip)
-                .font(Theme.body(17, .semibold))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.vertical, 16)
+            Button(action: onSkip) {
+                Text("Skip")
+                    .font(Theme.body(17, .semibold))
+                    .foregroundStyle(Theme.inkSoft)
+                    .tapTarget(minWidth: 88)
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 6)
         }
         .background(Theme.paperRaised, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
         .padding(.horizontal, 16)

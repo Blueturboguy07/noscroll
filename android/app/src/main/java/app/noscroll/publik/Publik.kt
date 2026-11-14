@@ -124,6 +124,7 @@ object Publik {
     fun watchForeground(app: Application) {
         if (watching) return
         watching = true
+        appName = app.applicationInfo.loadLabel(app.packageManager).toString().ifBlank { appName }
         val started = Collections.newSetFromMap(WeakHashMap<Activity, Boolean>())
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) { started.add(activity); foreground.value = true }
@@ -257,11 +258,14 @@ object Publik {
         )
     }
 
-    /** The words of the gate. The same in every publik module. */
+    /** The app's name in the gate's words (the app label; set by watchForeground). */
+    @Volatile var appName: String = "This app"
+
+    /** The words of the gate. The same in every publik module, in the words for a phone: "Tap", "screen", "the publik page". */
     fun gateScreen(id: String, w: Wallet? = null, note: String? = null, message: String? = null): Screen {
         if (id == "unreachable") return Screen(id, "Sign in with publik", message ?: "publik is not reachable. Check your connection.", note, listOf("retry" to "Retry"))
         if (id == "sign_in") {
-            return Screen(id, "Sign in with publik", "This app uses your publik account. Click Sign in with publik, then sign in in your browser. This window continues when you are signed in.",
+            return Screen(id, "Sign in with publik", "$appName uses your publik account. Tap Sign in with publik, then sign in on the publik page. This screen continues when you are signed in.",
                 note, listOf("sign_in" to "Sign in with publik"))
         }
         val who = w?.handle?.let { "You are signed in as @$it." } ?: "You are signed in to publik."
@@ -335,10 +339,10 @@ object Publik {
                 val a = ask(ui, gateScreen("sign_in", w, note = signNote), key = c.key, until = if (signPoll) signedIn else null)
                 if (a == "sign_in") {
                     ui.open(w.claimUrl ?: c.claimUrl ?: "$origin/wallet")
-                    signNote = "Waiting for you to sign in in your browser."
+                    signNote = "Waiting for you to sign in on the publik page."
                     signPoll = true
                 }
-                if (a == "timeout") { signNote = "No sign-in after 10 minutes. Click Sign in with publik to try again."; signPoll = false }
+                if (a == "timeout") { signNote = "No sign-in after 10 minutes. Tap Sign in with publik to try again."; signPoll = false }
                 continue
             }
             var choice = if (USES_AI) readCredential(app)?.choice else null
@@ -347,8 +351,8 @@ object Publik {
                 val a = ask(ui, gateScreen("choose", w, note = planNote), key = c.key, until = if (planPoll) hasPlan else null)
                 planNote = null
                 planPoll = false
-                if (a == "get_plan") { ui.open(w.topUpUrl); planNote = "Waiting for your plan. Finish in your browser."; planPoll = true }
-                if (a == "timeout") planNote = "No plan after 10 minutes. Click Get a plan to try again."
+                if (a == "get_plan") { ui.open(w.topUpUrl); planNote = "Waiting for your plan. Finish on the publik page."; planPoll = true }
+                if (a == "timeout") planNote = "No plan after 10 minutes. Tap Get a plan to try again."
                 if (a != "connect" && a != "own_key") continue // "done": the plan is there; the next screen is Connect your plan
                 choice = if (a == "connect") "publik" else "own_key"
                 setChoice(app, choice)

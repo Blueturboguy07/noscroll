@@ -67,9 +67,9 @@ struct HomeView: View {
                         .font(.system(size: 13, weight: .bold))
                     Text("OPEN").font(Theme.display(14, .heavy)).tracking(1)
                 }
-                .foregroundStyle(Color(hex: 0x9A7B34))
+                .foregroundStyle(Color(hex: 0x725A20)) // 5.2:1 on the capsule
                 .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .frame(minHeight: 44)
                 .background(Color(hex: 0xF0E4C8), in: Capsule())
                 .overlay(Capsule().strokeBorder(Color(hex: 0xD9C79C), lineWidth: 1))
             }
@@ -100,10 +100,16 @@ struct HomeView: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Theme.inkSoft)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Close")
         }
-        .padding(12)
+        // The 44 pt close button keeps the banner at its old height (58 pt).
+        .padding(.leading, 12)
+        .padding(.trailing, 4)
+        .padding(.vertical, 7)
         .background(Theme.paperRaised.opacity(0.75), in: Capsule())
     }
 
@@ -128,6 +134,8 @@ struct HomeView: View {
                     Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
                 }
                 .foregroundStyle(Theme.inkSoft)
+                .padding(.horizontal, 8)
+                .tapTarget()
             }
             .buttonStyle(.plain)
         }
@@ -156,7 +164,7 @@ struct HomeView: View {
                         .foregroundStyle(Theme.ink)
                     Text("Customize what's blocked")
                         .font(Theme.body(15))
-                        .foregroundStyle(Theme.ink.opacity(0.55))
+                        .foregroundStyle(Theme.ink.opacity(0.8))
                 }
                 Spacer()
                 Image(systemName: "gearshape.fill")

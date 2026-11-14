@@ -33,6 +33,18 @@ final class LifeInWeeksTests: XCTestCase {
         XCTAssertEqual(life.bands.first { $0.kind == .free }!.weeks, 0)
     }
 
+    func testSevenHoursAtEighteenUsesAllFreeTime() {
+        // The blind test case: 7 h/day at age 18. 7 > 5 free hours, so 100%, no free band,
+        // and the screen must say that the hours are more than the free time.
+        let life = LifeInWeeks(age: 18, scrollHoursPerDay: 7)
+        XCTAssertEqual(life.scrollPercent, 100)
+        XCTAssertTrue(life.scrollExceedsFreeTime)
+        XCTAssertEqual(life.bands.first { $0.kind == .free }!.weeks, 0)
+        XCTAssertGreaterThan(life.bands.first { $0.kind == .scrolling }!.weeks, 0)
+        XCTAssertFalse(LifeInWeeks(age: 18, scrollHoursPerDay: 4.8).scrollExceedsFreeTime)
+        XCTAssertFalse(LifeInWeeks(age: 18, scrollHoursPerDay: 5).scrollExceedsFreeTime)
+    }
+
     func testNoScrollingLeavesAllFreeTimeIntact() {
         let life = LifeInWeeks(age: 30, scrollHoursPerDay: 0)
         XCTAssertEqual(life.scrollPercent, 0)

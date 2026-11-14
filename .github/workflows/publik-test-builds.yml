@@ -64,6 +64,7 @@ jobs:
           expect "$APP/Info.plist" PublikGateMode "$MODE"
           expect "$APP/Info.plist" CFBundleDisplayName NoScroll
           expect "$APP/Info.plist" ITSAppUsesNonExemptEncryption false
+          expect "$APP/Info.plist" UIUserInterfaceStyle Light
           expect "$APP/Info.plist" UIDeviceFamily:0 1
           /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily:1' "$APP/Info.plist" >/dev/null 2>&1 && { echo "::error::The app is not iPhone only."; exit 1; }
           expect "$APP/PlugIns/NoScrollWidget.appex/Info.plist" CFBundleDisplayName NoScroll
@@ -90,6 +91,12 @@ jobs:
 
       - name: Self-test the built app in the Simulator
         run: bash .github/scripts/ios-self-test.sh ios/build/Release-iphonesimulator/NoScroll.app
+
+      # A fake publik on the runner: the gate signs in through the in-app browser, then the first
+      # onboarding screen must have its safe area (it had none in the blind test).
+      - name: After the sign-in in the in-app browser, the first onboarding screen has its safe area
+        if: matrix.mode == 'required'
+        run: bash .github/scripts/ios-gate-layout-test.sh ios/build/Release-iphonesimulator/NoScroll.app
 
       # Last step: it removes the token from the built app. The zip above is already uploaded.
       - name: A Release build without the app token fails

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The first-run flow, in order:
 ///
@@ -78,10 +79,20 @@ struct OnboardingFlow: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        #if PUBLIK_TEST_HOOKS
+        // The PUBLIK_LAYOUT_PROBE hook: the safe area this screen got (CI: it must not be 0 after the gate passes).
+        .background {
+            GeometryReader { g in
+                Color.clear
+                    .onAppear { LayoutProbe.safeTop = g.safeAreaInsets.top; LayoutProbe.start() }
+                    .onChange(of: g.safeAreaInsets.top) { _, top in LayoutProbe.safeTop = top }
+            }
+            .ignoresSafeArea()
+        }
+        #endif
         .onAppear { if let s = launchStep { step = s } }
         .animation(.snappy(duration: 0.35), value: step)
         .animation(.snappy(duration: 0.3), value: showAgeSheet)
-        .interactiveDismissDisabled()
     }
 
     private func go(_ next: Step) { step = next }
@@ -91,6 +102,29 @@ struct OnboardingFlow: View {
         isPresented = false
     }
 }
+
+#if PUBLIK_TEST_HOOKS
+/// The PUBLIK_LAYOUT_PROBE hook (test builds only): 1.5 s after the first onboarding screen appears, the app prints
+/// "noscroll-layout: onboarding view-safe-top=<pt> window-safe-top=<pt> title-y=<pt>" and exits.
+/// .github/scripts/ios-gate-layout-test.sh runs it right after a sign-in in the in-app browser.
+enum LayoutProbe {
+    // Written by the views (main thread), read once by the main-actor task below.
+    nonisolated(unsafe) static var safeTop: CGFloat = -1
+    nonisolated(unsafe) static var titleY: CGFloat = -1
+    nonisolated(unsafe) private static var started = false
+
+    static func start() {
+        guard !started, Publik.hook("PUBLIK_LAYOUT_PROBE") != nil else { return }
+        started = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            let window = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+            print("noscroll-layout: onboarding view-safe-top=\(Int(safeTop)) window-safe-top=\(Int(window?.safeAreaInsets.top ?? -1)) title-y=\(Int(titleY))")
+            exit(0)
+        }
+    }
+}
+#endif
 
 // MARK: - Widgets
 

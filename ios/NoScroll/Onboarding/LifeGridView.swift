@@ -108,9 +108,12 @@ struct LifeScreen: View {
             // Labels are overlaid on the grid, not laid out beside it: they must
             // map onto the GRID's height, and a sibling column stretches to the
             // row height instead, which slid every label down a band.
+            // Room for the labels: 56 pt on the left ("24yrs"), 84 pt on the right, so the longest
+            // name ("Scrolling") ends about 18 pt from the edge of the screen.
             LifeGridView(life: life, progress: fill)
                 .overlay { bandLabels }
-                .padding(.horizontal, 66)
+                .padding(.leading, 56)
+                .padding(.trailing, 84)
 
             Spacer(minLength: 8)
             number
@@ -151,6 +154,8 @@ struct LifeScreen: View {
                         Label("Back", systemImage: "chevron.left")
                             .font(Theme.body(17, .semibold))
                             .foregroundStyle(Theme.inkSoft)
+                            .padding(.trailing, 12)
+                            .tapTarget()
                     }
                     .buttonStyle(.plain)
                     Spacer()
@@ -173,14 +178,15 @@ struct LifeScreen: View {
                 Text("\(band.roundedYears)yrs")
                     .font(Theme.body(13, .semibold))
                     .foregroundStyle(Theme.inkSoft)
-                    .frame(width: 58, alignment: .trailing)
-                    .position(x: -33, y: y)
+                    .frame(width: 48, alignment: .trailing)
+                    .position(x: -30, y: y) // ends 6 pt left of the grid
 
                 Text(LifeGridView.label(for: band.kind))
                     .font(Theme.body(13, .semibold))
                     .foregroundStyle(Theme.inkSoft)
+                    .lineLimit(1)
                     .frame(width: 66, alignment: .leading)
-                    .position(x: geo.size.width + 39, y: y)
+                    .position(x: geo.size.width + 39, y: y) // starts 6 pt right of the grid
             }
         }
     }
@@ -213,14 +219,26 @@ struct LifeScreen: View {
             Text("of your free time. Gone to scrolling.")
                 .font(Theme.display(19, .bold))
                 .foregroundStyle(Theme.ink)
+
+            // The share stops at 100%: say so when the hours are more than all the free time.
+            if life.scrollExceedsFreeTime {
+                Text(String(format: "%.1f hours a day is more than the %.0f free hours in a day.",
+                            life.scrollHoursPerDay, life.assumptions.freeHoursPerDay))
+                    .font(Theme.body(15))
+                    .foregroundStyle(Theme.inkSoft)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 4)
+            }
         }
         .opacity(revealNumber ? 1 : 0)
         .scaleEffect(revealNumber ? 1 : 0.82)
     }
 
+    /// Only the bands that have boxes: at 5 or more hours a day there is no free time left, so no "Free".
     private var legend: some View {
         HStack(spacing: 0) {
-            ForEach(life.bands) { band in
+            ForEach(life.bands.filter { $0.weeks > 0 }) { band in
                 VStack(spacing: 5) {
                     RoundedRectangle(cornerRadius: 3)
                         .fill(LifeGridView.colour(for: band.kind))

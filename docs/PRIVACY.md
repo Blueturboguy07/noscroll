@@ -37,6 +37,8 @@ and the app works without it).
   sends the app name and version, the system (`ios` or `android`), a random install ID, the device
   name and the processor type. The key stays in the app's own files. On iOS, the key file is
   excluded from iCloud and device backups. On Android, the app has no backup.
+- On iOS, the same file keeps a "signed in" mark and your publik handle after you sign in. With
+  them, the app opens when publik is not reachable. Sign out deletes them with the key.
 - You sign in on publik's own page, in the browser. NoScroll never sees your publik password.
 - After you sign in, the app sends two events: `app_opened` at start, and `active_session` every
   30 minutes while the app is on screen. Each event holds the app name, a random install ID, the

@@ -24,6 +24,8 @@ protocol PublikGateUI: Sendable {
 
 enum Publik {
     static let appSlug = "noscroll"
+    /// The name people see (CFBundleDisplayName), for the gate's words.
+    static let appName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "This app"
     /// The release version: MARKETING_VERSION of the app target.
     static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0.0.0"
     /// false: the app calls no model. It still signs in and counts users; it skips the plan screen.
@@ -38,8 +40,9 @@ enum Publik {
     private static let publikDeleteAccountURL = URL(string: "https://publikhq.com/settings/profile#delete-account-title")!
 
     /// The test hooks: PUBLIK_API_BASE_URL, PUBLIK_ORIGIN, PUBLIK_TELEMETRY_URL, PUBLIK_SELF_TEST, PUBLIK_API_KEY,
-    /// PUBLIK_APP_TOKEN, PUBLIK_TELEMETRY_INTERVAL_SECONDS and PUBLIK_TELEMETRY_DEBUG, from the environment or a launch
-    /// argument (`-NAME value`). They are compiled in only with the PUBLIK_TEST_HOOKS flag (ios/Config/App.xcconfig:
+    /// PUBLIK_APP_TOKEN, PUBLIK_TELEMETRY_INTERVAL_SECONDS, PUBLIK_TELEMETRY_DEBUG, PUBLIK_TEST_PRESS (the gate presses
+    /// this button once by itself) and PUBLIK_LAYOUT_PROBE (the first onboarding screen prints its layout and the app
+    /// exits), from the environment or a launch argument (`-NAME value`). They are compiled in only with the PUBLIK_TEST_HOOKS flag (ios/Config/App.xcconfig:
     /// the Debug configuration and the CI test builds). The App Store Release build has none: it always talks to publik.
     static func hook(_ name: String) -> String? {
         #if PUBLIK_TEST_HOOKS
@@ -67,7 +70,10 @@ enum Publik {
     /// Ask for a tier, never a vendor model name.
     static let models = (fast: "publik-fast", balanced: "publik-balanced", smart: "publik-smart")
 
-    struct Credential: Codable { var key: String; var base_url: String; var install_id: String; var claim_url: String?; var choice: String? }
+    /// The key file. `claimed` is the local "signed in" mark: set when GET /wallet says "claimed", cleared only by
+    /// publik's own answer (a JSON 401, or a wallet that is not claimed). With it, the app opens when publik is not
+    /// reachable (offline, 5xx, 408, 429, a captive-portal page). A fresh install has no mark and needs publik once.
+    struct Credential: Codable { var key: String; var base_url: String; var install_id: String; var claim_url: String?; var choice: String?; var claimed: Bool?; var handle: String? }
     struct Wallet: Sendable { var claimed: Bool; var claimURL: String?; var handle: String?; var planKind: String; var planLabel: String?; var balanceMicros: Int; var topUpURL: String }
     struct Screen: Sendable { let id: String; let title: String; let body: String; let note: String?; let buttons: [(action: String, label: String)] }
     enum Provider { case own(baseURL: String, apiKey: String), publik(baseURL: String, apiKey: String), needsOwnKey }
@@ -122,6 +128,11 @@ enum Publik {
     }
 
     private static func request(_ method: String, _ url: String, body: [String: Any]? = nil, key: String? = nil, timeout: TimeInterval = 20) async throws -> (Int, [String: Any]) {
+        let (status, json) = try await requestJSON(method, url, body: body, key: key, timeout: timeout)
+        return (status, json ?? [:])
+    }
+    /// The status and the JSON object of the answer; nil when the answer is not a JSON object (for example a captive-portal page).
+    private static func requestJSON(_ method: String, _ url: String, body: [String: Any]? = nil, key: String? = nil, timeout: TimeInterval = 20) async throws -> (Int, [String: Any]?) {
         guard let target = URL(string: url) else { throw PublikError(message: "publik address is not valid.") }
         var req = URLRequest(url: target, timeoutInterval: timeout)
         req.httpMethod = method
@@ -129,7 +140,7 @@ enum Publik {
         if let key { req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
         if let body { req.httpBody = try JSONSerialization.data(withJSONObject: body) }
         let (data, response) = try await URLSession.shared.data(for: req)
-        return ((response as? HTTPURLResponse)?.statusCode ?? 0, (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:])
+        return ((response as? HTTPURLResponse)?.statusCode ?? 0, (try? JSONSerialization.jsonObject(with: data)) as? [String: Any])
     }
 
     /// POST /api/v1/installs: this device's publik key. Throws a readable message (URLError when publik is not reachable).
@@ -159,19 +170,40 @@ enum Publik {
 
     /// GET /api/v1/wallet: (status, wallet or nil, message). Throws when publik is not reachable.
     static func readWallet(_ key: String) async throws -> (Int, Wallet?, String?) {
-        let (status, b) = try await request("GET", "\(origin)/api/v1/wallet", key: key, timeout: 15)
-        guard status == 200, let state = b["claim_state"] as? String else { return (status, nil, (b["error"] as? [String: Any])?["message"] as? String) }
+        let a = try await walletAnswer(key)
+        return (a.status, a.wallet, a.message)
+    }
+    /// GET /api/v1/wallet with `json`: true when the answer is a JSON object (publik's own answer, not a captive portal's page).
+    static func walletAnswer(_ key: String, timeout: TimeInterval = 15) async throws -> (status: Int, wallet: Wallet?, message: String?, json: Bool) {
+        let (status, json) = try await requestJSON("GET", "\(origin)/api/v1/wallet", key: key, timeout: timeout)
+        let b = json ?? [:]
+        guard status == 200, let state = b["claim_state"] as? String else { return (status, nil, (b["error"] as? [String: Any])?["message"] as? String, json != nil) }
         let plan = b["plan"] as? [String: Any]
         return (status, Wallet(claimed: state == "claimed", claimURL: b["claim_url"] as? String, handle: (b["account"] as? [String: Any])?["handle"] as? String,
                                planKind: plan?["kind"] as? String ?? "none", planLabel: plan?["label"] as? String, balanceMicros: b["balance_micros"] as? Int ?? 0,
-                               topUpURL: b["top_up_url"] as? String ?? "\(origin)/wallet"), nil)
+                               topUpURL: b["top_up_url"] as? String ?? "\(origin)/wallet"), nil, true)
+    }
+
+    /// The local "signed in" mark (see Credential). Kept with the key; Sign out deletes both.
+    private static func mark(claimed: Bool, handle: String? = nil) {
+        guard var c = readCredential() else { return }
+        let newHandle = claimed ? (handle ?? c.handle) : nil
+        if (c.claimed == true) == claimed && c.handle == newHandle { return }
+        c.claimed = claimed ? true : nil
+        c.handle = newHandle
+        try? write(c)
+    }
+    /// A device with the mark, when publik does not answer: the wallet from the mark.
+    private static func markedWallet(_ c: Credential) -> Wallet {
+        Wallet(claimed: true, claimURL: c.claim_url, handle: c.handle, planKind: "none", planLabel: nil, balanceMicros: 0, topUpURL: "\(origin)/wallet")
     }
 
     /// The words of the gate. The same in every publik module.
     static func gateScreen(_ id: String, _ w: Wallet? = nil, note: String? = nil, message: String? = nil) -> Screen {
         if id == "unreachable" { return Screen(id: id, title: "Sign in with publik", body: message ?? "publik is not reachable. Check your connection.", note: note, buttons: [("retry", "Retry")]) }
         if id == "sign_in" {
-            return Screen(id: id, title: "Sign in with publik", body: "This app uses your publik account. Click Sign in with publik, then sign in in your browser. This window continues when you are signed in.",
+            // The contract words, for a phone: "Tap", "screen", "the publik page", and the app's name.
+            return Screen(id: id, title: "Sign in with publik", body: "\(appName) uses your publik account. Tap Sign in with publik, then sign in on the publik page. This screen continues when you are signed in.",
                           note: note, buttons: [("sign_in", "Sign in with publik")])
         }
         let who = w?.handle.map { "You are signed in as @\($0)." } ?? "You are signed in to publik."
@@ -214,31 +246,41 @@ enum Publik {
         while true {
             if Task.isCancelled { return nil }
             let envKey = hook("PUBLIK_API_KEY")
-            let c: Credential, status: Int, wallet: Wallet?, message: String?
+            let saved = envKey == nil ? readCredential() : nil
+            // Signed in before on this device: open even when publik does not answer (offline, 5xx, 408, 429, a captive portal).
+            let marked = saved?.claimed == true && !(usesAI && saved?.choice == nil)
+            let c: Credential, answer: (status: Int, wallet: Wallet?, message: String?, json: Bool)
             do {
-                if let envKey { c = Credential(key: envKey, base_url: defaultBaseURL, install_id: "") } else if let saved = readCredential() { c = saved } else { c = try await provision() }
-                (status, wallet, message) = try await readWallet(c.key)
+                if let envKey { c = Credential(key: envKey, base_url: defaultBaseURL, install_id: "") } else if let saved { c = saved } else { c = try await provision() }
+                answer = try await walletAnswer(c.key, timeout: marked ? 8 : 15)
             } catch {
+                if marked, let saved { return await openWithMark(saved) }
                 _ = await ask(ui, gateScreen("unreachable", message: error is URLError ? nil : error.localizedDescription))
                 continue
             }
-            if status == 401 && envKey == nil { try? write(nil); continue } // a revoked key: provision again
-            guard let w = wallet else { _ = await ask(ui, gateScreen("unreachable", message: message)); continue }
-            if !w.claimed {
-                let a = await ask(ui, gateScreen("sign_in", w, note: signNote), key: c.key, until: signPoll ? signedIn : nil)
-                if a == "sign_in", let url = URL(string: w.claimURL ?? c.claim_url ?? "\(origin)/wallet") {
-                    ui.open(url); signNote = "Waiting for you to sign in in your browser."; signPoll = true
-                }
-                if a == "timeout" { signNote = "No sign-in after 10 minutes. Click Sign in with publik to try again."; signPoll = false }
+            if answer.status == 401 && answer.json && envKey == nil { try? write(nil); continue } // publik's own 401: a revoked key; provision again
+            guard let w = answer.wallet else {
+                if marked, let saved { return await openWithMark(saved) }
+                _ = await ask(ui, gateScreen("unreachable", message: answer.message))
                 continue
             }
+            if !w.claimed {
+                if saved?.claimed == true { mark(claimed: false) } // publik says this device is not signed in
+                let a = await ask(ui, gateScreen("sign_in", w, note: signNote), key: c.key, until: signPoll ? signedIn : nil)
+                if a == "sign_in", let url = URL(string: w.claimURL ?? c.claim_url ?? "\(origin)/wallet") {
+                    ui.open(url); signNote = "Waiting for you to sign in on the publik page."; signPoll = true
+                }
+                if a == "timeout" { signNote = "No sign-in after 10 minutes. Tap Sign in with publik to try again."; signPoll = false }
+                continue
+            }
+            if envKey == nil { mark(claimed: true, handle: w.handle) }
             var choice = usesAI ? readCredential()?.choice : nil
             if usesAI && choice == nil {
                 if hasPlan(w) { planNote = nil; planPoll = false } // the plan is there: Connect your plan
                 let a = await ask(ui, gateScreen("choose", w, note: planNote), key: c.key, until: planPoll ? hasPlan : nil)
                 planNote = nil; planPoll = false
-                if a == "get_plan", let url = URL(string: w.topUpURL) { ui.open(url); planNote = "Waiting for your plan. Finish in your browser."; planPoll = true }
-                if a == "timeout" { planNote = "No plan after 10 minutes. Click Get a plan to try again." }
+                if a == "get_plan", let url = URL(string: w.topUpURL) { ui.open(url); planNote = "Waiting for your plan. Finish on the publik page."; planPoll = true }
+                if a == "timeout" { planNote = "No plan after 10 minutes. Tap Get a plan to try again." }
                 guard a == "connect" || a == "own_key" else { continue } // "done": the plan is there; the next screen is Connect your plan
                 choice = a == "connect" ? "publik" : "own_key"
                 setChoice(choice)
@@ -248,13 +290,29 @@ enum Publik {
         }
     }
 
+    /// The gate passes on the local mark: publik did not answer, and this device signed in before.
+    private static func openWithMark(_ c: Credential) async -> (key: String, wallet: Wallet, choice: String?) {
+        await startTelemetry() // events that cannot reach publik are dropped; nothing waits for them
+        return (c.key, markedWallet(c), usesAI ? c.choice : nil)
+    }
+
     /// Optional mode, at launch: no screen. A saved key that GET /wallet says is signed in starts usage counting.
-    /// Returns the wallet when signed in; nil when not signed in, or when publik is not reachable.
+    /// Returns the wallet when signed in (also from the local mark when publik does not answer); nil when not signed in.
     static func resume() async -> Wallet? {
         await selfTestIfAsked()
-        guard let c = readCredential(), let read = try? await readWallet(c.key) else { return nil }
-        if read.0 == 401 { try? write(nil); return nil } // a revoked key
-        guard let w = read.1, w.claimed else { return nil }
+        guard let c = readCredential() else { return nil }
+        let marked = c.claimed == true
+        guard let a = try? await walletAnswer(c.key, timeout: marked ? 8 : 15) else {
+            if marked { return await openWithMark(c).wallet }
+            return nil
+        }
+        if a.status == 401 && a.json { try? write(nil); return nil } // publik's own 401: a revoked key
+        guard let w = a.wallet else {
+            if marked { return await openWithMark(c).wallet }
+            return nil
+        }
+        guard w.claimed else { if marked { mark(claimed: false) }; return nil }
+        mark(claimed: true, handle: w.handle)
         await startTelemetry()
         return w
     }

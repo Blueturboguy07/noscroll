@@ -81,13 +81,13 @@ struct OnboardingFlow: View {
         }
         #if PUBLIK_TEST_HOOKS
         // The PUBLIK_LAYOUT_PROBE hook: the safe area this screen got (CI: it must not be 0 after the gate passes).
+        // The reader must respect the safe area: a reader that ignores it reports 0.
         .background {
             GeometryReader { g in
                 Color.clear
                     .onAppear { LayoutProbe.safeTop = g.safeAreaInsets.top; LayoutProbe.start() }
                     .onChange(of: g.safeAreaInsets.top) { _, top in LayoutProbe.safeTop = top }
             }
-            .ignoresSafeArea()
         }
         #endif
         .onAppear { if let s = launchStep { step = s } }

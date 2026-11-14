@@ -48,14 +48,27 @@ launch_once() { # a fresh install each time; prints only the layout line
     xcrun simctl uninstall "$UDID" app.noscroll || true
     xcrun simctl install "$UDID" "$APP"
   } > /dev/null 2>&1
+  echo "Installed after $(( $(date +%s) - START )) s." >&2
   : > "$OUT"
   SIMCTL_CHILD_PUBLIK_API_BASE_URL="http://127.0.0.1:$PORT/api/v1" \
   SIMCTL_CHILD_PUBLIK_APP_TOKEN="pat_ci_fake" \
   SIMCTL_CHILD_PUBLIK_TEST_PRESS=sign_in \
   SIMCTL_CHILD_PUBLIK_LAYOUT_PROBE=1 \
   SIMCTL_CHILD_DO_NOT_TRACK=1 \
-    perl -e 'alarm 300; exec @ARGV' script -q -t 0 "$OUT" xcrun simctl launch --console-pty "$UDID" app.noscroll > /dev/null 2>&1 || true
-  grep -a -o 'noscroll-layout: [^[:cntrl:]]*' "$OUT" | head -n 1 || true
+    perl -e 'alarm 300; exec @ARGV' script -q -t 0 "$OUT" xcrun simctl launch --console-pty "$UDID" app.noscroll < /dev/null > /dev/null 2>&1 &
+  local pid=$! line="" i
+  # Stop as soon as the line is there: the console of a finished app does not always close at once.
+  for i in $(seq 1 300); do
+    line=$(grep -a -o 'noscroll-layout: [^[:cntrl:]]*' "$OUT" | head -n 1 || true)
+    [ -n "$line" ] && break
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 1
+  done
+  kill "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  xcrun simctl terminate "$UDID" app.noscroll > /dev/null 2>&1 || true
+  [ -n "$line" ] || line=$(grep -a -o 'noscroll-layout: [^[:cntrl:]]*' "$OUT" | head -n 1 || true)
+  printf '%s\n' "$line"
 }
 
 START=$(date +%s)

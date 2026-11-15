@@ -52,6 +52,7 @@ jobs:
       DO_NOT_TRACK: "1"
       MAESTRO_CLI_NO_ANALYTICS: "1"
       MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+      MAESTRO_DRIVER_STARTUP_TIMEOUT: "300000"   # ms; a fresh CI runner starts the XCTest driver slowly
     steps:
       - name: Check the inputs
         env:
@@ -135,28 +136,7 @@ jobs:
           tar -xzf cf.tgz; tar -xzf bore.tgz; rm -f cf.tgz bore.tgz
           nohup ./cloudflared tunnel --no-autoupdate --url tcp://127.0.0.1:2222 > cf.log 2>&1 &
           nohup ./bore local 2222 --to bore.pub > bore.log 2>&1 &
-          CF=""; BORE=""
-          for _ in $(seq 1 60); do
-            CF=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' cf.log | head -n 1 || true)
-            BORE=$(perl -pe 's/\e\[[0-9;]*m//g' bore.log | grep -oE 'remote_port=[0-9]+' | head -n 1 | cut -d= -f2 || true)
-            [ -n "$CF" ] && [ -n "$BORE" ] && break
-            sleep 1
-          done
-          [ -n "$CF$BORE" ] || { echo "::error::No tunnel came up."; exit 1; }
-          HOSTKEY=$(cut -d' ' -f1,2 "$D/host_ed25519.pub")
-          DOOR="user=$(id -un) cf=${CF#https://} bore=${BORE:+bore.pub:$BORE} hostkey=$HOSTKEY"
-          echo "$DOOR" > "$BTH/door.txt"
-          echo "::notice title=blind-test-host door::$DOOR"
-
-      # Annotations and job logs are not readable while a job runs, but a v4 artifact is.
-      # It holds only the door line above (public by design). rkit.sh stop-host deletes it.
-      - name: Publish the door address
-        uses: actions/upload-artifact@v4
-        with:
-          name: bth-door
-          path: ${{ runner.temp }}/bth/door.txt
-          retention-days: 1
-          if-no-files-found: error
+          echo "sshd and two tunnels started. The next steps run while the tunnels register."
 
       - name: Get the app
         env:
@@ -181,6 +161,33 @@ jobs:
           unzip -q "$BTH/maestro.zip" -d "$BTH"; rm -f "$BTH/maestro.zip"
           test -x "$BTH/maestro/bin/maestro"
 
+      - name: Wait for the tunnel addresses
+        run: |
+          set -euo pipefail
+          cd "$BTH"
+          CF=""; BORE=""
+          for _ in $(seq 1 60); do
+            CF=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' cf.log | head -n 1 || true)
+            BORE=$(perl -pe 's/\e\[[0-9;]*m//g' bore.log | grep -oE 'remote_port=[0-9]+' | head -n 1 | cut -d= -f2 || true)
+            [ -n "$CF" ] && [ -n "$BORE" ] && break
+            sleep 1
+          done
+          [ -n "$CF$BORE" ] || { echo "::error::No tunnel came up."; exit 1; }
+          HOSTKEY=$(cut -d' ' -f1,2 ssh/host_ed25519.pub)
+          DOOR="user=$(id -un) cf=${CF#https://} bore=${BORE:+bore.pub:$BORE} hostkey=$HOSTKEY"
+          echo "$DOOR" > door.txt
+          echo "::notice title=blind-test-host door::$DOOR"
+
+      # Annotations and job logs are not readable while a job runs, but a v4 artifact is.
+      # It holds only the door line above (public by design). rkit.sh stop-host deletes it.
+      - name: Publish the door address
+        uses: actions/upload-artifact@v4
+        with:
+          name: bth-door
+          path: ${{ runner.temp }}/bth/door.txt
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Install the app and start the UI driver
         run: |
           set -euo pipefail
@@ -188,10 +195,12 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b > /dev/null
           xcrun simctl install "$UDID" "$(cat "$BTH/app_path")"
           T0=$(date +%s)
-          if perl -e 'alarm 300; exec @ARGV' "$BTH/maestro/bin/maestro" --udid "$UDID" hierarchy > "$BTH/maestro-start.log" 2>&1; then
+          if perl -e 'alarm 420; exec @ARGV' "$BTH/maestro/bin/maestro" --udid "$UDID" hierarchy > "$BTH/maestro-start.log" 2>&1; then
             echo "UI driver started in $(( $(date +%s) - T0 )) s."
           else
-            echo "::warning::The UI driver did not start. The host tries again at the first UI command."
+            echo "::warning::The UI driver did not start in $(( $(date +%s) - T0 )) s. The host tries again at the first UI command."
+            # Only Maestro's error lines (the app is not started yet, so they hold no app data).
+            grep -iE 'error|exception|timed? ?out|failed' "$BTH/maestro-start.log" | cut -c1-200 | tail -n 8 || true
           fi
 
       - name: Serve commands
@@ -241,7 +250,8 @@ jobs:
           LAST = [time.time()]
           STOP = [None]
           LOCK = threading.Lock()
-          S = {"net": "on", "pf_token": None, "port": None}
+          DLOCK = threading.Lock()
+          S ={"net": "on", "pf_token": None, "port": None}
           LOG = open(os.path.join(W, "host.log"), "a", buffering=1)
 
 
@@ -326,12 +336,25 @@ jobs:
               p = find_driver()
               if p:
                   return p
-              log("starting the UI driver")
-              run([MAESTRO, "--udid", UDID, "hierarchy"], timeout=360, check=False)
-              p = find_driver()
-              if not p:
-                  raise Fail("the UI driver did not start")
-              return p
+              with DLOCK:  # one start at a time (the warm-up thread or a UI command)
+                  p = find_driver()
+                  if p:
+                      return p
+                  log("starting the UI driver")
+                  t0 = time.time()
+                  _, err, rc = run([MAESTRO, "--udid", UDID, "hierarchy"], timeout=420, check=False)
+                  p = find_driver()
+                  log("UI driver start: exit %d after %d s, port %s" % (rc, time.time() - t0, p))
+                  if not p:
+                      raise Fail("the UI driver did not start: %s" % err.strip()[-300:])
+                  return p
+
+
+          def warm():
+              try:
+                  driver()
+              except Exception as e:  # the first UI command tries again
+                  log("warm-up: %s" % type(e).__name__)
 
 
           def dcall(path, body=None, timeout=30):
@@ -804,6 +827,8 @@ jobs:
               srv = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
               srv.daemon_threads = True
               threading.Thread(target=watchdog, args=(srv,), daemon=True).start()
+              if not find_driver():
+                  threading.Thread(target=warm, daemon=True).start()
               print("Serving until %s UTC (%d min), or until %d min without a command."
                     % (time.strftime("%H:%M", time.gmtime(DEADLINE)), MINUTES, IDLE_SEC // 60), flush=True)
               srv.serve_forever(poll_interval=0.5)

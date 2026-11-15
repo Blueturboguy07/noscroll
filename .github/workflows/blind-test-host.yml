@@ -38,6 +38,10 @@ on:
         description: "a tag that lets the tester find this run"
         required: false
         default: ""
+      device:
+        description: "Simulator name, for example iPhone 17 Pro Max (empty = the newest 'iPhone NN Pro')"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -61,9 +65,11 @@ jobs:
           ARTIFACT: ${{ inputs.artifact }}
           MINUTES: ${{ inputs.minutes }}
           PUBKEY: ${{ inputs.pubkey }}
+          DEVICE: ${{ inputs.device }}
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
+          [ -z "$DEVICE" ] || [[ "$DEVICE" =~ ^iPhone[A-Za-z0-9\ ]{1,40}$ ]] || fail "device must be empty or an iPhone name, for example iPhone 17 Pro Max."
           [[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || fail "repo must be owner/name."
           [[ "$RUN_ID" =~ ^[0-9]{1,15}$ ]] || fail "run_id must be a number."
           [[ "$ARTIFACT" =~ ^[A-Za-z0-9_.-]{1,100}$ ]] || fail "artifact has characters that are not allowed."
@@ -71,24 +77,42 @@ jobs:
           [[ "$PUBKEY" =~ ^ssh-ed25519\ [A-Za-z0-9+/]{60,80}={0,2}(\ [A-Za-z0-9_.@-]{0,64})?$ ]] || fail "pubkey must be one ssh-ed25519 public key."
           W="$RUNNER_TEMP/bth"; mkdir -p "$W"; chmod 700 "$W"
           echo "BTH=$W" >> "$GITHUB_ENV"
-          echo "App: $REPO run $RUN_ID artifact $ARTIFACT. Serve time: $MINUTES min."
+          echo "App: $REPO run $RUN_ID artifact $ARTIFACT. Serve time: $MINUTES min. Device: ${DEVICE:-default}."
 
       - name: Boot the simulator
+        env:
+          DEVICE: ${{ inputs.device }}
         run: |
           set -euo pipefail
-          read -r UDID NAME < <(xcrun simctl list devices available -j | python3 -c '
-          import json, re, sys
-          devs = json.load(sys.stdin)["devices"]
+          # DEVICE empty: the newest runtime's "iPhone NN Pro" (the old default, unchanged).
+          # DEVICE set: that exact name on the newest runtime that has it; if no runtime has
+          # it, the device is created from its device type on the newest iOS runtime.
+          read -r UDID NAME < <(python3 -c '
+          import json, os, re, subprocess, sys
+          want = os.environ.get("DEVICE", "").strip()
+          def sim(*a):
+              return json.loads(subprocess.run(["xcrun", "simctl", "list", *a, "-j"], capture_output=True, text=True, check=True).stdout)
+          devs = sim("devices", "available")["devices"]
           def ver(rt):
               return [int(x) for x in re.findall(r"\d+", rt.rsplit(".", 1)[-1])]
           for rt in sorted((r for r in devs if ".iOS-" in r), key=ver, reverse=True):
               phones = [d for d in devs[rt] if d["name"].startswith("iPhone")]
+              if want:
+                  phones = [d for d in phones if d["name"] == want]
               if not phones:
                   continue
               pick = next((d for d in phones if re.fullmatch(r"iPhone \d+ Pro", d["name"])), phones[0])
               print(pick["udid"], pick["name"] + " (" + rt.rsplit(".", 1)[-1] + ")")
               sys.exit(0)
-          sys.exit(1)')
+          if not want:
+              sys.exit(1)
+          dt = next((t["identifier"] for t in sim("devicetypes")["devicetypes"] if t["name"] == want), None)
+          rts = [r for r in sim("runtimes")["runtimes"] if r.get("platform") == "iOS" and r.get("isAvailable")]
+          if not dt or not rts:
+              sys.exit(1)
+          rt = sorted(rts, key=lambda r: [int(x) for x in re.findall(r"\d+", r["version"])])[-1]
+          udid = subprocess.run(["xcrun", "simctl", "create", want, dt, rt["identifier"]], capture_output=True, text=True, check=True).stdout.strip()
+          print(udid, want + " (iOS-" + rt["version"] + ", created)")') || { echo "::error::No simulator named '${DEVICE:-iPhone NN Pro}'."; exit 1; }
           echo "$UDID" > "$BTH/udid"
           echo "Simulator: $NAME"
           xcrun simctl boot "$UDID" || true
@@ -630,6 +654,20 @@ jobs:
               return "appearance %s" % mode
 
 
+          def v_statusbar(a):
+              mode = a[0] if a else "clean"
+              if mode == "clean":  # App Store look: 9:41, Wi-Fi and cell bars full, battery full and charged
+                  simctl("status_bar", UDID, "override", "--time", "9:41", "--dataNetwork", "wifi",
+                         "--wifiMode", "active", "--wifiBars", "3", "--cellularMode", "active",
+                         "--cellularBars", "4", "--operatorName", "", "--batteryState", "charged",
+                         "--batteryLevel", "100", timeout=60)
+                  return "status bar: 9:41, full bars, battery 100% charged"
+              if mode == "clear":
+                  simctl("status_bar", UDID, "clear", timeout=60)
+                  return "status bar: back to normal"
+              raise Fail("usage: statusbar clean|clear")
+
+
           def flush_dns():
               sudo("dscacheutil", "-flushcache", check=False, timeout=30)
               sudo("killall", "-HUP", "mDNSResponder", check=False, timeout=30)
@@ -761,7 +799,7 @@ jobs:
               "status": v_status, "install": v_install, "launch": v_launch, "terminate": v_terminate,
               "reset": v_reset, "shot": v_shot, "tree": v_tree, "size": v_size, "tap": v_tap,
               "tap-text": v_tap_text, "wait-text": v_wait_text, "type": v_type, "key": v_key,
-              "swipe": v_swipe, "openurl": v_openurl, "appearance": v_appearance, "net": v_net,
+              "swipe": v_swipe, "openurl": v_openurl, "appearance": v_appearance, "statusbar": v_statusbar, "net": v_net,
               "logs": v_logs, "install-id": v_install_id, "background": v_background,
               "foreground": v_foreground, "offline": v_offline, "online": v_online, "stop": v_stop,
           }

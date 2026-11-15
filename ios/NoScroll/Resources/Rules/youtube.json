@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "minEngine": 1,
   "services": {
     "youtube": {
@@ -14,11 +14,13 @@
       ],
       "surfaces": {
         "shorts-route": {
-          "kind": "route-rewrite",
+          "kind": "route-block",
           "label": "Block Shorts",
-          "pattern": "^/shorts/([A-Za-z0-9_-]+)(.*)$",
-          "replacement": "/watch?v=$1",
-          "source": "The single cheapest win in the product: /shorts is purely a front-end player skin. Same video, same CDN, same metadata.",
+          "patterns": [
+            "^/shorts(/|\\?|$)"
+          ],
+          "redirect": "/",
+          "source": "The Shorts tab of m.youtube.com opens /shorts/ with no video id; a Shorts link opens /shorts/<id>. Both go home, also when the page changes the address in place (pushState).",
           "defaultEnabled": true
         },
         "shorts-shelf": {
@@ -32,7 +34,11 @@
             "ytd-rich-section-renderer:has(a[href^='/shorts'])",
             "ytm-rich-section-renderer:has(a[href^='/shorts'])",
             "ytd-video-renderer:has(a[href^='/shorts'])",
-            "ytm-video-with-context-renderer:has(a[href^='/shorts'])"
+            "ytm-video-with-context-renderer:has(a[href^='/shorts'])",
+            "ytm-rich-item-renderer:has(ytm-shorts-lockup-view-model)",
+            "grid-shelf-view-model:has(ytm-shorts-lockup-view-model)",
+            "ytm-rich-section-renderer:has(ytm-shorts-lockup-view-model)",
+            "ytm-shorts-lockup-view-model"
           ],
           "observe": true,
           "probe": {
@@ -46,6 +52,9 @@
           "kind": "dom-remove",
           "label": "Remove Shorts tab",
           "selectors": [
+            "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.shorts)",
+            "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.pivot-shorts)",
+            "ytm-pivot-bar-item-renderer:has(.pivot-shorts)",
             "ytd-mini-guide-entry-renderer:has(a[title='Shorts'])",
             "ytd-guide-entry-renderer:has(a[href='/shorts'])",
             "ytm-pivot-bar-item-renderer:has(div[aria-label='Shorts'])",
@@ -95,7 +104,7 @@
               "^/watch"
             ]
           },
-          "source": "Required: the /shorts->/watch rewrite alone just moves the user into a different infinite loop."
+          "source": "Hides the up-next list and the recommendations on a watch page, so one video does not lead into the next."
         },
         "home-feed": {
           "kind": "dom-remove",
@@ -137,5 +146,5 @@
       ]
     }
   },
-  "signature": "Z6DaZSnEpQFUOtuFN3tKzhXy+kND/7uCvchiTXbkebUfAMAUDQXmpHYNYjlUZ0GCKcCOczbIu7jCDcR60rjfAQ=="
+  "signature": "g11YmZC1qNIjUIEORZJUGZbvnuYtT4OUxY7JxveFzF2wFmBdvkatUEhf10ZiEREp8qWXaHBEUZhHDInfKtu5CQ=="
 }

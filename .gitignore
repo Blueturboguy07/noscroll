@@ -1,5 +1,8 @@
-keys/*.pem
-keys/*.raw
+# Only the PRIVATE rule-signing key stays out of git. It lives in the repo
+# secret RULES_SIGNING_KEY. The public key (keys/rules-signing.pub.pem and
+# keys/rules-signing.pub.raw) is committed so CI and the app can verify bundles.
+keys/rules-signing.pem
+keys/*.private.pem
 node_modules/
 dist/
 build/

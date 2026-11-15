@@ -65,8 +65,8 @@ the point a user would otherwise expect to see it.
 
 ### Rules are data
 
-Every competitor in this category hardcodes CSS selectors and patches them reactively, which is
-why they visibly leak. NoScroll ships selectors as an **ed25519-signed JSON bundle** fetched at
+Hardcoded CSS selectors break whenever a site changes its markup, and the feed leaks until the
+next app update. NoScroll ships selectors as an **ed25519-signed JSON bundle** fetched at
 runtime with a three-tier fallback — remote → cached → baked into the binary — so a cold first
 launch with no network still blocks, and an upstream redesign is fixed in minutes instead of an
 App Store review cycle.
@@ -109,12 +109,17 @@ cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug
 cd probe && pnpm install && pnpm exec playwright install chromium && pnpm probe
 ```
 
-Rule bundles are signed. To work on them you need your own keypair:
+Rule bundles are signed with ed25519. The public key is committed
+(`keys/rules-signing.pub.pem`, `keys/rules-signing.pub.raw`, and the same 32
+bytes in `ios/NoScroll/Resources/rules-signing.pub.raw`). The private key is
+only in the repo secret `RULES_SIGNING_KEY`. Change a bundle in `rules/`, push,
+and the `Sign rule bundles` workflow signs every bundle, copies them into the
+iOS and Android resources and commits the result. Remote bundles served from
+`rules.noscroll.app` must be signed with the same key.
 
 ```bash
-node tools/sign-bundle.mjs keygen           # writes keys/ (gitignored)
-node tools/sign-bundle.mjs sign rules/*.json
-swift tools/verify-canonical.swift          # Node and Swift must agree byte for byte
+node tools/sign-bundle.mjs verify rules/*.json   # checks against the committed public key
+swift tools/verify-canonical.swift               # Node and Swift must agree byte for byte
 ```
 
 ---

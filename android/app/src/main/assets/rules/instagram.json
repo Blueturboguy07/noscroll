@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "minEngine": 1,
   "services": {
     "instagram": {
@@ -87,11 +87,10 @@
         "suggested-posts": {
           "kind": "dom-remove",
           "defaultEnabled": true,
-          "label": "Hide Ads & Suggested",
+          "label": "Hide suggested posts",
           "selectors": [
             "article:has([aria-label='Suggested for you'])",
-            "article:has([aria-label*='Suggested'])",
-            "article:has(div[role='button'][aria-label*='Why am I seeing'])"
+            "article:has([aria-label*='Suggested'])"
           ],
           "observe": true,
           "suppression": "remove",
@@ -99,11 +98,11 @@
             "expectMin": 0,
             "warnIfZeroFor": "6h"
           },
-          "source": "seeded from BevizLaszlo/UBlock-Filters-for-Social-Media (MIT)"
+          "source": "seeded from BevizLaszlo/UBlock-Filters-for-Social-Media (MIT). Only the \"Suggested for you\" mark: the \"Why am I seeing\" button is also on ads, and NoScroll does not block ads."
         },
         "sponsored": {
           "kind": "dom-remove",
-          "defaultEnabled": true,
+          "defaultEnabled": false,
           "label": "Hide sponsored posts",
           "selectors": [
             "article:has(a[href*='utm_source'])",
@@ -112,7 +111,8 @@
           "observe": true,
           "probe": {
             "expectMin": 0
-          }
+          },
+          "source": "Off by default, and the iOS app shows no switch for it: NoScroll does not block ads (App Store guideline 5.2.2)."
         },
         "stories-tray": {
           "kind": "dom-remove",
@@ -194,5 +194,5 @@
       ]
     }
   },
-  "signature": "2xmcIAy3Vnxhwrh/qM9YywXFM8LCufpaFOtdCN22EZlwmcovwvcfKLGy2ShyM+8w4kl9rSuDX9k5TFOiNubpCA=="
+  "signature": "dWQLuaMCtJLdg5so7yGuqT6zXbgt5Nf7wWBDe53Mp+cSeDED5ebqVTVZilVJswjbxGyWN1hoAC23uW1XN7JeCg=="
 }

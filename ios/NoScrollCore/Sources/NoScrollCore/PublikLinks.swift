@@ -28,4 +28,9 @@ public enum PublikLinks {
     public static func privacyURL(origin: String) -> URL? {
         URL(string: "\(origin)/in-app/privacy")
     }
+
+    /// Help and support: publik's bare in-app support page.
+    public static func supportURL(origin: String) -> URL? {
+        URL(string: "\(origin)/in-app/support")
+    }
 }

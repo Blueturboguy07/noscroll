@@ -8,31 +8,58 @@ struct WebScreen: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var authSurfaceActive = false
+    @State private var showPausedInfo = false
 
     var body: some View {
         NavigationStack {
             container
                 .ignoresSafeArea(edges: .bottom)
+                // Tell the user plainly that we have stepped back on their login page. It is the moment
+                // they are most likely to suspect a wrapper of phishing them. One sign for every service:
+                // a bar under the title with a short label, 44 pt high, that explains itself on a tap.
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if authSurfaceActive { pausedSign }
+                }
                 .navigationTitle(service.name)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Done") { dismiss() }
                     }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        if authSurfaceActive {
-                            // Tell the user plainly that we have stepped back on
-                            // their login page. It is the moment they are most
-                            // likely to suspect a wrapper of phishing them.
-                            Label("Sign-in page — \(AppState.appName) is paused", systemImage: "lock.open")
-                                .labelStyle(.iconOnly)
-                                .foregroundStyle(.secondary)
-                                .accessibilityLabel("Sign-in page. \(AppState.appName) is paused and is not reading this page.")
-                        }
-                    }
+                }
+                .alert("\(AppState.homeScreenName) is paused", isPresented: $showPausedInfo) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("This is a sign-in page. \(AppState.appName) does not hide, read or change anything on it. Blocking starts again after you sign in.")
                 }
         }
         .onAppear { state.didOpen(service) }
+    }
+
+    /// The paused sign: the same on every service.
+    private var pausedSign: some View {
+        Button { showPausedInfo = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                Text("Sign-in page: \(AppState.homeScreenName) is paused")
+                    .font(Theme.body(15, .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                Image(systemName: "info.circle")
+                    .font(.system(size: 16))
+            }
+            .foregroundStyle(Theme.ink)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(Theme.paperRaised)
+            .overlay(alignment: .bottom) { Divider() }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Sign-in page. \(AppState.appName) is paused and does not read this page.")
+        .accessibilityHint("Shows more about the pause")
     }
 
     @ViewBuilder
@@ -86,6 +113,11 @@ struct WebViewContainer: UIViewControllerRepresentable {
                 #endif
                 if case let .authSurface(active) = message {
                     Task { @MainActor in onAuthSurface(active) }
+                }
+                // A new page that is not a sign-in page: the engine starts there and says "ready" (it says
+                // nothing about the sign-in page that came before), so the paused sign goes away.
+                if case .ready = message {
+                    Task { @MainActor in onAuthSurface(false) }
                 }
             }
         )

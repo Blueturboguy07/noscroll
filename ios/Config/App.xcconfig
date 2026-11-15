@@ -15,6 +15,11 @@ APP_NAME = publik NoScroll
 // One build of each: xcodebuild ... PUBLIK_GATE_MODE=optional
 PUBLIK_GATE_MODE = required
 
+// The App Store build (Info.plist key AppStoreBuild, read in NoScroll/App/Services.swift). YES leaves out
+// the services that do not work in a phone's web view (Snapchat). A developer build can set NO to show them:
+// xcodebuild ... APP_STORE_BUILD=NO
+APP_STORE_BUILD = YES
+
 // Test hooks (Publik.hook(): PUBLIK_API_BASE_URL, PUBLIK_ORIGIN, PUBLIK_TELEMETRY_URL, PUBLIK_SELF_TEST, ...,
 // and the onboarding --step argument) are compiled in only when PUBLIK_TEST_HOOKS = YES: the Debug
 // configuration sets YES, and the CI test builds pass xcodebuild ... PUBLIK_TEST_HOOKS=YES.

@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// True in the App Store build (Info.plist key AppStoreBuild, from APP_STORE_BUILD in ios/Config/App.xcconfig).
+/// A plain constant, so any code can read it (AppState is main-actor isolated). See AppState.isAppStoreBuild.
+let appStoreBuild: Bool = ((Bundle.main.object(forInfoDictionaryKey: "AppStoreBuild") as? String) ?? "YES")
+    .trimmingCharacters(in: .whitespaces).uppercased() != "NO"
+
 extension AppState {
 
     /// The services NoScroll wraps.
@@ -18,7 +23,9 @@ extension AppState {
         let tintDark: Color
         let symbol: String
         /// Beta services are wrapped but not yet probe-verified against the live site.
-        let beta: Bool
+        let isBeta: Bool
+        /// The BETA label. The App Store build shows no "beta" anywhere (App Store guideline 2.2).
+        var beta: Bool { isBeta && !appStoreBuild }
 
         var gradient: LinearGradient {
             LinearGradient(colors: [tint, tintDark], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -45,46 +52,63 @@ extension AppState {
         }
     }
 
-    static let services: [Service] = [
+    /// The App Store build (APP_STORE_BUILD = YES in ios/Config/App.xcconfig, Info.plist key AppStoreBuild)
+    /// ships only the services that were seen working: Instagram, YouTube, TikTok, Facebook and LinkedIn.
+    /// It leaves out the services in `notInStoreBuild` (no tile, no switches, no sign-out row, no widget):
+    /// X and Reddit (not confirmed), and Snapchat (on a phone, its web site only says to use a computer).
+    /// Other builds (APP_STORE_BUILD = NO) show every service.
+    static var isAppStoreBuild: Bool { appStoreBuild }
+    static let notInStoreBuild: Set<String> = ["x", "reddit", "snapchat"]
+
+    /// The App Store build shows, for these services, only the switches that block by address (route rules):
+    /// they are reliable. Their page-part rules are not confirmed on the live sites, so they are off and have no switch.
+    static let addressOnlyInStoreBuild: Set<String> = ["tiktok", "facebook", "linkedin"]
+    static let addressKinds: Set<String> = ["route-block", "route-rewrite", "route-allow-only"]
+
+    /// The services of this build: every service, less `notInStoreBuild` in the App Store build.
+    static let services: [Service] = allServices.filter { !isAppStoreBuild || !notInStoreBuild.contains($0.id) }
+
+    /// Every service that has a rule bundle.
+    static let allServices: [Service] = [
         Service(id: "instagram", name: "Instagram",
                 home: URL(string: "https://www.instagram.com/")!,
                 tint: Color(hex: 0xE1306C), tintDark: Color(hex: 0xF77737),
-                symbol: "camera.fill", beta: false),
+                symbol: "camera.fill", isBeta: false),
 
         Service(id: "youtube", name: "YouTube",
                 home: URL(string: "https://m.youtube.com/")!,
                 tint: Color(hex: 0xE02F2F), tintDark: Color(hex: 0x9E1B1B),
-                symbol: "play.rectangle.fill", beta: false),
+                symbol: "play.rectangle.fill", isBeta: false),
 
         Service(id: "x", name: "X",
                 home: URL(string: "https://x.com/home")!,
                 tint: Color(hex: 0x2B2B2B), tintDark: Color(hex: 0x0A0A0A),
-                symbol: "xmark", beta: true),
+                symbol: "xmark", isBeta: true),
 
         Service(id: "tiktok", name: "TikTok",
                 home: URL(string: "https://www.tiktok.com/following")!,
                 tint: Color(hex: 0x25F4EE), tintDark: Color(hex: 0xFE2C55),
-                symbol: "music.note", beta: true),
+                symbol: "music.note", isBeta: true),
 
         Service(id: "facebook", name: "Facebook",
                 home: URL(string: "https://m.facebook.com/")!,
                 tint: Color(hex: 0x4267B2), tintDark: Color(hex: 0x1D3557),
-                symbol: "person.2.fill", beta: true),
+                symbol: "person.2.fill", isBeta: true),
 
         Service(id: "linkedin", name: "LinkedIn",
                 home: URL(string: "https://www.linkedin.com/feed/")!,
                 tint: Color(hex: 0x0A66C2), tintDark: Color(hex: 0x004182),
-                symbol: "briefcase.fill", beta: true),
+                symbol: "briefcase.fill", isBeta: true),
 
         Service(id: "snapchat", name: "Snapchat",
                 home: URL(string: "https://web.snapchat.com/")!,
                 tint: Color(hex: 0xFFFC00), tintDark: Color(hex: 0xE0A800),
-                symbol: "bolt.fill", beta: true),
+                symbol: "bolt.fill", isBeta: true),
 
         Service(id: "reddit", name: "Reddit",
                 home: URL(string: "https://www.reddit.com/")!,
                 tint: Color(hex: 0xFF4500), tintDark: Color(hex: 0xC33B00),
-                symbol: "bubble.left.and.bubble.right.fill", beta: true),
+                symbol: "bubble.left.and.bubble.right.fill", isBeta: true),
     ]
 
     static func service(_ id: String) -> Service? {

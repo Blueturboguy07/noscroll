@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The home screen: one service at a time in a horizontal carousel, with the
 /// number of its blocks that are on above it and that service's settings below.
@@ -12,6 +13,15 @@ struct HomeView: View {
     @State private var openService: AppState.Service?
     @State private var showSettingsFor: AppState.Service?
     @State private var showWidgetBanner = true
+    /// The banner was tapped: the widget steps are on screen.
+    @State private var showWidgetSteps = false
+
+    init() {
+        // The page dots under the carousel: ink on paper, so they can be seen (the default dots are
+        // white on a light background).
+        UIPageControl.appearance().currentPageIndicatorTintColor = UIColor(Theme.ink)
+        UIPageControl.appearance().pageIndicatorTintColor = UIColor(Theme.inkSoft).withAlphaComponent(0.7)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,6 +47,11 @@ struct HomeView: View {
         .background(Theme.paper.ignoresSafeArea())
         .fullScreenCover(item: $openService) { WebScreen(service: $0) }
         .sheet(item: $showSettingsFor) { ServiceSettingsView(service: $0) }
+        // The banner: the three steps to add a widget.
+        .sheet(isPresented: $showWidgetSteps) {
+            WidgetsScreen(onSetUp: { showWidgetSteps = false }, onLater: { showWidgetSteps = false },
+                          stepsFirst: true, laterTitle: "Close")
+        }
         // A widget tap lands here: select that service and open it straight
         // away, so the shortcut is one tap rather than two.
         .onChange(of: state.pendingService) { _, id in openPending(id) }
@@ -54,7 +69,9 @@ struct HomeView: View {
     // MARK: - Pieces
 
     private var titleBar: some View {
-        HStack {
+        // "Open Instagram": the button opens the service the carousel shows.
+        let name = AppState.service(selection)?.name ?? ""
+        return HStack {
             Text(AppState.appName)
                 .font(Theme.display(31))
                 .foregroundStyle(Theme.ink)
@@ -65,9 +82,12 @@ struct HomeView: View {
                 if let s = AppState.service(selection) { openService = s }
             } label: {
                 HStack(spacing: 7) {
-                    Image(systemName: "rectangle.portrait.on.rectangle.portrait")
-                        .font(.system(size: 13, weight: .bold))
-                    Text("OPEN").font(Theme.display(14, .heavy)).tracking(1)
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Open \(name)")
+                        .font(Theme.display(15, .heavy))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .foregroundStyle(Color(hex: 0x725A20)) // 5.2:1 on the capsule
                 .padding(.horizontal, 16)
@@ -76,6 +96,7 @@ struct HomeView: View {
                 .overlay(Capsule().strokeBorder(Color(hex: 0xD9C79C), lineWidth: 1))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Open \(name)")
         }
         .padding(.horizontal, 18)
         .padding(.top, 4)
@@ -83,19 +104,28 @@ struct HomeView: View {
 
     private var widgetBanner: some View {
         HStack(spacing: 12) {
-            Image(systemName: "square.grid.2x2.fill")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 34, height: 34)
-                .background(
-                    LinearGradient(colors: [Color(hex: 0xE1306C), Color(hex: 0xF77737)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                )
-            Text("Add apps to your home screen")
-                .font(Theme.display(16, .bold))
-                .foregroundStyle(Theme.ink)
-            Spacer()
+            // A tap on the banner opens the steps to add a widget.
+            Button { showWidgetSteps = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "square.grid.2x2.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(
+                            LinearGradient(colors: [Color(hex: 0xE1306C), Color(hex: 0xF77737)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        )
+                    Text("Add apps to your home screen")
+                        .font(Theme.display(16, .bold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer(minLength: 0)
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Shows the steps to add a widget")
             Button {
                 withAnimation(.snappy) { showWidgetBanner = false }
             } label: {

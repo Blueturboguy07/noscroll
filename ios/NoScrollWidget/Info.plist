@@ -4,6 +4,9 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>$(APP_DISPLAY_NAME)</string>
+	<!-- APP_STORE_BUILD (ios/Config/App.xcconfig): YES leaves X and Reddit out of the widget, as in the app. -->
+	<key>AppStoreBuild</key>
+	<string>$(APP_STORE_BUILD)</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

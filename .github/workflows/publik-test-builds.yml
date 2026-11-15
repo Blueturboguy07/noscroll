@@ -60,8 +60,9 @@ jobs:
             echo "$2 = $v"
             [ "$v" = "$3" ] || { echo "::error::$2 is '$v', not '$3'."; exit 1; }
           }
-          expect "$APP/Info.plist" CFBundleShortVersionString 0.1.4
-          expect "$APP/Info.plist" CFBundleVersion 5
+          expect "$APP/Info.plist" CFBundleShortVersionString 0.1.5
+          expect "$APP/Info.plist" CFBundleVersion 6
+          expect "$APP/Info.plist" AppStoreBuild YES
           expect "$APP/Info.plist" PublikGateMode "$MODE"
           expect "$APP/Info.plist" CFBundleDisplayName NoScroll
           expect "$APP/Info.plist" AppFullName "publik NoScroll"
@@ -70,6 +71,7 @@ jobs:
           expect "$APP/Info.plist" UIDeviceFamily:0 1
           /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily:1' "$APP/Info.plist" >/dev/null 2>&1 && { echo "::error::The app is not iPhone only."; exit 1; }
           expect "$APP/PlugIns/NoScrollWidget.appex/Info.plist" CFBundleDisplayName NoScroll
+          expect "$APP/PlugIns/NoScrollWidget.appex/Info.plist" AppStoreBuild YES
 
       - name: The App Store Release configuration has no test hooks; Debug has them
         if: matrix.mode == 'required'

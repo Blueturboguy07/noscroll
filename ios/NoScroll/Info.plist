@@ -9,6 +9,9 @@
 	<string>$(APP_NAME)</string>
 	<key>PublikGateMode</key>
 	<string>$(PUBLIK_GATE_MODE)</string>
+	<!-- APP_STORE_BUILD (ios/Config/App.xcconfig): YES leaves Snapchat out of the app. -->
+	<key>AppStoreBuild</key>
+	<string>$(APP_STORE_BUILD)</string>
 
 	<!-- HTTPS through the OS and a signature check of the rule files only: exempt. -->
 	<key>ITSAppUsesNonExemptEncryption</key>

@@ -45,4 +45,9 @@ final class PublikLinksTests: XCTestCase {
         XCTAssertEqual(PublikLinks.privacyURL(origin: "https://publikhq.com")?.absoluteString,
                        "https://publikhq.com/in-app/privacy")
     }
+
+    func testSupportURLIsTheInAppPage() {
+        XCTAssertEqual(PublikLinks.supportURL(origin: "https://publikhq.com")?.absoluteString,
+                       "https://publikhq.com/in-app/support")
+    }
 }

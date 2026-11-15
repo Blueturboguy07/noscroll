@@ -6,6 +6,8 @@ import PackageDescription
 // simulator, an entitlement, or waiting until 3am to see if Sleep Mode releases.
 let package = Package(
     name: "NoScrollCore",
+    // PublikPoll uses Swift concurrency (async, Task, AsyncStream).
+    platforms: [.iOS(.v17), .macOS(.v13)],
     products: [.library(name: "NoScrollCore", targets: ["NoScrollCore"])],
     targets: [
         .target(name: "NoScrollCore"),

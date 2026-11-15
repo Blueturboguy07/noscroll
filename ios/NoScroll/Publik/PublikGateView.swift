@@ -17,6 +17,8 @@ final class PublikGateModel: ObservableObject, PublikGateUI {
     @Published private(set) var signedIn = false
     /// The publik handle, for "Signed in as" in Settings.
     @Published private(set) var handle: String?
+    /// The account email, when GET /wallet gives one: Settings shows "Signed in as <email>".
+    @Published private(set) var email: String?
     /// Optional mode: the Sign in with publik sheet (Settings) is open.
     @Published var signInSheet = false
     /// Delete account, step 3: publik's delete page in the in-app browser.
@@ -57,6 +59,7 @@ final class PublikGateModel: ObservableObject, PublikGateUI {
         busySince = nil
         guard let result else { screen = nil; return }
         handle = result.wallet.handle
+        email = result.wallet.email
         signedIn = true
         signInSheet = false
     }
@@ -87,6 +90,7 @@ final class PublikGateModel: ObservableObject, PublikGateUI {
         guard mode == .optional, !signedIn else { return }
         if let w = await Publik.resume() {
             handle = w.handle
+            email = w.email
             signedIn = true
         }
     }
@@ -95,6 +99,7 @@ final class PublikGateModel: ObservableObject, PublikGateUI {
     func signOut() {
         Publik.signOut()
         handle = nil
+        email = nil
         screen = nil
         signedIn = false
     }
@@ -104,6 +109,7 @@ final class PublikGateModel: ObservableObject, PublikGateUI {
     func deleteAccount() {
         Publik.deleteLocalData()
         handle = nil
+        email = nil
         deletePage = BrowserPage(url: Publik.deleteAccountURL)
     }
 
@@ -226,7 +232,8 @@ struct PublikGateView: View {
             .padding(.horizontal, 28)
             .padding(.vertical, 24)
         }
-        .sheet(item: $model.browser) { page in
+        // The person closed the publik page (Done): check the sign-in at once, not at the next 3 s check.
+        .sheet(item: $model.browser, onDismiss: { Publik.pollNow() }) { page in
             PublikBrowser(url: page.url).ignoresSafeArea()
         }
         .task { await model.run() }

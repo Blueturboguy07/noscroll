@@ -36,16 +36,18 @@ struct AllSettingsTab: View {
     }
 }
 
-/// Settings: the publik account, sign-out for each service, privacy, and the
-/// rule bundle's provenance.
+/// Settings: the publik account, sign-out for each service, privacy, and About
+/// (how blocking works, the rule versions, the source code, the app version).
 struct ProfileTab: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var gate: PublikGateModel
 
     @State private var confirmSignOut = false
     @State private var confirmDelete = false
-    /// publik's bare in-app privacy page in the in-app browser, or nil.
-    @State private var privacyPage: PublikGateModel.BrowserPage?
+    /// A page in the in-app browser (help and support, the privacy policy, the source code), or nil.
+    @State private var webPage: PublikGateModel.BrowserPage?
+
+    static let sourceCodeURL = URL(string: "https://github.com/Blueturboguy07/noscroll")!
 
     var body: some View {
         NavigationStack {
@@ -53,16 +55,15 @@ struct ProfileTab: View {
                 publikSection
                 servicesSection
 
-                Section("Rules") {
-                    ForEach(AppState.services) { service in
-                        LabeledContent(service.name,
-                                       value: state.bundleVersion(for: service.id))
-                    }
+                Section {
+                    // publik's bare in-app support page, in the in-app browser.
+                    Button("Help and support") { webPage = PublikGateModel.BrowserPage(url: Publik.supportURL) }
+                } header: {
+                    Text("Help")
                 }
 
                 Section {
-                    LabeledContent("Engine", value: "v1")
-                    Button("Privacy policy") { privacyPage = PublikGateModel.BrowserPage(url: Publik.privacyURL) }
+                    Button("Privacy policy") { webPage = PublikGateModel.BrowserPage(url: Publik.privacyURL) }
                 } header: {
                     Text("Privacy")
                 } footer: {
@@ -70,8 +71,14 @@ struct ProfileTab: View {
                 }
 
                 Section {
-                    Link("Source code", destination: URL(string: "https://github.com/Blueturboguy07/noscroll")!)
-                    Link("How rules work", destination: URL(string: "https://github.com/Blueturboguy07/noscroll/blob/main/docs/RULES.md")!)
+                    NavigationLink("How blocking works") { HowBlockingWorksView() }
+                    NavigationLink("Blocking rules") { RuleDetailsView() }
+                    Button("Source code") { webPage = PublikGateModel.BrowserPage(url: Self.sourceCodeURL) }
+                    Text(AppState.versionLine)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Version: \(AppState.versionLine)")
+                } header: {
+                    Text("About")
                 } footer: {
                     Text("\(AppState.appName) is free and open source under AGPL-3.0. It is not affiliated with any of the services it opens.")
                 }
@@ -85,8 +92,8 @@ struct ProfileTab: View {
         .sheet(item: $gate.deletePage, onDismiss: { gate.finishDelete() }) { page in
             PublikBrowser(url: page.url).ignoresSafeArea()
         }
-        // The privacy policy: publik's bare in-app page in the in-app browser.
-        .sheet(item: $privacyPage) { page in
+        // Help and support, the privacy policy and the source code: in the in-app browser, not the Safari app.
+        .sheet(item: $webPage) { page in
             PublikBrowser(url: page.url).ignoresSafeArea()
         }
         .confirmationDialog("Sign out of publik?", isPresented: $confirmSignOut, titleVisibility: .visible) {
@@ -113,17 +120,25 @@ struct ProfileTab: View {
     private var publikSection: some View {
         Section {
             if gate.signedIn {
-                LabeledContent("Signed in as", value: gate.handle.map { "@\($0)" } ?? "publik")
+                // The account email when publik gives one; else the handle; else no name at all.
+                if let email = gate.email {
+                    LabeledContent("Signed in as", value: email)
+                } else if let handle = gate.handle {
+                    LabeledContent("Signed in as", value: "@\(handle)")
+                } else {
+                    Text("Signed in with publik")
+                }
                 Button("Sign out", role: .destructive) { confirmSignOut = true }
+                // Only with an account: usage counting and account deletion.
+                Toggle("Count app use", isOn: $gate.usageCounting)
+                Button("Delete account", role: .destructive) { confirmDelete = true }
             } else {
                 Button("Sign in with publik") { gate.signInSheet = true }
             }
-            Toggle("Count app use", isOn: $gate.usageCounting)
-            Button("Delete account", role: .destructive) { confirmDelete = true }
         } header: {
             Text("publik account")
         } footer: {
-            Text("When you are signed in, \(AppState.appName) tells publik when it opens and each 30 minutes that it stays open, so publik can count app use. It sends nothing about what you look at. Turn off Count app use to stop this.")
+            Text(gate.signedIn ? "\(AppState.appName) tells publik when it opens and each 30 minutes that it stays open, so publik can count app use. It sends nothing about what you look at. Turn off Count app use to stop this." : "When you are signed in, \(AppState.appName) tells publik when it opens and each 30 minutes that it stays open, so publik can count app use. It sends nothing about what you look at. After you sign in, you can turn this off here (Count app use).")
         }
     }
 
@@ -150,5 +165,60 @@ struct ProfileTab: View {
         } footer: {
             Text("Sign out deletes the cookies and saved data of that service in \(AppState.appName) on this iPhone. Your account at the service stays.")
         }
+    }
+}
+
+/// Settings > About > How blocking works: the rules, in plain words.
+struct HowBlockingWorksView: View {
+    var body: some View {
+        List {
+            Section("What it does") {
+                Text("\(AppState.appName) opens each service in its own browser inside the app. When a page loads, \(AppState.appName) hides the parts that keep you scrolling, for example Reels, Shorts and suggested posts.")
+                Text("It also stops pages such as Reels or Shorts from opening. You go to the start page of the service instead.")
+            }
+            Section("You choose") {
+                Text("Each block has a switch. Find the switches in the Blocks tab, or tap the Settings card of a service on the home screen. Turn a switch off to see that part again.")
+            }
+            Section("On your iPhone only") {
+                Text("All of this happens on your iPhone. \(AppState.appName) sends nothing about what you look at.")
+            }
+            Section("Sign-in pages") {
+                Text("On a sign-in page, \(AppState.appName) stops. It does not hide, read or change anything on that page. A sign at the top of the screen says that \(AppState.appName) is paused. Blocking starts again after you sign in.")
+            }
+            Section("The rules") {
+                Text("A list of rules for each service tells \(AppState.appName) what to hide. The lists come with the app, and each list has a signature. \(AppState.appName) checks the signature and does not use a list that was changed.")
+                Text("Web sites change. A rule can stop working until the next update of the app.")
+                if !appStoreBuild {
+                    // Not in the App Store build: it has no BETA services and says no "beta" (guideline 2.2).
+                    Text("Services marked BETA are newer, and their rules are tested less.")
+                }
+            }
+        }
+        .navigationTitle("How blocking works")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Settings > About > Blocking rules: the version of each service's rule list and of the engine.
+struct RuleDetailsView: View {
+    @EnvironmentObject private var state: AppState
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(AppState.services) { service in
+                    LabeledContent(service.name, value: state.bundleVersion(for: service.id))
+                }
+            } header: {
+                Text("Rule lists")
+            } footer: {
+                Text("Each service has its own list of rules. A new version comes with an update of the app.")
+            }
+            Section("Blocking engine") {
+                LabeledContent("Engine", value: "Version 1")
+            }
+        }
+        .navigationTitle("Blocking rules")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

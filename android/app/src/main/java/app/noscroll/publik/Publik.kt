@@ -268,8 +268,8 @@ object Publik {
     }
 
     /** GET /api/v1/wallet: (status, wallet or null, message). Throws when publik is not reachable. */
-    suspend fun readWallet(key: String): Triple<Int, Wallet?, String?> {
-        val (status, b) = request("GET", "$origin/api/v1/wallet", key = key, timeoutMs = 15_000)
+    suspend fun readWallet(key: String, timeoutMs: Int = 15_000): Triple<Int, Wallet?, String?> {
+        val (status, b) = request("GET", "$origin/api/v1/wallet", key = key, timeoutMs = timeoutMs)
         val state = b.str("claim_state")
         if (status != 200 || state == null) return Triple(status, null, b.optJSONObject("error")?.str("message"))
         val plan = b.optJSONObject("plan")
@@ -305,8 +305,9 @@ object Publik {
     }
 
     /**
-     * Show a screen; with `until`, poll GET /wallet every 3 s for at most 10 minutes. "done": the poll saw it; "timeout": it did not.
-     * The poll runs while the app is in the foreground; when the app comes back, it checks at once.
+     * Show a screen; with `until`, poll GET /wallet every 3 s for 10 minutes (PublikPoll). "done": the poll saw it; "timeout": it did not.
+     * The checks are on a fixed 3 s grid and each runs on its own, so a slow request never moves the next check, and the
+     * interval never grows. The poll checks only while the app is in the foreground; when the app comes back, it checks at once.
      */
     private suspend fun ask(ui: PublikGateUI, screen: Screen, key: String = "", until: ((Wallet) -> Boolean)? = null): String = coroutineScope {
         val answers = Channel<String?>(Channel.UNLIMITED)
@@ -314,15 +315,11 @@ object Publik {
         jobs += launch { answers.send(ui.show(screen)) }
         if (until != null) {
             jobs += launch {
-                var polls = 0
-                while (polls < 200) { // 200 x 3 s = 10 minutes
-                    delay(3_000)
-                    foreground.first { it }
-                    polls++
-                    val w = try { readWallet(key).second } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
-                    if (w != null && until(w)) { answers.send("done"); return@launch }
+                val seen = PublikPoll.run(intervalMs = 3_000, durationMs = 600_000, foreground = foreground) {
+                    val w = readWallet(key, timeoutMs = 8_000).second
+                    w != null && until(w)
                 }
-                answers.send("timeout")
+                answers.send(if (seen) "done" else "timeout")
             }
         }
         var answer = "retry"

@@ -75,8 +75,9 @@ jobs:
         run: |
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           cd ios
+          # The app compiles the NoScrollCore sources into its own module (ServiceLinks, PublikPoll, ...).
           xcrun swiftc -typecheck -target arm64-apple-ios17.0 -sdk "$SDK" \
-            NoScroll/Core/*.swift NoScroll/Web/*.swift
+            NoScroll/Core/*.swift NoScroll/Web/*.swift NoScrollCore/Sources/NoScrollCore/*.swift
           # NoScroll/Shield imports NoScrollCore (a Swift package). Build that
           # module for the iOS SDK first, so `import NoScrollCore` resolves.
           CORE="$RUNNER_TEMP/noscrollcore"

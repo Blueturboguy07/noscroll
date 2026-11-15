@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import SafariServices
 import UIKit
 import WebKit
 
@@ -134,6 +135,21 @@ final class WrappedWebViewController: UIViewController {
     /// switch over two hardcoded cases with `default: instagram`, which sent
     /// all six other services to Instagram.
     private func homeURL() -> URL { startURL }
+
+    /// The service's own domains, from the `match` patterns of its rule bundle (ServiceLinks, NoScrollCore).
+    private lazy var serviceDomains: [String] = {
+        let match = (try? JSONDecoder().decode(RuleBundle.self, from: bundleRaw))?.services[session.service]?.match ?? []
+        let domains = ServiceLinks.domains(fromMatch: match)
+        return domains.isEmpty ? [startURL.host?.lowercased() ?? ""].filter { !$0.isEmpty } : domains
+    }()
+
+    /// A link that leaves the service: the in-app Safari sheet shows it. The web view never shows another site.
+    private func openOutside(_ url: URL) {
+        guard presentedViewController == nil else { return }
+        let safari = SFSafariViewController(url: url)
+        safari.dismissButtonStyle = .close
+        present(safari, animated: true)
+    }
 }
 
 // MARK: - Navigation
@@ -155,6 +171,16 @@ extension WrappedWebViewController: WKNavigationDelegate {
         if let scheme = url.scheme?.lowercased(),
            !["http", "https", "about", "data", "blob"].contains(scheme) {
             decisionHandler(.cancel); return
+        }
+
+        // A page of another site (a link in a post, a profile's web site, a redirect of a link shim) opens in
+        // the in-app Safari sheet, not here: the web view shows only the service and its sign-in pages, so the
+        // app gives no unrestricted web access. Frames inside a page of the service are not checked.
+        let mainFrame = navigationAction.targetFrame?.isMainFrame ?? true
+        if mainFrame, !ServiceLinks.staysInApp(url, serviceDomains: serviceDomains) {
+            decisionHandler(.cancel)
+            openOutside(url)
+            return
         }
 
         decisionHandler(.allow)

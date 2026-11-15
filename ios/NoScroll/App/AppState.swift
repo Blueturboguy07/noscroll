@@ -35,10 +35,26 @@ final class AppState: ObservableObject {
     /// the app by the name iOS shows.
     static let homeScreenName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "NoScroll"
 
+    /// "publik NoScroll 0.1.5 (6)": the full name, the release version and the build number, for Settings.
+    static let versionLine: String = {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = info["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info["CFBundleVersion"] as? String ?? "?"
+        return "\(appName) \(version) (\(build))"
+    }()
+
     /// Surfaces that hide ads ("sponsored", "promoted"). The app never turns
     /// them on and never shows a switch for them: blocking ads conflicts with
     /// the terms of the services it opens (App Store guideline 5.2.2).
     static let adSurfaceKeys: Set<String> = ["sponsored", "promoted"]
+
+    /// False for a rule that this build never applies and shows no switch for: the ad rules (every build), and in
+    /// the App Store build the page-part rules of the services in `addressOnlyInStoreBuild`.
+    static func isOffered(service: String, key: String, kind: String) -> Bool {
+        if adSurfaceKeys.contains(key) { return false }
+        if isAppStoreBuild && addressOnlyInStoreBuild.contains(service) && !addressKinds.contains(kind) { return false }
+        return true
+    }
 
     /// First run shows onboarding, where the user sees every switch once and
     /// decides. Nothing is forced on.
@@ -71,8 +87,8 @@ final class AppState: ObservableObject {
     }
 
     func bundleVersion(for serviceID: String) -> String {
-        guard let v = bundles[serviceID]?.version else { return "unavailable" }
-        return "v\(v)"
+        guard let v = bundles[serviceID]?.version else { return "Not available" }
+        return "Version \(v)"
     }
 
     // MARK: - Sign out of a service
@@ -115,7 +131,7 @@ final class AppState: ObservableObject {
             guard let svc = bundles[service.id]?.services[service.id] else { continue }
             for (name, surface) in svc.surfaces {
                 let key = "\(service.id).\(name)"
-                if Self.adSurfaceKeys.contains(name) {
+                if !Self.isOffered(service: service.id, key: name, kind: surface.kind) {
                     // Off, also for people who had turned it on in an older build.
                     if settings[key] != false { settings[key] = false }
                 } else if surface.label != nil, settings[key] == nil {
@@ -212,7 +228,7 @@ final class AppState: ObservableObject {
     func surfaces(for service: String) -> [SurfaceGroup] {
         guard let svc = bundles[service]?.services[service] else { return [] }
         var byLabel: [String: (keys: [String], suggested: Bool)] = [:]
-        for (key, surface) in svc.surfaces where !Self.adSurfaceKeys.contains(key) {
+        for (key, surface) in svc.surfaces where Self.isOffered(service: service, key: key, kind: surface.kind) {
             guard let label = Self.displayLabel(surface.label) else { continue }
             var entry = byLabel[label] ?? (keys: [], suggested: false)
             entry.keys.append(key)

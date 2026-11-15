@@ -11,7 +11,10 @@ friend sends you a reel you can watch *that* video. You just can't scroll to the
 
 Eight services: **Instagram** and **YouTube** are probe-verified against the live sites;
 **X, TikTok, Facebook, LinkedIn, Snapchat** and **Reddit** ship as beta and are labelled so in
-the app.
+the app. The iOS App Store build (`APP_STORE_BUILD` in `ios/Config/App.xcconfig`) ships only Instagram,
+YouTube, TikTok, Facebook and LinkedIn, with no BETA label; for TikTok, Facebook and LinkedIn it shows only
+the blocks that work by address. It leaves out X, Reddit and Snapchat (on a phone, Snapchat's web site only
+says to use a computer).
 
 > Status: **pre-release.** The engine, rule bundles, both native shells and the shield layers are
 > written and tested, and both the iPhone and Android apps build and run. Not yet submitted to either store —

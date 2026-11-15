@@ -43,6 +43,9 @@ enum Publik {
     /// The privacy policy: publik's bare in-app page, opened in the in-app browser.
     static var privacyURL: URL { PublikLinks.privacyURL(origin: origin) ?? publikPrivacyURL }
     private static let publikPrivacyURL = URL(string: "https://publikhq.com/in-app/privacy")!
+    /// Help and support (Settings): publik's bare in-app support page, opened in the in-app browser.
+    static var supportURL: URL { PublikLinks.supportURL(origin: origin) ?? publikSupportURL }
+    private static let publikSupportURL = URL(string: "https://publikhq.com/in-app/support")!
 
     /// The test hooks: PUBLIK_API_BASE_URL, PUBLIK_ORIGIN, PUBLIK_TELEMETRY_URL, PUBLIK_SELF_TEST, PUBLIK_API_KEY,
     /// PUBLIK_APP_TOKEN, PUBLIK_TELEMETRY_INTERVAL_SECONDS, PUBLIK_TELEMETRY_DEBUG, PUBLIK_TEST_PRESS (the gate presses
@@ -78,8 +81,9 @@ enum Publik {
     /// The key file. `claimed` is the local "signed in" mark: set when GET /wallet says "claimed", cleared only by
     /// publik's own answer (a JSON 401, or a wallet that is not claimed). With it, the app opens when publik is not
     /// reachable (offline, 5xx, 408, 429, a captive-portal page). A fresh install has no mark and needs publik once.
-    struct Credential: Codable { var key: String; var base_url: String; var install_id: String; var claim_url: String?; var choice: String?; var claimed: Bool?; var handle: String? }
-    struct Wallet: Sendable { var claimed: Bool; var claimURL: String?; var handle: String?; var planKind: String; var planLabel: String?; var balanceMicros: Int; var topUpURL: String }
+    struct Credential: Codable { var key: String; var base_url: String; var install_id: String; var claim_url: String?; var choice: String?; var claimed: Bool?; var handle: String?; var email: String? }
+    /// `email`: the account email, when GET /wallet gives one (account.email, or email); Settings shows it.
+    struct Wallet: Sendable { var claimed: Bool; var claimURL: String?; var handle: String?; var email: String? = nil; var planKind: String; var planLabel: String?; var balanceMicros: Int; var topUpURL: String }
     struct Screen: Sendable { let id: String; let title: String; let body: String; let note: String?; let buttons: [(action: String, label: String)] }
     enum Provider { case own(baseURL: String, apiKey: String), publik(baseURL: String, apiKey: String), needsOwnKey }
     struct PublikError: LocalizedError { let message: String; var errorDescription: String? { message } }
@@ -184,23 +188,27 @@ enum Publik {
         let b = json ?? [:]
         guard status == 200, let state = b["claim_state"] as? String else { return (status, nil, (b["error"] as? [String: Any])?["message"] as? String, json != nil) }
         let plan = b["plan"] as? [String: Any]
-        return (status, Wallet(claimed: state == "claimed", claimURL: b["claim_url"] as? String, handle: (b["account"] as? [String: Any])?["handle"] as? String,
+        let account = b["account"] as? [String: Any]
+        let email = ((account?["email"] as? String) ?? (b["email"] as? String)).map { $0.trimmingCharacters(in: .whitespaces) }.flatMap { $0.contains("@") ? $0 : nil }
+        return (status, Wallet(claimed: state == "claimed", claimURL: b["claim_url"] as? String, handle: account?["handle"] as? String, email: email,
                                planKind: plan?["kind"] as? String ?? "none", planLabel: plan?["label"] as? String, balanceMicros: b["balance_micros"] as? Int ?? 0,
                                topUpURL: b["top_up_url"] as? String ?? "\(origin)/wallet"), nil, true)
     }
 
     /// The local "signed in" mark (see Credential). Kept with the key; Sign out deletes both.
-    private static func mark(claimed: Bool, handle: String? = nil) {
+    private static func mark(claimed: Bool, handle: String? = nil, email: String? = nil) {
         guard var c = readCredential() else { return }
         let newHandle = claimed ? (handle ?? c.handle) : nil
-        if (c.claimed == true) == claimed && c.handle == newHandle { return }
+        let newEmail = claimed ? (email ?? c.email) : nil
+        if (c.claimed == true) == claimed && c.handle == newHandle && c.email == newEmail { return }
         c.claimed = claimed ? true : nil
         c.handle = newHandle
+        c.email = newEmail
         try? write(c)
     }
     /// A device with the mark, when publik does not answer: the wallet from the mark.
     private static func markedWallet(_ c: Credential) -> Wallet {
-        Wallet(claimed: true, claimURL: c.claim_url, handle: c.handle, planKind: "none", planLabel: nil, balanceMicros: 0, topUpURL: "\(origin)/wallet")
+        Wallet(claimed: true, claimURL: c.claim_url, handle: c.handle, email: c.email, planKind: "none", planLabel: nil, balanceMicros: 0, topUpURL: "\(origin)/wallet")
     }
 
     /// The words of the gate. The same in every publik module.
@@ -222,25 +230,47 @@ enum Publik {
                       buttons: [("connect", "Connect your plan"), ("own_key", "Use my own key")])
     }
 
-    /// Show a screen; with `until`, poll GET /wallet every 3 s for at most 10 minutes. "done": the poll saw it; "timeout": it did not.
-    /// iOS suspends the app in the background, so the poll runs while the app is in the foreground and goes on when it comes back.
+    /// Show a screen; with `until`, poll GET /wallet every 3 s for 10 minutes (PublikPoll, NoScrollCore). "done": the poll saw it;
+    /// "timeout": it did not. The checks are on a fixed 3 s grid and each runs on its own, so a slow request never moves the
+    /// next check, and the interval never grows. When the app becomes active again, or the in-app sign-in page closes
+    /// (pollNow()), it checks at once. iOS suspends the app in the background; the grid goes on when it comes back.
     private static func ask(_ ui: PublikGateUI, _ screen: Screen, key: String = "", until: (@Sendable (Wallet) -> Bool)? = nil) async -> String {
         await withTaskGroup(of: String?.self) { group in
             group.addTask { await ui.show(screen) }
             if let until {
                 group.addTask {
-                    for _ in 0..<200 { // 200 x 3 s = 10 minutes
-                        try? await Task.sleep(nanoseconds: 3_000_000_000)
-                        if Task.isCancelled { return nil }
-                        if let w = try? await readWallet(key).1, until(w) { return "done" }
+                    let seen = await PublikPoll.run(interval: 3, duration: 600, wake: wakeSignals()) {
+                        guard let w = try? await walletAnswer(key, timeout: 8).wallet else { return false }
+                        return until(w)
                     }
-                    return "timeout"
+                    if Task.isCancelled { return nil }
+                    return seen ? "done" : "timeout"
                 }
             }
             defer { group.cancelAll() }
             for await result in group { if let result { return result } }
             return "retry"
         }
+    }
+
+    /// The in-app sign-in page closed (or another reason to look now): the sign-in poll checks GET /wallet at once.
+    static func pollNow() { NotificationCenter.default.post(name: pollNowNotification, object: nil) }
+    private static let pollNowNotification = Notification.Name("publik.pollNow")
+
+    /// One signal each time the app becomes active again or pollNow() is called, for the sign-in poll.
+    private static func wakeSignals() -> AsyncStream<Void> {
+        AsyncStream { continuation in
+            let center = NotificationCenter.default
+            let observers = WakeObservers([UIApplication.didBecomeActiveNotification, pollNowNotification].map { name in
+                center.addObserver(forName: name, object: nil, queue: nil) { _ in continuation.yield(()) }
+            })
+            continuation.onTermination = { _ in observers.remove() }
+        }
+    }
+    private final class WakeObservers: @unchecked Sendable {
+        private let tokens: [NSObjectProtocol]
+        init(_ tokens: [NSObjectProtocol]) { self.tokens = tokens }
+        func remove() { tokens.forEach { NotificationCenter.default.removeObserver($0) } }
     }
 
     /// The gate (see the top of the file). Returns once the person is signed in; `choice` is nil when usesAI is false.
@@ -285,7 +315,7 @@ enum Publik {
                 if a == "timeout" { signNote = "No sign-in after 10 minutes. Tap Sign in with publik to try again."; signPoll = false }
                 continue
             }
-            if envKey == nil { mark(claimed: true, handle: w.handle) }
+            if envKey == nil { mark(claimed: true, handle: w.handle, email: w.email) }
             var choice = usesAI ? readCredential()?.choice : nil
             if usesAI && choice == nil {
                 if hasPlan(w) { planNote = nil; planPoll = false } // the plan is there: Connect your plan
@@ -324,7 +354,7 @@ enum Publik {
             return nil
         }
         guard w.claimed else { if marked { mark(claimed: false) }; return nil }
-        mark(claimed: true, handle: w.handle)
+        mark(claimed: true, handle: w.handle, email: w.email)
         await startTelemetry()
         return w
     }

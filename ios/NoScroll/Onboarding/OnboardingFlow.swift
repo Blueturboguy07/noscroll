@@ -132,11 +132,21 @@ enum LayoutProbe {
 struct WidgetsScreen: View {
     let onSetUp: () -> Void
     let onLater: () -> Void
+    /// The words of the second button: "Maybe later" in onboarding, "Close" from the home screen.
+    let laterTitle: String
 
     /// iOS exposes no way to open the widget gallery programmatically, so the
     /// honest version of "Set it up" is to show the three steps rather than
     /// pretend a button can do it.
-    @State private var showSteps = false
+    @State private var showSteps: Bool
+
+    /// stepsFirst: show the three steps at once (the "Add apps to your home screen" banner of the home screen).
+    init(onSetUp: @escaping () -> Void, onLater: @escaping () -> Void, stepsFirst: Bool = false, laterTitle: String = "Maybe later") {
+        self.onSetUp = onSetUp
+        self.onLater = onLater
+        self.laterTitle = laterTitle
+        _showSteps = State(initialValue: stepsFirst)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -177,7 +187,7 @@ struct WidgetsScreen: View {
                 if showSteps { onSetUp() } else { showSteps = true }
             }
             .padding(.horizontal, 20)
-            SecondaryButton(title: "Maybe later", outlined: true, action: onLater)
+            SecondaryButton(title: laterTitle, outlined: true, action: onLater)
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
         }

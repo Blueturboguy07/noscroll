@@ -26,7 +26,14 @@ struct WidgetService: Identifiable, Hashable {
     let start: Color
     let end: Color
 
-    static let all: [WidgetService] = [
+    /// The App Store build (Info.plist key AppStoreBuild) shows only the services the app ships there; the app
+    /// leaves out the same ids (AppState.notInStoreBuild).
+    static let isAppStoreBuild = ((Bundle.main.object(forInfoDictionaryKey: "AppStoreBuild") as? String) ?? "YES")
+        .trimmingCharacters(in: .whitespaces).uppercased() != "NO"
+    static let notInStoreBuild: Set<String> = ["x", "reddit", "snapchat"]
+    static let all: [WidgetService] = every.filter { !isAppStoreBuild || !notInStoreBuild.contains($0.id) }
+
+    static let every: [WidgetService] = [
         .init(id: "instagram", name: "Instagram",
               start: Color(red: 0.88, green: 0.19, blue: 0.42),
               end: Color(red: 0.97, green: 0.47, blue: 0.22)),

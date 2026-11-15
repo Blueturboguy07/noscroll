@@ -163,7 +163,7 @@ struct WidgetsScreen: View {
                 VStack(alignment: .leading, spacing: 12) {
                     step(1, "Touch and hold an empty part of your home screen")
                     step(2, "Tap Edit, then Add Widget")
-                    step(3, "Search for \(AppState.appName) and add it")
+                    step(3, "Search for \(AppState.homeScreenName) and add it")
                 }
                 .padding(.horizontal, 30)
                 .transition(.opacity)
@@ -219,7 +219,7 @@ struct WidgetsScreen: View {
                     }
                 }
             }
-            Label(AppState.appName, systemImage: "square.grid.2x2.fill")
+            Label(AppState.homeScreenName, systemImage: "square.grid.2x2.fill")
                 .font(Theme.body(14, .bold))
                 .foregroundStyle(Theme.inkSoft)
         }

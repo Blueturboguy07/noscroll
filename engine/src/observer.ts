@@ -6,8 +6,6 @@
  * with NO URL change at all. There is no route to block and no navigation event
  * to hook. URL rules are structurally insufficient for that surface, and no
  * quantity of them will ever be enough.
- *
- * This is also the surface SocialLite visibly leaks on.
  */
 
 export type SweepFn = () => void;

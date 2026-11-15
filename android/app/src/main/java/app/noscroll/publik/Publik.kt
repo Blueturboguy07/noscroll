@@ -19,6 +19,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import app.noscroll.BuildConfig
+import app.noscroll.R
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -124,7 +125,7 @@ object Publik {
     fun watchForeground(app: Application) {
         if (watching) return
         watching = true
-        appName = app.applicationInfo.loadLabel(app.packageManager).toString().ifBlank { appName }
+        appName = app.getString(R.string.app_name_full).ifBlank { appName }
         val started = Collections.newSetFromMap(WeakHashMap<Activity, Boolean>())
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) { started.add(activity); foreground.value = true }

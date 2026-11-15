@@ -2,11 +2,11 @@ import XCTest
 @testable import NoScrollCore
 
 /// The life grid is the most persuasive screen in the app, so its arithmetic is
-/// pinned. These cases reproduce the reference exactly: age 18, 4.8 scrolling
+/// pinned. These cases pin the expected numbers exactly: age 18, 4.8 scrolling
 /// hours a day, 90-year life → 18/24/24/9/15 and 96%.
 final class LifeInWeeksTests: XCTestCase {
 
-    func testReferenceCaseMatchesExactly() {
+    func testPinnedCaseMatchesExactly() {
         let life = LifeInWeeks(age: 18, scrollHoursPerDay: 4.8)
 
         func years(_ k: LifeInWeeks.Kind) -> Int {

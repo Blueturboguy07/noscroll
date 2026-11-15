@@ -24,8 +24,9 @@ protocol PublikGateUI: Sendable {
 
 enum Publik {
     static let appSlug = "noscroll"
-    /// The name people see (CFBundleDisplayName), for the gate's words.
-    static let appName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "This app"
+    /// The full name (Info.plist AppFullName, else CFBundleDisplayName), for the gate's words.
+    static let appName = (Bundle.main.object(forInfoDictionaryKey: "AppFullName") as? String)
+        ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "This app"
     /// The release version: MARKETING_VERSION of the app target.
     static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0.0.0"
     /// false: the app calls no model. It still signs in and counts users; it skips the plan screen.

@@ -7,10 +7,9 @@ import java.util.TimeZone
  * Scheduled blocking (bedtime). Kotlin twin of ios/NoScrollCore SleepSchedule.swift —
  * same semantics, same edge cases, same tests.
  *
- * The bug this exists to not ship: SocialLite has two independent public reviews
- * reporting Sleep Mode failing to release at the scheduled end, one user stuck on
- * the "you should be asleep" screen at 9am. The cause is almost certainly a
- * window computed once and cached, which drifts on timezone change, DST, device
+ * The bug this exists to not ship: Sleep Mode fails to release at the scheduled
+ * end, and the user is stuck on the "you should be asleep" screen at 9am. The
+ * cause is almost certainly a window computed once and cached, which drifts on timezone change, DST, device
  * sleep across the boundary, and any schedule crossing midnight.
  *
  * The rule: NEVER cache the decision. [isActive] is pure and is recomputed from

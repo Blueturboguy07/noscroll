@@ -26,7 +26,7 @@ enum Theme {
     // MARK: - Type
 
     /// Display face. The system rounded weightings carry the same friendly-but-
-    /// blunt tone as the reference without shipping a licensed font.
+    /// blunt tone we want without shipping a licensed font.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .black) -> Font {
         .system(size: size, weight: weight, design: .rounded)
     }

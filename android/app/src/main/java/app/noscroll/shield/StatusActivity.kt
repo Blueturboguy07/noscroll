@@ -60,7 +60,7 @@ class StatusActivity : Activity() {
     private val scope = MainScope()
     /** Delete account opened publik's page; when the person comes back, the device is signed out. */
     private var deletePending = false
-    private val appName by lazy { getString(R.string.app_name) }
+    private val appName by lazy { getString(R.string.app_name_full) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

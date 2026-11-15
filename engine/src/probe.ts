@@ -3,8 +3,7 @@
  *
  * The category's defining failure is selector rot: Instagram ships a redesign,
  * a hashed class rotates, and the blocker silently stops blocking. Users find
- * out before the developer does — that is why SocialLite's own marketing
- * screenshot still shows a Shorts shelf.
+ * out before the developer does.
  *
  * Every rule declares expectMin. The engine counts what it actually matched and
  * reports anomalies. Combined with probe/ (scheduled Playwright runs against

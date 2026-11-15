@@ -1,7 +1,12 @@
 // Build settings for both targets (the app and the widget), set on the project.
 
-// The name under the icon and in the app's own screens. A rename is this one line.
+// The short name under the icon (CFBundleDisplayName). "publik NoScroll" is too long:
+// iOS cuts a home-screen label at about 12 characters.
 APP_DISPLAY_NAME = NoScroll
+
+// The full name: the app's own screens, the gate and the permission texts (Info.plist key
+// AppFullName). The App Store name "publik NoScroll" is set in App Store Connect.
+APP_NAME = publik NoScroll
 
 // Sign in with publik (NoScroll/Publik/Publik.swift reads it from the Info.plist key PublikGateMode).
 //   required: the app opens with Sign in with publik, with no way past it (today's behaviour).

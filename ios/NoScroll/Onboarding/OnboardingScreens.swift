@@ -21,6 +21,9 @@ struct WelcomeScreen: View {
                     .font(Theme.display(40))
                     .tracking(3)
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 16)
                     #if PUBLIK_TEST_HOOKS
                     .background {
                         GeometryReader { g in

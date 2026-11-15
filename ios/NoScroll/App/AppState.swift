@@ -25,9 +25,15 @@ final class AppState: ObservableObject {
     private let settingsKey = "noscroll.settings"
     private let onboardedKey = "noscroll.onboarded"
 
-    /// The name people see: CFBundleDisplayName, from APP_DISPLAY_NAME in
-    /// ios/Config/App.xcconfig. A rename is one line there.
-    static let appName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "NoScroll"
+    /// The full name in the app's own screens ("publik NoScroll"): the Info.plist key
+    /// AppFullName, from APP_NAME in ios/Config/App.xcconfig.
+    static let appName = (Bundle.main.object(forInfoDictionaryKey: "AppFullName") as? String)
+        ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "publik NoScroll"
+
+    /// The short name under the icon and in the widget gallery ("NoScroll"):
+    /// CFBundleDisplayName, from APP_DISPLAY_NAME. Use it where the user must find
+    /// the app by the name iOS shows.
+    static let homeScreenName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "NoScroll"
 
     /// Surfaces that hide ads ("sponsored", "promoted"). The app never turns
     /// them on and never shows a switch for them: blocking ads conflicts with

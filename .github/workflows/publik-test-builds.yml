@@ -60,9 +60,11 @@ jobs:
             echo "$2 = $v"
             [ "$v" = "$3" ] || { echo "::error::$2 is '$v', not '$3'."; exit 1; }
           }
-          expect "$APP/Info.plist" CFBundleShortVersionString 0.1.2
+          expect "$APP/Info.plist" CFBundleShortVersionString 0.1.3
+          expect "$APP/Info.plist" CFBundleVersion 4
           expect "$APP/Info.plist" PublikGateMode "$MODE"
           expect "$APP/Info.plist" CFBundleDisplayName NoScroll
+          expect "$APP/Info.plist" AppFullName "publik NoScroll"
           expect "$APP/Info.plist" ITSAppUsesNonExemptEncryption false
           expect "$APP/Info.plist" UIUserInterfaceStyle Light
           expect "$APP/Info.plist" UIDeviceFamily:0 1

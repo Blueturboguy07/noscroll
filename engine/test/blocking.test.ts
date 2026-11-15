@@ -1,9 +1,8 @@
 /**
  * Golden-DOM tests: shipped rule bundles run against captured page structure.
  *
- * These are the tests that would have caught SocialLite's two visible failures —
- * a Shorts shelf surviving in their own marketing screenshot, and suggested
- * posts leaking into the feed.
+ * They catch the two most visible failures of a feed blocker: a Shorts shelf
+ * that survives, and suggested posts leaking into the feed.
  */
 
 import { readFileSync } from 'node:fs';
@@ -131,7 +130,7 @@ describe('YouTube', () => {
     expect(document.querySelector('.pivot-shorts')).toBeNull();
   });
 
-  it('removes the Shorts shelf — the surface SocialLite visibly leaks', () => {
+  it('removes the Shorts shelf — the surface that most often leaks', () => {
     run(yt);
     expect(document.getElementById('shorts-shelf-1')).toBeNull();
   });

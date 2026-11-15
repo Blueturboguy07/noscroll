@@ -58,6 +58,8 @@ struct HomeView: View {
             Text(AppState.appName)
                 .font(Theme.display(31))
                 .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Spacer()
             Button {
                 if let s = AppState.service(selection) { openService = s }

@@ -8,11 +8,11 @@ import org.junit.Test
 class PublikGateWordsTest {
     @Test
     fun signInScreenHasOneWayOn() {
-        Publik.appName = "NoScroll"
+        Publik.appName = "publik NoScroll"
         val s = Publik.gateScreen("sign_in")
         assertEquals("Sign in with publik", s.title)
         assertEquals(
-            "NoScroll uses your publik account. Tap Sign in with publik and sign in on the publik page. Then come back here. NoScroll opens by itself.",
+            "publik NoScroll uses your publik account. Tap Sign in with publik and sign in on the publik page. Then come back here. publik NoScroll opens by itself.",
             s.body,
         )
         assertEquals(listOf("sign_in" to "Sign in with publik"), s.buttons)

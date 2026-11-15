@@ -195,7 +195,9 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b > /dev/null
           xcrun simctl install "$UDID" "$(cat "$BTH/app_path")"
           T0=$(date +%s)
-          if perl -e 'alarm 420; exec @ARGV' "$BTH/maestro/bin/maestro" --udid "$UDID" hierarchy > "$BTH/maestro-start.log" 2>&1; then
+          # --no-reinstall-driver: without it, Maestro stops the XCTest driver when the CLI exits.
+          perl -e 'alarm 420; exec @ARGV' "$BTH/maestro/bin/maestro" --udid "$UDID" hierarchy --no-reinstall-driver > "$BTH/maestro-start.log" 2>&1 || true
+          if curl -s -m 5 http://127.0.0.1:22087/deviceInfo | grep -q widthPoints; then
             echo "UI driver started in $(( $(date +%s) - T0 )) s."
           else
             echo "::warning::The UI driver did not start in $(( $(date +%s) - T0 )) s. The host tries again at the first UI command."
@@ -340,14 +342,19 @@ jobs:
                   p = find_driver()
                   if p:
                       return p
-                  log("starting the UI driver")
-                  t0 = time.time()
-                  _, err, rc = run([MAESTRO, "--udid", UDID, "hierarchy"], timeout=420, check=False)
-                  p = find_driver()
-                  log("UI driver start: exit %d after %d s, port %s" % (rc, time.time() - t0, p))
-                  if not p:
-                      raise Fail("the UI driver did not start: %s" % err.strip()[-300:])
-                  return p
+                  # Without --no-reinstall-driver, Maestro stops its XCTest driver when the CLI exits
+                  # (seen on the runner, Nov 15 2026). With it, the driver stays up for the next calls.
+                  # The plain call in the middle reinstalls a broken driver.
+                  err = ""
+                  for extra in (["--no-reinstall-driver"], [], ["--no-reinstall-driver"]):
+                      log("starting the UI driver %s" % extra)
+                      t0 = time.time()
+                      _, err, rc = run([MAESTRO, "--udid", UDID, "hierarchy"] + extra, timeout=420, check=False)
+                      p = find_driver()
+                      log("UI driver start: exit %d after %d s, port %s" % (rc, time.time() - t0, p))
+                      if p:
+                          return p
+                  raise Fail("the UI driver did not start: %s" % err.strip()[-300:])
 
 
           def warm():

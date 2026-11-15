@@ -41,6 +41,7 @@
 		827770E84FF0BF9D5999EA61 /* youtube.json in Resources */ = {isa = PBXBuildFile; fileRef = 45D328F985929718EE6E102E /* youtube.json */; };
 		5E86D988E1CFC7573C497EFA /* NoScrollWidget.swift in WidgetSources */ = {isa = PBXBuildFile; fileRef = 1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */; };
 		6A4BD3B1CBC66F4CF0721548 /* NoScrollWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AEDC9D5FAA9591CF1291BADC /* PrivacyInfo.xcprivacy in WidgetResources */ = {isa = PBXBuildFile; fileRef = BD7955A5F28830838C940789 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -78,6 +79,7 @@
 		E923E430F8E46F763F647273 /* x.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "x.json"; path = "NoScroll/Resources/Rules/x.json"; sourceTree = "<group>"; };
 		45D328F985929718EE6E102E /* youtube.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "youtube.json"; path = "NoScroll/Resources/Rules/youtube.json"; sourceTree = "<group>"; };
 		1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NoScrollWidget.swift"; path = "NoScrollWidget/NoScrollWidget.swift"; sourceTree = "<group>"; };
+		BD7955A5F28830838C940789 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = "PrivacyInfo.xcprivacy"; path = "NoScrollWidget/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
 		FBF257999FE8034997CE0C5E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info.plist"; path = "NoScrollWidget/Info.plist"; sourceTree = "<group>"; };
 		C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NoScrollWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D91517BFBDECE389497A425B /* NoScroll.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoScroll.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -174,6 +176,7 @@
 			children = (
 				1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */,
 				FBF257999FE8034997CE0C5E /* Info.plist */,
+				BD7955A5F28830838C940789 /* PrivacyInfo.xcprivacy */,
 			);
 			name = NoScrollWidget;
 			sourceTree = "<group>";
@@ -206,6 +209,7 @@
 			buildPhases = (
 				59C757B69A2BA5C7B3FDB1D7,
 				DE01148BD5ECED1017080940,
+				610A5AE89E343EB10249B970,
 			);
 			buildRules = ();
 			dependencies = ();
@@ -283,6 +287,14 @@
 				97358D1A963520AEA8FE3696 /* tiktok.json in Resources */,
 				D698B01EC3BB77FD1669A593 /* x.json in Resources */,
 				827770E84FF0BF9D5999EA61 /* youtube.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		610A5AE89E343EB10249B970 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AEDC9D5FAA9591CF1291BADC /* PrivacyInfo.xcprivacy in WidgetResources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

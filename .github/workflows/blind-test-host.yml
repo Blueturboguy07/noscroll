@@ -1,0 +1,816 @@
+# Blind-test host: an iPhone Simulator on this macOS runner that a tester drives step by
+# step from their own Mac (rkit.sh in the blind-test kit). Only this file is on this branch.
+#
+# Privacy: this repo and its logs are PUBLIC. The job prints only step names, the tunnel
+# address and the runner's SSH host public key. Both are useless without the tester's
+# private key. Screenshots, typed text, URLs and app logs go only through SSH: sshd accepts
+# only the public key given as input, listens on 127.0.0.1, and forwards only to the host
+# daemon on 127.0.0.1:8765. Nothing is uploaded as an artifact.
+name: blind test host
+run-name: blind test host ${{ inputs.nonce || 'register' }}
+
+on:
+  # The push trigger only registers this workflow, so it can be dispatched on this branch.
+  # On a push the job is skipped.
+  push:
+    branches: [blind-test-host]
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "owner/name of the repo that built the app"
+        required: true
+        default: Blueturboguy07/noscroll
+      run_id:
+        description: "id of the workflow run with the Simulator app artifact"
+        required: true
+      artifact:
+        description: "artifact name, for example ios-sim-app"
+        required: true
+        default: ios-sim-app
+      minutes:
+        description: "minutes to serve after the host is ready (1-60)"
+        required: true
+        default: "20"
+      pubkey:
+        description: "the tester's ssh-ed25519 PUBLIC key (the only key the runner accepts)"
+        required: true
+      nonce:
+        description: "a tag that lets the tester find this run"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  host:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    timeout-minutes: 85
+    env:
+      DO_NOT_TRACK: "1"
+      MAESTRO_CLI_NO_ANALYTICS: "1"
+      MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+    steps:
+      - name: Check the inputs
+        env:
+          REPO: ${{ inputs.repo }}
+          RUN_ID: ${{ inputs.run_id }}
+          ARTIFACT: ${{ inputs.artifact }}
+          MINUTES: ${{ inputs.minutes }}
+          PUBKEY: ${{ inputs.pubkey }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || fail "repo must be owner/name."
+          [[ "$RUN_ID" =~ ^[0-9]{1,15}$ ]] || fail "run_id must be a number."
+          [[ "$ARTIFACT" =~ ^[A-Za-z0-9_.-]{1,100}$ ]] || fail "artifact has characters that are not allowed."
+          [[ "$MINUTES" =~ ^[0-9]{1,2}$ ]] && [ "$MINUTES" -ge 1 ] && [ "$MINUTES" -le 60 ] || fail "minutes must be 1 to 60."
+          [[ "$PUBKEY" =~ ^ssh-ed25519\ [A-Za-z0-9+/]{60,80}={0,2}(\ [A-Za-z0-9_.@-]{0,64})?$ ]] || fail "pubkey must be one ssh-ed25519 public key."
+          W="$RUNNER_TEMP/bth"; mkdir -p "$W"; chmod 700 "$W"
+          echo "BTH=$W" >> "$GITHUB_ENV"
+          echo "App: $REPO run $RUN_ID artifact $ARTIFACT. Serve time: $MINUTES min."
+
+      - name: Boot the simulator
+        run: |
+          set -euo pipefail
+          read -r UDID NAME < <(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          devs = json.load(sys.stdin)["devices"]
+          def ver(rt):
+              return [int(x) for x in re.findall(r"\d+", rt.rsplit(".", 1)[-1])]
+          for rt in sorted((r for r in devs if ".iOS-" in r), key=ver, reverse=True):
+              phones = [d for d in devs[rt] if d["name"].startswith("iPhone")]
+              if not phones:
+                  continue
+              pick = next((d for d in phones if re.fullmatch(r"iPhone \d+ Pro", d["name"])), phones[0])
+              print(pick["udid"], pick["name"] + " (" + rt.rsplit(".", 1)[-1] + ")")
+              sys.exit(0)
+          sys.exit(1)')
+          echo "$UDID" > "$BTH/udid"
+          echo "Simulator: $NAME"
+          xcrun simctl boot "$UDID" || true
+
+      - name: Open the private SSH door
+        env:
+          PUBKEY: ${{ inputs.pubkey }}
+        run: |
+          set -euo pipefail
+          D="$BTH/ssh"; mkdir -p "$D"; chmod 700 "$D"
+          printf '%s\n' "$PUBKEY" > "$D/authorized_keys"; chmod 600 "$D/authorized_keys"
+          ssh-keygen -q -t ed25519 -N '' -C blind-test-host -f "$D/host_ed25519"
+          cat > "$D/sshd_config" <<EOF
+          Port 2222
+          ListenAddress 127.0.0.1
+          HostKey $D/host_ed25519
+          PidFile $D/sshd.pid
+          AuthorizedKeysFile $D/authorized_keys
+          AuthenticationMethods publickey
+          PubkeyAuthentication yes
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          PermitRootLogin no
+          AllowUsers $(id -un)
+          UsePAM no
+          StrictModes no
+          AllowTcpForwarding local
+          PermitOpen 127.0.0.1:8765
+          AllowAgentForwarding no
+          AllowStreamLocalForwarding no
+          X11Forwarding no
+          PermitTunnel no
+          MaxAuthTries 2
+          ClientAliveInterval 20
+          ClientAliveCountMax 6
+          LogLevel VERBOSE
+          EOF
+          sudo /usr/sbin/sshd -t -f "$D/sshd_config"
+          sudo /usr/sbin/sshd -f "$D/sshd_config" -E "$D/sshd.log"
+          for _ in $(seq 1 20); do nc -z 127.0.0.1 2222 && break; sleep 0.5; done
+          nc -z 127.0.0.1 2222 || { echo "::error::sshd did not start."; exit 1; }
+          cd "$BTH"
+          curl -fsSL --retry 3 -o cf.tgz https://github.com/cloudflare/cloudflared/releases/download/2026.2.0/cloudflared-darwin-arm64.tgz
+          curl -fsSL --retry 3 -o bore.tgz https://github.com/ekzhang/bore/releases/download/v0.6.0/bore-v0.6.0-aarch64-apple-darwin.tar.gz
+          tar -xzf cf.tgz; tar -xzf bore.tgz; rm -f cf.tgz bore.tgz
+          nohup ./cloudflared tunnel --no-autoupdate --url tcp://127.0.0.1:2222 > cf.log 2>&1 &
+          nohup ./bore local 2222 --to bore.pub > bore.log 2>&1 &
+          CF=""; BORE=""
+          for _ in $(seq 1 60); do
+            CF=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' cf.log | head -n 1 || true)
+            BORE=$(perl -pe 's/\e\[[0-9;]*m//g' bore.log | grep -oE 'remote_port=[0-9]+' | head -n 1 | cut -d= -f2 || true)
+            [ -n "$CF" ] && [ -n "$BORE" ] && break
+            sleep 1
+          done
+          [ -n "$CF$BORE" ] || { echo "::error::No tunnel came up."; exit 1; }
+          HOSTKEY=$(cut -d' ' -f1,2 "$D/host_ed25519.pub")
+          echo "::notice title=blind-test-host door::user=$(id -un) cf=${CF#https://} bore=${BORE:+bore.pub:$BORE} hostkey=$HOSTKEY"
+
+      - name: Get the app
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ inputs.repo }}
+          RUN_ID: ${{ inputs.run_id }}
+          ARTIFACT: ${{ inputs.artifact }}
+        run: |
+          set -euo pipefail
+          gh run download "$RUN_ID" -R "$REPO" -n "$ARTIFACT" -D "$BTH/artifact"
+          find "$BTH/artifact" -name '*.zip' -print0 | while IFS= read -r -d '' z; do ditto -x -k "$z" "$BTH/app"; done
+          APP=$(find "$BTH/app" "$BTH/artifact" -maxdepth 4 -type d -name '*.app' 2>/dev/null | head -n 1)
+          [ -n "$APP" ] || { echo "::error::The artifact has no .app."; exit 1; }
+          echo "$APP" > "$BTH/app_path"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist" > "$BTH/bundle_id"
+          echo "App: $(cat "$BTH/bundle_id") $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")"
+
+      - name: Get the UI driver (Maestro 2.10.0)
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o "$BTH/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
+          unzip -q "$BTH/maestro.zip" -d "$BTH"; rm -f "$BTH/maestro.zip"
+          test -x "$BTH/maestro/bin/maestro"
+
+      - name: Install the app and start the UI driver
+        run: |
+          set -euo pipefail
+          UDID=$(cat "$BTH/udid")
+          xcrun simctl bootstatus "$UDID" -b > /dev/null
+          xcrun simctl install "$UDID" "$(cat "$BTH/app_path")"
+          T0=$(date +%s)
+          if perl -e 'alarm 300; exec @ARGV' "$BTH/maestro/bin/maestro" --udid "$UDID" hierarchy > "$BTH/maestro-start.log" 2>&1; then
+            echo "UI driver started in $(( $(date +%s) - T0 )) s."
+          else
+            echo "::warning::The UI driver did not start. The host tries again at the first UI command."
+          fi
+
+      - name: Serve commands
+        timeout-minutes: 62
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BTH_MINUTES: ${{ inputs.minutes }}
+        run: |
+          cat > "$BTH/host.py" <<'PY'
+          """Blind-test host daemon (runs on the GitHub macOS runner).
+
+          It serves the kit verbs on 127.0.0.1:8765 ONLY. The tester reaches that port
+          through the SSH door (a key-only sshd behind a tunnel). The repo and its job
+          logs are PUBLIC, so this daemon prints only a start line and a stop line.
+          Commands, typed text, URLs, screenshots and app logs never go to stdout/stderr.
+
+              POST /v1  {"verb": "...", "args": ["..."]}
+              -> 200 {"ok": true, "out": ...}  |  200 image/png or image/jpeg (verb "shot")
+              -> 4xx/5xx {"ok": false, "err": "..."}
+          """
+          import glob
+          import http.server
+          import json
+          import os
+          import plistlib
+          import re
+          import socket
+          import subprocess
+          import threading
+          import time
+          import urllib.error
+          import urllib.request
+
+          W = os.environ["BTH"]
+          PORT = 8765
+          MINUTES = max(1, min(60, int(os.environ.get("BTH_MINUTES", "20"))))
+          IDLE_SEC = int(os.environ.get("BTH_IDLE_MINUTES", "15")) * 60
+          UDID = open(os.path.join(W, "udid")).read().split()[0]
+          MAESTRO = os.path.join(W, "maestro", "bin", "maestro")
+          BLOCK = ["publikhq.com", "www.publikhq.com"]
+          DEAD_API = "http://127.0.0.1:9"  # nothing listens on port 9: every publik call fails at once
+          BUTTON, LINK = 9, 39
+          KINDS = {BUTTON: "button", LINK: "link", 48: "text", 49: "field", 50: "secure field"}
+          UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+          DEADLINE = time.time() + MINUTES * 60
+          LAST = [time.time()]
+          STOP = [None]
+          LOCK = threading.Lock()
+          S = {"net": "on", "pf_token": None, "port": None}
+          LOG = open(os.path.join(W, "host.log"), "a", buffering=1)
+
+
+          def log(m):
+              LOG.write(time.strftime("%H:%M:%S ") + m + "\n")
+
+
+          class Fail(Exception):
+              pass
+
+
+          def run(cmd, timeout=120, env=None, check=True, data=None):
+              p = subprocess.run(cmd, input=data, capture_output=True, timeout=timeout, env=env)
+              out = p.stdout.decode("utf-8", "replace")
+              err = p.stderr.decode("utf-8", "replace")
+              if check and p.returncode != 0:
+                  name = " ".join(cmd[:3]) if cmd[0] in ("xcrun", "sudo") else os.path.basename(cmd[0])
+                  raise Fail("%s failed (exit %d): %s" % (name, p.returncode, (err.strip() or out.strip())[-600:]))
+              return out, err, p.returncode
+
+
+          def simctl(*a, **kw):
+              return run(["xcrun", "simctl"] + list(a), **kw)
+
+
+          def sudo(*a, **kw):
+              return run(["sudo", "-n"] + list(a), **kw)
+
+
+          def default_bundle():
+              try:
+                  return open(os.path.join(W, "bundle_id")).read().strip()
+              except OSError:
+                  return ""
+
+
+          def bundle(a, i=0):
+              b = a[i] if len(a) > i and a[i] else default_bundle()
+              if not re.fullmatch(r"[A-Za-z0-9.\-]+", b or ""):
+                  raise Fail("give a bundle id")
+              return b
+
+
+          def installed(b):
+              return simctl("get_app_container", UDID, b, "app", check=False, timeout=30)[2] == 0
+
+
+          # ---------------------------------------------------------------- UI driver (Maestro XCTest runner)
+
+          def d_ok(p):
+              try:
+                  with urllib.request.urlopen("http://127.0.0.1:%d/deviceInfo" % p, timeout=3) as r:
+                      return b"widthPoints" in r.read()
+              except Exception:
+                  return False
+
+
+          def d_ports():
+              out, _, _ = run(["lsof", "-a", "-nP", "-iTCP", "-sTCP:LISTEN", "-c", "maestro-d"], check=False, timeout=20)
+              ports = set()
+              for line in out.splitlines()[1:]:
+                  f = line.split()
+                  if len(f) >= 9 and ":" in f[8]:
+                      try:
+                          ports.add(int(f[8].rsplit(":", 1)[1]))
+                      except ValueError:
+                          pass
+              return [22087] + sorted(ports - {22087})
+
+
+          def find_driver():
+              if S["port"] and d_ok(S["port"]):
+                  return S["port"]
+              for p in d_ports():
+                  if d_ok(p):
+                      S["port"] = p
+                      return p
+              return None
+
+
+          def driver():
+              p = find_driver()
+              if p:
+                  return p
+              log("starting the UI driver")
+              run([MAESTRO, "--udid", UDID, "hierarchy"], timeout=360, check=False)
+              p = find_driver()
+              if not p:
+                  raise Fail("the UI driver did not start")
+              return p
+
+
+          def dcall(path, body=None, timeout=30):
+              p = driver()
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request("http://127.0.0.1:%d%s" % (p, path), data=data,
+                                           headers={"Content-Type": "application/json"},
+                                           method="GET" if body is None else "POST")
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as r:
+                      raw = r.read()
+              except urllib.error.HTTPError as e:
+                  raise Fail("the UI driver answered HTTP %s: %s" % (e.code, e.read()[:300].decode("utf-8", "ignore")))
+              except (urllib.error.URLError, OSError) as e:
+                  S["port"] = None
+                  raise Fail("the UI driver did not answer (%s). Run the command again." % getattr(e, "reason", e))
+              return json.loads(raw) if raw.strip() else {}
+
+
+          def size():
+              d = dcall("/deviceInfo")
+              return d["widthPoints"], d["heightPoints"]
+
+
+          def elements(node, out=None):
+              out = [] if out is None else out
+              if isinstance(node, dict):
+                  if "frame" in node:
+                      out.append(node)
+                  if "axElement" in node:
+                      elements(node["axElement"], out)
+                  for c in node.get("children") or []:
+                      elements(c, out)
+              return out
+
+
+          def text_of(e):
+              for k in ("label", "value", "title", "identifier"):
+                  v = e.get(k)
+                  if isinstance(v, str) and v.strip():
+                      return v.strip()
+              return ""
+
+
+          def center(e):
+              f = e["frame"]
+              return f["X"] + f["Width"] / 2, f["Y"] + f["Height"] / 2
+
+
+          def tree():
+              return dcall("/viewHierarchy", {"appIds": [], "excludeKeyboardElements": False})
+
+
+          def find(text):
+              els = [e for e in elements(tree()) if text_of(e) and e["frame"]["Width"] > 0 and e["frame"]["Height"] > 0]
+              hits = [e for e in els if text_of(e) == text]
+              if not hits:
+                  try:
+                      rx = re.compile(text)
+                      hits = [e for e in els if rx.fullmatch(text_of(e))]
+                  except re.error:
+                      hits = []
+              if not hits:
+                  low = text.lower()
+                  hits = [e for e in els if low in text_of(e).lower()]
+              hits.sort(key=lambda e: 0 if e.get("elementType") in (BUTTON, LINK) else 1)
+              return hits
+
+
+          def point(x, y):
+              w, h = size()
+              px = float(x[:-1]) * w / 100 if x.endswith("%") else float(x)
+              py = float(y[:-1]) * h / 100 if y.endswith("%") else float(y)
+              return px, py
+
+
+          def touch(x, y):
+              dcall("/touch", {"x": float(x), "y": float(y), "duration": 0.1})
+
+
+          # ---------------------------------------------------------------- verbs
+
+          def v_status(a):
+              info = {}
+              out, _, _ = simctl("list", "devices", "-j", timeout=30)
+              for rt, devs in json.loads(out)["devices"].items():
+                  for d in devs:
+                      if d["udid"] == UDID:
+                          info = {"device": d["name"], "runtime": rt.rsplit(".", 1)[-1], "state": d["state"]}
+              b = default_bundle()
+              return dict(info, app=b, installed=bool(b) and installed(b),
+                          ui_driver="ready" if find_driver() else "not started (the first UI command starts it, about 1 min)",
+                          net=S["net"], minutes_left=round((DEADLINE - time.time()) / 60, 1),
+                          idle_stop_minutes=IDLE_SEC // 60)
+
+
+          def find_app(root):
+              for dirpath, dirnames, _ in os.walk(root):
+                  for d in sorted(dirnames):
+                      if d.endswith(".app"):
+                          return os.path.join(dirpath, d)
+              return None
+
+
+          def v_install(a):
+              if a:
+                  if len(a) != 3:
+                      raise Fail("usage: install [<owner/repo> <run-id> <artifact>]")
+                  repo, rid, art = a
+                  if not (re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo) and re.fullmatch(r"\d{1,15}", rid)
+                          and re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", art)):
+                      raise Fail("bad repo, run id or artifact name")
+                  dest = os.path.join(W, "apps", "%s-%s" % (rid, art))
+                  if not os.path.isdir(dest):
+                      run(["gh", "run", "download", rid, "-R", repo, "-n", art, "-D", dest + "/dl"], timeout=300)
+                      for z in glob.glob(dest + "/dl/**/*.zip", recursive=True):
+                          run(["ditto", "-x", "-k", z, dest + "/x"], timeout=300)
+                  app = find_app(dest + "/x") or find_app(dest + "/dl")
+                  if not app:
+                      raise Fail("no .app in that artifact")
+              else:
+                  app = open(os.path.join(W, "app_path")).read().strip()
+              simctl("install", UDID, app, timeout=300)
+              with open(os.path.join(app, "Info.plist"), "rb") as f:
+                  bid = plistlib.load(f)["CFBundleIdentifier"]
+              open(os.path.join(W, "bundle_id"), "w").write(bid)
+              open(os.path.join(W, "app_path"), "w").write(app)
+              return "installed %s" % bid
+
+
+          def v_launch(a, extra=None):
+              a = list(a)
+              bid = a.pop(0) if a and not a[0].startswith("-") else bundle([])
+              env, args = dict(os.environ), []
+              env.pop("GH_TOKEN", None)
+              while a:
+                  x = a.pop(0)
+                  if x == "--env":
+                      if not a or "=" not in a[0]:
+                          raise Fail("--env needs KEY=VALUE")
+                      k, v = a.pop(0).split("=", 1)
+                      env["SIMCTL_CHILD_" + k] = v
+                  elif x == "--":
+                      args, a = args + a, []
+                  else:
+                      args.append(x)
+              for k, v in (extra or {}).items():
+                  env["SIMCTL_CHILD_" + k] = v
+              out, _, _ = simctl("launch", "--terminate-running-process", UDID, bid, *args, env=env, timeout=120)
+              return out.strip() or "launched %s" % bid
+
+
+          def v_terminate(a):
+              b = bundle(a)
+              rc = simctl("terminate", UDID, b, check=False, timeout=60)[2]
+              return "stopped %s" % b if rc == 0 else "%s was not running" % b
+
+
+          def v_reset(a):
+              b = bundle(a)
+              simctl("terminate", UDID, b, check=False, timeout=60)
+              if installed(b):
+                  simctl("uninstall", UDID, b, timeout=120)
+                  return "uninstalled %s and deleted its data" % b
+              return "%s was not installed" % b
+
+
+          def v_shot(a):
+              fmt = {"jpg": "jpeg"}.get((a[0] if a else "png").lower(), (a[0] if a else "png").lower())
+              if fmt not in ("png", "jpeg"):
+                  raise Fail("format must be png or jpeg")
+              f = os.path.join(W, "shot." + fmt)
+              simctl("io", UDID, "screenshot", "--type=" + fmt, f, timeout=60)
+              with open(f, "rb") as fh:
+                  data = fh.read()
+              os.remove(f)
+              return ("image/" + fmt, data)
+
+
+          def v_tree(a):
+              seen, lines = set(), []
+              for e in elements(tree()):
+                  s, f = text_of(e), e["frame"]
+                  key = (s, round(f["X"]), round(f["Y"]))
+                  if s and key not in seen and f["Width"] > 0:
+                      seen.add(key)
+                      kind = KINDS.get(e.get("elementType"), "type %s" % e.get("elementType"))
+                      lines.append("%-60s %-12s x=%d y=%d w=%d h=%d" % (s[:60], kind, f["X"], f["Y"], f["Width"], f["Height"]))
+              return "\n".join(lines)
+
+
+          def v_size(a):
+              return "%s x %s points" % size()
+
+
+          def v_tap(a):
+              if len(a) != 2:
+                  raise Fail("usage: tap <x> <y>")
+              x, y = point(a[0], a[1])
+              touch(x, y)
+              return "tapped %d,%d" % (x, y)
+
+
+          def v_tap_text(a):
+              if not a or not a[0]:
+                  raise Fail('usage: tap-text "<text>" [n]')
+              hits = find(a[0])
+              idx = int(a[1]) if len(a) > 1 and a[1] != "" else 0
+              if len(hits) <= idx:
+                  raise Fail("no element shows %r (run: tree)" % a[0])
+              x, y = center(hits[idx])
+              touch(x, y)
+              return "tapped %r at %d,%d (%d match(es))" % (text_of(hits[idx]), x, y, len(hits))
+
+
+          def v_wait_text(a):
+              if not a or not a[0]:
+                  raise Fail('usage: wait-text "<text>" [sec]')
+              end = time.time() + min(float(a[1]) if len(a) > 1 else 30.0, 180.0)
+              while time.time() < end:
+                  if find(a[0]):
+                      return "visible: %r" % a[0]
+                  time.sleep(1)
+              raise Fail("%r did not show in time" % a[0])
+
+
+          def v_type(a):
+              if not a:
+                  raise Fail('usage: type "<text>"')
+              dcall("/inputText", {"text": a[0], "appIds": []})
+              return "typed %d characters" % len(a[0])
+
+
+          def v_key(a):
+              name = (a[0] if a else "").lower()
+              if name in ("home", "lock"):
+                  dcall("/pressButton", {"button": name})
+              elif name in ("return", "enter", "delete", "backspace", "tab", "space", "escape"):
+                  dcall("/pressKey", {"key": {"enter": "return", "backspace": "delete"}.get(name, name)})
+              else:
+                  raise Fail("key must be home, lock, return, delete, tab, space or escape")
+              return "pressed %s" % name
+
+
+          def v_swipe(a):
+              if len(a) != 4:
+                  raise Fail("usage: swipe <x1> <y1> <x2> <y2>")
+              x1, y1 = point(a[0], a[1])
+              x2, y2 = point(a[2], a[3])
+              dcall("/swipeV2", {"startX": x1, "startY": y1, "endX": x2, "endY": y2, "duration": 0.5, "appIds": []})
+              return "swiped %d,%d -> %d,%d" % (x1, y1, x2, y2)
+
+
+          def v_openurl(a):
+              if not a or not a[0]:
+                  raise Fail("usage: openurl <url>")
+              simctl("openurl", UDID, a[0], timeout=60)
+              return "opened the URL"
+
+
+          def v_appearance(a):
+              mode = a[0] if a else ""
+              if mode not in ("dark", "light"):
+                  raise Fail("usage: appearance dark|light")
+              simctl("ui", UDID, "appearance", mode, timeout=60)
+              return "appearance %s" % mode
+
+
+          def flush_dns():
+              sudo("dscacheutil", "-flushcache", check=False, timeout=30)
+              sudo("killall", "-HUP", "mDNSResponder", check=False, timeout=30)
+
+
+          def probe():
+              out, _, rc = run(["curl", "-sS", "-m", "8", "-o", "/dev/null", "-w", "%{http_code}",
+                                "https://publikhq.com/"], check=False, timeout=20)
+              return "HTTP %s" % out.strip() if rc == 0 else "unreachable (curl exit %d)" % rc
+
+
+          def v_net(a):
+              mode = a[0] if a else ""
+              if mode == "off":
+                  if S["net"] != "off":
+                      ips = set()
+                      for h in BLOCK:
+                          for fam in (socket.AF_INET, socket.AF_INET6):
+                              try:
+                                  for r in socket.getaddrinfo(h, 443, fam, socket.SOCK_STREAM):
+                                      ips.add(r[4][0])
+                              except socket.gaierror:
+                                  pass
+                      # 1. names: /etc/hosts sends them to localhost:443, where nothing listens.
+                      lines = "".join("127.0.0.1 %s # bth\n::1 %s # bth\n" % (h, h) for h in BLOCK)
+                      sudo("tee", "-a", "/etc/hosts", data=lines.encode(), timeout=30)
+                      # 2. addresses: a pf rule refuses open and new connections to the old IPs.
+                      if ips:
+                          rule = "block return out quick to { %s }\n" % ", ".join(sorted(ips))
+                          sudo("pfctl", "-a", "com.apple/bth", "-f", "-", data=rule.encode(), timeout=30)
+                          _, err, _ = sudo("pfctl", "-E", timeout=30)
+                          m = re.search(r"Token : (\d+)", err)
+                          S["pf_token"] = m.group(1) if m else None
+                          for ip in ips:
+                              sudo("pfctl", "-k", "::/0" if ":" in ip else "0.0.0.0/0", "-k", ip, check=False, timeout=30)
+                      flush_dns()
+                      S["net"] = "off"
+                  return {"net": "off", "blocked": BLOCK, "publikhq.com from the runner": probe()}
+              if mode == "on":
+                  sudo("sed", "-i", "", "/ # bth$/d", "/etc/hosts", timeout=30)
+                  sudo("pfctl", "-a", "com.apple/bth", "-F", "all", check=False, timeout=30)
+                  if S["pf_token"]:
+                      sudo("pfctl", "-X", S["pf_token"], check=False, timeout=30)
+                      S["pf_token"] = None
+                  flush_dns()
+                  S["net"] = "on"
+                  return {"net": "on", "publikhq.com from the runner": probe()}
+              raise Fail("usage: net off|on")
+
+
+          def v_logs(a):
+              a = list(a)
+              mins = a.pop() if a and re.fullmatch(r"\d{1,3}", a[-1]) else "5"
+              b = bundle(a)
+              app, _, rc = simctl("get_app_container", UDID, b, "app", check=False, timeout=30)
+              if rc:
+                  raise Fail("%s is not installed" % b)
+              with open(os.path.join(app.strip(), "Info.plist"), "rb") as f:
+                  exe = plistlib.load(f).get("CFBundleExecutable", "")
+              out, _, _ = simctl("spawn", UDID, "log", "show", "--last", mins + "m", "--style", "compact",
+                                 "--predicate", 'process == "%s"' % exe, timeout=180, check=False)
+              return "\n".join(out.splitlines()[-300:])
+
+
+          def v_install_id(a):
+              b = bundle(a)
+              data, _, rc = simctl("get_app_container", UDID, b, "data", check=False, timeout=30)
+              if rc:
+                  raise Fail("%s is not installed" % b)
+              data = data.strip()
+              for f in glob.glob(os.path.join(data, "Library/Application Support/publik/apps/*.json")):
+                  try:
+                      v = json.load(open(f)).get("install_id")  # the file also holds the app key: read install_id only
+                      if v:
+                          return v
+                  except Exception:
+                      pass
+              found = []
+
+              def walk(v, key=""):
+                  if isinstance(v, dict):
+                      for k, x in v.items():
+                          walk(x, str(k))
+                  elif isinstance(v, list):
+                      for x in v:
+                          walk(x, key)
+                  elif isinstance(v, (bytes, str)):
+                      s = v.decode("utf-8", "ignore") if isinstance(v, bytes) else v
+                      if UUID.match(s.strip()) and "install" in key.lower():
+                          found.append(s.strip())
+                          return
+                      try:
+                          walk(json.loads(s), key)
+                      except Exception:
+                          pass
+              plist = os.path.join(data, "Library/Preferences/%s.plist" % b)
+              if os.path.exists(plist):
+                  with open(plist, "rb") as f:
+                      walk(plistlib.load(f))
+              if found:
+                  return found[0]
+              raise Fail("no install id yet. Start the app and tap Sign in with publik first.")
+
+
+          def v_background(a):
+              return v_key(["home"])
+
+
+          def v_foreground(a):
+              b = bundle(a)
+              simctl("launch", UDID, b, timeout=60)
+              return "brought %s to the front" % b
+
+
+          def v_offline(a):
+              return v_launch([bundle(a)], {"PUBLIK_API_BASE_URL": DEAD_API})
+
+
+          def v_online(a):
+              return v_launch([bundle(a)])
+
+
+          def v_stop(a):
+              STOP[0] = "the tester ran stop-host"
+              return "stopping"
+
+
+          VERBS = {
+              "status": v_status, "install": v_install, "launch": v_launch, "terminate": v_terminate,
+              "reset": v_reset, "shot": v_shot, "tree": v_tree, "size": v_size, "tap": v_tap,
+              "tap-text": v_tap_text, "wait-text": v_wait_text, "type": v_type, "key": v_key,
+              "swipe": v_swipe, "openurl": v_openurl, "appearance": v_appearance, "net": v_net,
+              "logs": v_logs, "install-id": v_install_id, "background": v_background,
+              "foreground": v_foreground, "offline": v_offline, "online": v_online, "stop": v_stop,
+          }
+
+
+          class Handler(http.server.BaseHTTPRequestHandler):
+              def log_message(self, *a):  # never write requests to the public job log
+                  pass
+
+              def reply(self, code, obj, ctype="application/json", raw=None):
+                  body = raw if raw is not None else json.dumps(obj).encode()
+                  self.send_response(code)
+                  self.send_header("Content-Type", ctype)
+                  self.send_header("Content-Length", str(len(body)))
+                  self.end_headers()
+                  self.wfile.write(body)
+
+              def do_POST(self):
+                  if self.path != "/v1":
+                      return self.reply(404, {"ok": False, "err": "not found"})
+                  try:
+                      n = int(self.headers.get("Content-Length") or 0)
+                      req = json.loads(self.rfile.read(n) or b"{}")
+                      verb, args = req.get("verb"), [str(x) for x in (req.get("args") or [])]
+                  except Exception:
+                      return self.reply(400, {"ok": False, "err": "bad request"})
+                  fn = VERBS.get(verb)
+                  if not fn:
+                      return self.reply(400, {"ok": False, "err": "unknown verb %r" % verb})
+                  LAST[0] = time.time()
+                  t0 = time.time()
+                  try:
+                      if verb == "status":
+                          res = fn(args)
+                      else:
+                          with LOCK:
+                              res = fn(args)
+                  except Fail as e:
+                      log("%s: fail" % verb)
+                      return self.reply(500, {"ok": False, "err": str(e)})
+                  except subprocess.TimeoutExpired:
+                      return self.reply(504, {"ok": False, "err": "%s took too long" % verb})
+                  except Exception as e:  # keep serving
+                      log("%s: %s" % (verb, type(e).__name__))
+                      return self.reply(500, {"ok": False, "err": "%s: %s" % (type(e).__name__, e)})
+                  finally:
+                      LAST[0] = time.time()
+                  log("%s %d ms" % (verb, (time.time() - t0) * 1000))
+                  if isinstance(res, tuple):
+                      self.reply(200, None, ctype=res[0], raw=res[1])
+                  else:
+                      self.reply(200, {"ok": True, "out": res})
+                  if STOP[0]:
+                      threading.Thread(target=self.server.shutdown, daemon=True).start()
+
+
+          def watchdog(srv):
+              while not STOP[0]:
+                  time.sleep(5)
+                  now = time.time()
+                  if now > DEADLINE:
+                      STOP[0] = "time is up (%d min)" % MINUTES
+                  elif now - LAST[0] > IDLE_SEC and not LOCK.locked():
+                      STOP[0] = "no command for %d min" % (IDLE_SEC // 60)
+                  if STOP[0]:
+                      srv.shutdown()
+
+
+          def main():
+              srv = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+              srv.daemon_threads = True
+              threading.Thread(target=watchdog, args=(srv,), daemon=True).start()
+              print("Serving until %s UTC (%d min), or until %d min without a command."
+                    % (time.strftime("%H:%M", time.gmtime(DEADLINE)), MINUTES, IDLE_SEC // 60), flush=True)
+              srv.serve_forever(poll_interval=0.5)
+              print("Stopped: %s." % (STOP[0] or "unknown reason"), flush=True)
+
+
+          if __name__ == "__main__":
+              main()
+          PY
+          python3 -I "$BTH/host.py"
+
+      - name: Clean up
+        if: always()
+        run: |
+          [ -n "${BTH:-}" ] || exit 0
+          pkill -f "$BTH/cloudflared" || true
+          pkill -f "$BTH/bore" || true
+          [ -f "$BTH/ssh/sshd.pid" ] && sudo kill "$(cat "$BTH/ssh/sshd.pid")" || true
+          sudo sed -i '' '/ # bth$/d' /etc/hosts || true
+          sudo pfctl -a com.apple/bth -F all > /dev/null 2>&1 || true
+          xcrun simctl shutdown all || true
+          echo "Host closed."

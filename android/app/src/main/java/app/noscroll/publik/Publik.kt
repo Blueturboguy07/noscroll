@@ -265,7 +265,7 @@ object Publik {
     fun gateScreen(id: String, w: Wallet? = null, note: String? = null, message: String? = null): Screen {
         if (id == "unreachable") return Screen(id, "Sign in with publik", message ?: "publik is not reachable. Check your connection.", note, listOf("retry" to "Retry"))
         if (id == "sign_in") {
-            return Screen(id, "Sign in with publik", "$appName uses your publik account. Tap Sign in with publik, then sign in on the publik page. This screen continues when you are signed in.",
+            return Screen(id, "Sign in with publik", "$appName uses your publik account. Tap Sign in with publik and sign in on the publik page. Then come back here. $appName opens by itself.",
                 note, listOf("sign_in" to "Sign in with publik"))
         }
         val who = w?.handle?.let { "You are signed in as @$it." } ?: "You are signed in to publik."

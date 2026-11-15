@@ -202,8 +202,9 @@ enum Publik {
     static func gateScreen(_ id: String, _ w: Wallet? = nil, note: String? = nil, message: String? = nil) -> Screen {
         if id == "unreachable" { return Screen(id: id, title: "Sign in with publik", body: message ?? "publik is not reachable. Check your connection.", note: note, buttons: [("retry", "Retry")]) }
         if id == "sign_in" {
-            // The contract words, for a phone: "Tap", "screen", "the publik page", and the app's name.
-            return Screen(id: id, title: "Sign in with publik", body: "\(appName) uses your publik account. Tap Sign in with publik, then sign in on the publik page. This screen continues when you are signed in.",
+            // The contract words, for a phone: what to do and what happens. iOS: the publik page opens in the
+            // app and closes by itself after the sign-in.
+            return Screen(id: id, title: "Sign in with publik", body: "\(appName) uses your publik account. Tap Sign in with publik and sign in on the publik page. The page then closes, and \(appName) opens by itself.",
                           note: note, buttons: [("sign_in", "Sign in with publik")])
         }
         let who = w?.handle.map { "You are signed in as @\($0)." } ?? "You are signed in to publik."

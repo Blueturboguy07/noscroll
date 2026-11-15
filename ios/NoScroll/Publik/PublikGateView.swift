@@ -205,6 +205,10 @@ struct PublikGateView: View {
                     }
                 } else {
                     ProgressView().tint(Theme.ink)
+                    Text("Checking your sign-in…")
+                        .font(Theme.body(15))
+                        .foregroundStyle(Theme.inkSoft)
+                        .padding(.top, 12)
                     Spacer()
                 }
                 if model.mode == .optional {

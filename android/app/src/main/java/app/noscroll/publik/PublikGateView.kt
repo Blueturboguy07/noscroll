@@ -30,9 +30,11 @@ import kotlinx.coroutines.withContext
 class PublikGateView(private val activity: Activity) : PublikGateUI {
     private val paper = 0xFFF7EFE0.toInt()
     private val ink = 0xFF141414.toInt()
-    private val inkSoft = 0xFF8A8578.toInt()
+    private val inkSoft = 0xFF6B665B.toInt() // 5.0:1 on paper
 
     private val spinner = ProgressBar(activity)
+    /** The words under the spinner, while the gate checks the saved sign-in. */
+    private val checking = text(15f, inkSoft, bold = false).apply { text = "Checking your sign-in…"; setPadding(0, dp(12), 0, 0) }
     private val title = text(30f, ink, bold = true)
     private val body = text(17f, inkSoft, bold = false).apply { setPadding(0, dp(14), 0, 0) }
     private val note = text(15f, ink, bold = true).apply { setPadding(0, dp(14), 0, 0) }
@@ -48,7 +50,7 @@ class PublikGateView(private val activity: Activity) : PublikGateUI {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
                 setPadding(dp(28), dp(24), dp(28), dp(24))
-                for (v in listOf(spinner, title, body, note, buttons)) {
+                for (v in listOf(spinner, checking, title, body, note, buttons)) {
                     addView(v, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
                 }
             },
@@ -94,11 +96,13 @@ class PublikGateView(private val activity: Activity) : PublikGateUI {
 
     private fun showLoading() {
         spinner.visibility = View.VISIBLE
+        checking.visibility = View.VISIBLE
         for (v in listOf(title, body, note, buttons)) v.visibility = View.GONE
     }
 
     private fun render(screen: Publik.Screen, press: (String) -> Unit) {
         spinner.visibility = View.GONE
+        checking.visibility = View.GONE
         title.text = screen.title
         body.text = screen.body
         note.text = screen.note ?: ""

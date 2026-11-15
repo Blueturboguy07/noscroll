@@ -12,7 +12,7 @@ class PublikGateWordsTest {
         val s = Publik.gateScreen("sign_in")
         assertEquals("Sign in with publik", s.title)
         assertEquals(
-            "NoScroll uses your publik account. Tap Sign in with publik, then sign in on the publik page. This screen continues when you are signed in.",
+            "NoScroll uses your publik account. Tap Sign in with publik and sign in on the publik page. Then come back here. NoScroll opens by itself.",
             s.body,
         )
         assertEquals(listOf("sign_in" to "Sign in with publik"), s.buttons)

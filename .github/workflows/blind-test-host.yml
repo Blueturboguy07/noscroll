@@ -144,7 +144,19 @@ jobs:
           done
           [ -n "$CF$BORE" ] || { echo "::error::No tunnel came up."; exit 1; }
           HOSTKEY=$(cut -d' ' -f1,2 "$D/host_ed25519.pub")
-          echo "::notice title=blind-test-host door::user=$(id -un) cf=${CF#https://} bore=${BORE:+bore.pub:$BORE} hostkey=$HOSTKEY"
+          DOOR="user=$(id -un) cf=${CF#https://} bore=${BORE:+bore.pub:$BORE} hostkey=$HOSTKEY"
+          echo "$DOOR" > "$BTH/door.txt"
+          echo "::notice title=blind-test-host door::$DOOR"
+
+      # Annotations and job logs are not readable while a job runs, but a v4 artifact is.
+      # It holds only the door line above (public by design). rkit.sh stop-host deletes it.
+      - name: Publish the door address
+        uses: actions/upload-artifact@v4
+        with:
+          name: bth-door
+          path: ${{ runner.temp }}/bth/door.txt
+          retention-days: 1
+          if-no-files-found: error
 
       - name: Get the app
         env:

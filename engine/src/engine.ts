@@ -158,6 +158,29 @@ function isSignedOut(): boolean {
   return false;
 }
 
+/**
+ * A page with a password field is a sign-in page, whatever its address: Facebook, for one, serves its
+ * login form at "/" to a signed-out visitor. The engine goes inert there exactly as on an auth route,
+ * and the shell shows its "paused" sign. Only the presence of the field is checked; nothing in it is read.
+ */
+function hasPasswordField(): boolean {
+  try {
+    return document.querySelector("input[type='password']") !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Stop everything at once: no CSS, no observer, no isolation. */
+function goInert(): void {
+  if (inert) return;
+  inert = true;
+  send({ type: 'auth-surface', active: true });
+  removeCss();
+  stopObserver();
+  disableIsolation();
+}
+
 function rejustify(parent: Element | null): void {
   if (!parent) return;
   const style = getComputedStyle(parent);
@@ -168,6 +191,12 @@ function rejustify(parent: Element | null): void {
 
 function sweepDom(): void {
   if (!service || inert) return;
+  // A login form that appears after the page started (a single-page app, or a server page that
+  // renders it late) turns this page into a sign-in page: stop before anything is removed.
+  if (hasPasswordField()) {
+    goInert();
+    return;
+  }
   const path = location.pathname + location.search;
 
   for (const [name, s] of Object.entries(service.surfaces)) {
@@ -211,7 +240,7 @@ function handleRoute(path: string): void {
 
   // Re-check on EVERY route change: an SPA can navigate from a feed into a
   // login challenge without a page load, and the engine must go inert.
-  const nowInert = isAuthSurface(location);
+  const nowInert = isAuthSurface(location) || hasPasswordField();
   if (nowInert !== inert) {
     inert = nowInert;
     send({ type: 'auth-surface', active: inert });
@@ -226,7 +255,7 @@ function handleRoute(path: string): void {
   }
   if (inert) return;
 
-  // 1. rewrites (cheapest, most robust): /shorts/<id> -> /watch?v=<id>
+  // 1. rewrites: an address changes to another address
   for (const [name, s] of Object.entries(service.surfaces)) {
     if (s.kind !== 'route-rewrite' || !isEnabled(name, s)) continue;
     const r = s as RouteRewriteSurface;
@@ -347,4 +376,4 @@ export function stop(): void {
 }
 
 /** Test/debug surface. */
-export const __internal = { sweepDom, handleRoute, buildCss, isEnabled };
+export const __internal = { sweepDom, handleRoute, buildCss, isEnabled, isInert: () => inert };

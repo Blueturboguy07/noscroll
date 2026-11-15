@@ -82,9 +82,9 @@ export function matchesAny(path: string, res: RegExp[]): boolean {
 }
 
 /**
- * Apply a rewrite. Used for the single cheapest win in the product:
- * YouTube /shorts/<id> -> /watch?v=<id> is the same video, same CDN, same
- * metadata. /shorts is purely a front-end player skin.
+ * Apply a rewrite: an address that matches `pattern` changes to `replacement`
+ * (capture groups as $1, $2...). No shipped rule uses it now: the Shorts tab of
+ * m.youtube.com opens /shorts/ with no video id, so YouTube uses a route block.
  */
 export function rewrite(path: string, pattern: string, replacement: string): string | null {
   let re: RegExp;

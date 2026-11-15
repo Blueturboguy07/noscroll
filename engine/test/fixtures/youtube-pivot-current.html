@@ -1,0 +1,52 @@
+<!--
+  Golden fixture: the bottom tab bar of m.youtube.com as the site's own script builds it
+  (checked in Nov 2026 against the ytmweb base script that m.youtube.com loads):
+
+    <ytm-pivot-bar-item-renderer>
+      <div class="pivot-bar-item-tab TARGET" role="tab" aria-selected="...">
+        <c3-icon></c3-icon><div class="pivot-bar-item-title TARGET">Title</div>
+      </div>
+    </ytm-pivot-bar-item-renderer>
+
+  The bar the script draws before the page data arrives (also the signed-out bar) has the
+  targets w2w, shorts and library. The page data uses pivot-w2w, pivot-shorts, pivot-subs
+  and pivot-library. The Shorts tab has NO link and NO aria-label: a tap goes to /shorts/
+  with no video id. That is why the old selectors (an aria-label, an a[href]) missed it.
+-->
+<div id="app">
+  <ytm-pivot-bar-renderer id="fallback-bar" role="tablist" style="display:flex">
+    <ytm-pivot-bar-item-renderer id="fb-home">
+      <div class="pivot-bar-item-tab w2w" role="tab" aria-selected="true"><c3-icon></c3-icon><div class="pivot-bar-item-title w2w">Home</div></div>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer id="fb-shorts">
+      <div class="pivot-bar-item-tab shorts" role="tab" aria-selected="false"><c3-icon></c3-icon><div class="pivot-bar-item-title shorts">Shorts</div></div>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer id="fb-library">
+      <div class="pivot-bar-item-tab library" role="tab" aria-selected="false"><c3-icon></c3-icon><div class="pivot-bar-item-title library">You</div></div>
+    </ytm-pivot-bar-item-renderer>
+  </ytm-pivot-bar-renderer>
+
+  <ytm-pivot-bar-renderer id="data-bar" role="tablist" style="display:flex">
+    <ytm-pivot-bar-item-renderer id="d-home">
+      <div class="pivot-bar-item-tab pivot-w2w" role="tab" aria-selected="true"><c3-icon></c3-icon><div class="pivot-bar-item-title pivot-w2w">Home</div></div>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer id="d-shorts">
+      <div class="pivot-bar-item-tab pivot-shorts" role="tab" aria-selected="false"><c3-icon></c3-icon><div class="pivot-bar-item-title pivot-shorts">Shorts</div></div>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer id="d-subs">
+      <div class="pivot-bar-item-tab pivot-subs" role="tab" aria-selected="false"><c3-icon></c3-icon><div class="pivot-bar-item-title pivot-subs">Subscriptions</div></div>
+    </ytm-pivot-bar-item-renderer>
+    <ytm-pivot-bar-item-renderer id="d-library">
+      <div class="pivot-bar-item-tab pivot-library" role="tab" aria-selected="false"><c3-icon></c3-icon><div class="pivot-bar-item-title pivot-library">You</div></div>
+    </ytm-pivot-bar-item-renderer>
+  </ytm-pivot-bar-renderer>
+
+  <ytm-rich-grid-renderer>
+    <ytm-rich-item-renderer id="long-form">
+      <a href="/watch?v=aaaaaaaaaaa"><span>A normal long-form video</span></a>
+    </ytm-rich-item-renderer>
+    <ytm-rich-item-renderer id="shorts-lockup-item">
+      <ytm-shorts-lockup-view-model><a href="/shorts/bbbbbbbbbbb"><span>a short</span></a></ytm-shorts-lockup-view-model>
+    </ytm-rich-item-renderer>
+  </ytm-rich-grid-renderer>
+</div>

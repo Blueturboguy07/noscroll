@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { start, stop } from '../src/engine.js';
+import { __internal, start, stop } from '../src/engine.js';
 import { snapshot } from '../src/probe.js';
 import type { RuleBundle, Settings } from '../src/types.js';
 
@@ -150,6 +150,75 @@ describe('YouTube', () => {
     expect(document.querySelector('.pivot-home')).not.toBeNull();
     expect(document.querySelector('.pivot-subs')).not.toBeNull();
     expect(document.querySelector('.pivot-you')).not.toBeNull();
+  });
+});
+
+describe('YouTube: the tab bar of the current mobile site', () => {
+  beforeEach(() => {
+    mount(fixture('youtube-pivot-current.html'), 'https://m.youtube.com/');
+  });
+
+  it('removes the Shorts tab of the bar drawn before the page data (signed out too)', () => {
+    run(yt);
+    expect(document.getElementById('fb-shorts')).toBeNull();
+  });
+
+  it('removes the Shorts tab of the bar drawn from the page data', () => {
+    run(yt);
+    expect(document.getElementById('d-shorts')).toBeNull();
+  });
+
+  it('keeps every other tab', () => {
+    run(yt);
+    for (const id of ['fb-home', 'fb-library', 'd-home', 'd-subs', 'd-library']) {
+      expect(document.getElementById(id), id).not.toBeNull();
+    }
+  });
+
+  it('hides the Shorts tab with CSS before the first paint', () => {
+    run(yt);
+    const css = document.getElementById('noscroll-css')?.textContent ?? '';
+    expect(css).toContain('.pivot-bar-item-tab.shorts');
+    expect(css).toContain('.pivot-bar-item-tab.pivot-shorts');
+  });
+
+  it('removes a short in the feed and keeps the long-form video', () => {
+    run(yt);
+    expect(document.getElementById('shorts-lockup-item')).toBeNull();
+    expect(document.getElementById('long-form')).not.toBeNull();
+  });
+
+  it('turns Remove Shorts tab off when the user turns it off', () => {
+    run(yt, { 'youtube.shorts-nav': false });
+    expect(document.getElementById('fb-shorts')).not.toBeNull();
+  });
+});
+
+describe('A page with a password field is a sign-in page', () => {
+  it('the engine goes inert and removes nothing, whatever the address', () => {
+    // Facebook serves its login form at "/" to a signed-out visitor.
+    mount(fixture('youtube-pivot-current.html') + '<form><input type="text" name="email"><input type="password" name="pass"></form>',
+      'https://m.youtube.com/');
+    run(yt);
+    expect(__internal.isInert()).toBe(true);
+    expect(document.getElementById('fb-shorts')).not.toBeNull();
+    expect(document.getElementById('noscroll-css')).toBeNull();
+  });
+
+  it('a login form that appears later also stops the engine before the next sweep', () => {
+    mount(fixture('youtube-pivot-current.html'), 'https://m.youtube.com/');
+    run(yt);
+    expect(__internal.isInert()).toBe(false);
+    document.body.insertAdjacentHTML('beforeend', '<form><input type="password"></form>');
+    __internal.sweepDom();
+    expect(__internal.isInert()).toBe(true);
+    expect(document.getElementById('noscroll-css')).toBeNull();
+  });
+
+  it('a page without a password field is not paused', () => {
+    mount(fixture('youtube-pivot-current.html'), 'https://m.youtube.com/');
+    run(yt);
+    expect(__internal.isInert()).toBe(false);
   });
 });
 

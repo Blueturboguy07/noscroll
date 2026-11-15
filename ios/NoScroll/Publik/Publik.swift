@@ -36,9 +36,13 @@ enum Publik {
     enum GateMode: String { case required, optional }
     static let gateMode: GateMode = (Bundle.main.object(forInfoDictionaryKey: "PublikGateMode") as? String)
         .flatMap { GateMode(rawValue: $0.trimmingCharacters(in: .whitespaces).lowercased()) } ?? .required
-    /// Delete account, step 3: publik's own page, opened in the in-app browser.
-    static var deleteAccountURL: URL { URL(string: "\(origin)/settings/profile#delete-account-title") ?? publikDeleteAccountURL }
-    private static let publikDeleteAccountURL = URL(string: "https://publikhq.com/settings/profile#delete-account-title")!
+    /// Delete account, step 3: publik's bare in-app delete page (no site navigation, prices or plan links),
+    /// opened in the in-app browser. PublikLinks (NoScrollCore) builds every publik page the app opens.
+    static var deleteAccountURL: URL { PublikLinks.deleteAccountURL(origin: origin) ?? publikDeleteAccountURL }
+    private static let publikDeleteAccountURL = URL(string: "https://publikhq.com/in-app/delete-account")!
+    /// The privacy policy: publik's bare in-app page, opened in the in-app browser.
+    static var privacyURL: URL { PublikLinks.privacyURL(origin: origin) ?? publikPrivacyURL }
+    private static let publikPrivacyURL = URL(string: "https://publikhq.com/in-app/privacy")!
 
     /// The test hooks: PUBLIK_API_BASE_URL, PUBLIK_ORIGIN, PUBLIK_TELEMETRY_URL, PUBLIK_SELF_TEST, PUBLIK_API_KEY,
     /// PUBLIK_APP_TOKEN, PUBLIK_TELEMETRY_INTERVAL_SECONDS, PUBLIK_TELEMETRY_DEBUG, PUBLIK_TEST_PRESS (the gate presses
@@ -269,8 +273,14 @@ enum Publik {
             if !w.claimed {
                 if saved?.claimed == true { mark(claimed: false) } // publik says this device is not signed in
                 let a = await ask(ui, gateScreen("sign_in", w, note: signNote), key: c.key, until: signPoll ? signedIn : nil)
-                if a == "sign_in", let url = URL(string: w.claimURL ?? c.claim_url ?? "\(origin)/wallet") {
-                    ui.open(url); signNote = "Waiting for you to sign in on the publik page."; signPoll = true
+                if a == "sign_in" {
+                    // Only publik's bare in-app sign-in page (claim_url + in_app=1); never a page with site links,
+                    // prices or plans. The wallet poll (signedIn) closes the in-app browser after the sign-in.
+                    if let url = (w.claimURL ?? c.claim_url).flatMap(PublikLinks.inAppClaimURL) {
+                        ui.open(url); signNote = "Waiting for you to sign in on the publik page."; signPoll = true
+                    } else {
+                        signNote = "publik sent no sign-in page. Tap Sign in with publik to try again."
+                    }
                 }
                 if a == "timeout" { signNote = "No sign-in after 10 minutes. Tap Sign in with publik to try again."; signPoll = false }
                 continue

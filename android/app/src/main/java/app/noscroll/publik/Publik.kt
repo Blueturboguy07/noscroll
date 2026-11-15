@@ -65,8 +65,33 @@ object Publik {
         private set
     /** Revoke calls run here: an app-wide scope that no screen can cancel. */
     private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    /** Delete account, step 3: publik's own page. */
-    val deleteAccountUrl: String get() = "$origin/settings/profile#delete-account-title"
+    /** Delete account, step 3: publik's bare in-app delete page (no site navigation, prices or plan links). */
+    val deleteAccountUrl: String get() = "$origin/in-app/delete-account"
+    /** The privacy policy: publik's bare in-app page. */
+    val privacyUrl: String get() = "$origin/in-app/privacy"
+
+    /**
+     * Sign in: the claim_url from publik with `in_app=1` added. The other query items stay byte for byte; an old
+     * `in_app` item is replaced. publik redirects it to /in-app/claim/<code>, a bare page with no site links.
+     * null when the value is not an http(s) URL with a host.
+     */
+    fun inAppClaimUrl(claimUrl: String): String? {
+        val url = claimUrl.trim()
+        val rest = when {
+            url.startsWith("https://", ignoreCase = true) -> url.substring(8)
+            url.startsWith("http://", ignoreCase = true) -> url.substring(7)
+            else -> return null
+        }
+        if (rest.takeWhile { it != '/' && it != '?' && it != '#' }.isEmpty()) return null
+        val hashAt = url.indexOf('#')
+        val fragment = if (hashAt >= 0) url.substring(hashAt) else ""
+        val beforeHash = if (hashAt >= 0) url.substring(0, hashAt) else url
+        val q = beforeHash.indexOf('?')
+        val path = if (q >= 0) beforeHash.substring(0, q) else beforeHash
+        val items = (if (q >= 0) beforeHash.substring(q + 1) else "").split('&')
+            .filter { it.isNotEmpty() && it != "in_app" && !it.startsWith("in_app=") }
+        return path + "?" + (items + "in_app=1").joinToString("&") + fragment
+    }
     const val TAG = "publik"
     /** Ask for a tier, never a vendor model name. */
     val MODELS = mapOf("fast" to "publik-fast", "balanced" to "publik-balanced", "smart" to "publik-smart")
@@ -339,9 +364,15 @@ object Publik {
             if (!w.claimed) {
                 val a = ask(ui, gateScreen("sign_in", w, note = signNote), key = c.key, until = if (signPoll) signedIn else null)
                 if (a == "sign_in") {
-                    ui.open(w.claimUrl ?: c.claimUrl ?: "$origin/wallet")
-                    signNote = "Waiting for you to sign in on the publik page."
-                    signPoll = true
+                    // Only publik's bare in-app sign-in page; never a page with site links, prices or plans.
+                    val claim = (w.claimUrl ?: c.claimUrl)?.let { inAppClaimUrl(it) }
+                    if (claim != null) {
+                        ui.open(claim)
+                        signNote = "Waiting for you to sign in on the publik page."
+                        signPoll = true
+                    } else {
+                        signNote = "publik sent no sign-in page. Tap Sign in with publik to try again."
+                    }
                 }
                 if (a == "timeout") { signNote = "No sign-in after 10 minutes. Tap Sign in with publik to try again."; signPoll = false }
                 continue

@@ -21,6 +21,7 @@
 		FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */; };
 		024E40666AED54B036AF4364 /* SVGPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = F289B64C92194643788A6FA4 /* SVGPath.swift */; };
 		79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0730769F06E849F940D126 /* SleepSchedule.swift */; };
+		D8EDD629186169E753567515 /* PublikLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD1EBFBCED5B9504A81B20 /* PublikLinks.swift */; };
 		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
 		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
 		A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */; };
@@ -57,6 +58,7 @@
 		9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LifeInWeeks.swift"; path = "NoScrollCore/Sources/NoScrollCore/LifeInWeeks.swift"; sourceTree = "<group>"; };
 		F289B64C92194643788A6FA4 /* SVGPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SVGPath.swift"; path = "NoScrollCore/Sources/NoScrollCore/SVGPath.swift"; sourceTree = "<group>"; };
 		AF0730769F06E849F940D126 /* SleepSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SleepSchedule.swift"; path = "NoScrollCore/Sources/NoScrollCore/SleepSchedule.swift"; sourceTree = "<group>"; };
+		56CD1EBFBCED5B9504A81B20 /* PublikLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PublikLinks.swift"; path = "NoScrollCore/Sources/NoScrollCore/PublikLinks.swift"; sourceTree = "<group>"; };
 		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RuleBundle.swift"; path = "NoScroll/Core/RuleBundle.swift"; sourceTree = "<group>"; };
 		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebSession.swift"; path = "NoScroll/Core/WebSession.swift"; sourceTree = "<group>"; };
 		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WrappedWebViewController.swift"; path = "NoScroll/Web/WrappedWebViewController.swift"; sourceTree = "<group>"; };
@@ -129,6 +131,7 @@
 				9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */,
 				F289B64C92194643788A6FA4 /* SVGPath.swift */,
 				AF0730769F06E849F940D126 /* SleepSchedule.swift */,
+				56CD1EBFBCED5B9504A81B20 /* PublikLinks.swift */,
 				54BD89AE0AFB93182037786A /* RuleBundle.swift */,
 				6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */,
 				F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */,
@@ -323,6 +326,7 @@
 				FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */,
 				024E40666AED54B036AF4364 /* SVGPath.swift in Sources */,
 				79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */,
+				D8EDD629186169E753567515 /* PublikLinks.swift in Sources */,
 				01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */,
 				49A807443D5252C9D186CD14 /* WebSession.swift in Sources */,
 				A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */,
@@ -366,12 +370,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				NOSCROLL_ENTITLEMENTS = "";
 				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
 				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -383,11 +387,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "$(APP_DISPLAY_NAME)";
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -419,12 +423,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				NOSCROLL_ENTITLEMENTS = "";
 				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
 				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -436,11 +440,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "$(APP_DISPLAY_NAME)";
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

@@ -44,6 +44,8 @@ struct ProfileTab: View {
 
     @State private var confirmSignOut = false
     @State private var confirmDelete = false
+    /// publik's bare in-app privacy page in the in-app browser, or nil.
+    @State private var privacyPage: PublikGateModel.BrowserPage?
 
     var body: some View {
         NavigationStack {
@@ -60,7 +62,7 @@ struct ProfileTab: View {
 
                 Section {
                     LabeledContent("Engine", value: "v1")
-                    Link("Privacy policy", destination: URL(string: "https://publikhq.com/privacy")!)
+                    Button("Privacy policy") { privacyPage = PublikGateModel.BrowserPage(url: Publik.privacyURL) }
                 } header: {
                     Text("Privacy")
                 } footer: {
@@ -81,6 +83,10 @@ struct ProfileTab: View {
         }
         // Delete account, step 3: publik's delete page in the in-app browser.
         .sheet(item: $gate.deletePage, onDismiss: { gate.finishDelete() }) { page in
+            PublikBrowser(url: page.url).ignoresSafeArea()
+        }
+        // The privacy policy: publik's bare in-app page in the in-app browser.
+        .sheet(item: $privacyPage) { page in
             PublikBrowser(url: page.url).ignoresSafeArea()
         }
         .confirmationDialog("Sign out of publik?", isPresented: $confirmSignOut, titleVisibility: .visible) {

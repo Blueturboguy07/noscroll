@@ -52,7 +52,7 @@
           "kind": "dom-remove",
           "label": "Remove Shorts tab",
           "selectors": [
-            "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.shorts)",
+            "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab[class*='shorts'])",
             "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.pivot-shorts)",
             "ytm-pivot-bar-item-renderer:has(.pivot-shorts)",
             "ytd-mini-guide-entry-renderer:has(a[title='Shorts'])",
@@ -146,5 +146,5 @@
       ]
     }
   },
-  "signature": "g11YmZC1qNIjUIEORZJUGZbvnuYtT4OUxY7JxveFzF2wFmBdvkatUEhf10ZiEREp8qWXaHBEUZhHDInfKtu5CQ=="
+  "signature": "98QfGCZv9XYZcr0S3qSE7Ded7lhRIBfCaX754yCwIn4JcDDgXeRFK3OeFYCQcZehdDMfNy/YrA31fs+QhhZaBg=="
 }

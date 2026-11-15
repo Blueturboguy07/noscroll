@@ -70,9 +70,16 @@ describe('Instagram', () => {
     expect(document.getElementById('post-following-2')).not.toBeNull();
   });
 
-  it('removes sponsored posts', () => {
-    run(ig);
+  it('removes sponsored posts only when that rule is on (it defaults off; the apps never turn it on)', () => {
+    run(ig, { 'instagram.sponsored': true });
     expect(document.getElementById('post-sponsored')).toBeNull();
+  });
+
+  it('Hide suggested posts keeps an ad: NoScroll does not block ads', () => {
+    // The ad has a "Why am I seeing this ad?" button. Hide suggested posts is on (default).
+    run(ig);
+    expect(document.getElementById('post-suggested')).toBeNull();
+    expect(document.getElementById('post-sponsored')).not.toBeNull();
   });
 
   it('every block can be switched off by the user — nothing is forced on', () => {

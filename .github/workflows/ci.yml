@@ -16,6 +16,36 @@ jobs:
       # nothing ships.
       - run: pnpm --dir engine test
       - run: pnpm --dir engine build
+      # The apps carry a copy of the engine. It must be the engine built from engine/src,
+      # or a fix in engine/src never reaches a phone.
+      - name: The apps ship the engine built from engine/src
+        run: |
+          for f in ios/NoScroll/Resources/noscroll.js android/app/src/main/assets/noscroll.js; do
+            cmp -s engine/dist/noscroll.js "$f" || { echo "::error::$f is not the engine built from engine/src. A push to signin-gate runs the Sign rule bundles workflow, which rebuilds and commits it (or run node tools/sync-engine.mjs)."; exit 1; }
+          done
+
+  youtube-live:
+    # A live check of the YouTube rules against today's m.youtube.com: WebKit with an iPhone
+    # profile, the engine copy the iOS app ships and rules/youtube.json. It fails when a Shorts
+    # tab is still visible, or when a /shorts/ address can load (direct, in-page, or a tap).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: pnpm install --dir probe
+      - run: pnpm --dir probe exec playwright install --with-deps webkit
+      - name: Probe live m.youtube.com with the shipped engine and rules
+        env:
+          NOSCROLL_ENGINE: ios/NoScroll/Resources/noscroll.js
+        run: pnpm --dir probe exec playwright test -g YouTube
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: youtube-live-probe
+          path: probe/results.json
 
   signing:
     runs-on: macos-latest
@@ -45,9 +75,23 @@ jobs:
         run: |
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           cd ios
+          # The app compiles the NoScrollCore sources into its own module (ServiceLinks, PublikPoll, ...).
           xcrun swiftc -typecheck -target arm64-apple-ios17.0 -sdk "$SDK" \
-            NoScroll/Core/*.swift NoScroll/Web/*.swift
-          for f in NoScroll/Shield/*.swift ShieldConfiguration/*.swift \
-                   ShieldAction/*.swift DeviceActivityMonitor/*.swift; do
+            NoScroll/Core/*.swift NoScroll/Web/*.swift NoScrollCore/Sources/NoScrollCore/*.swift
+          # NoScroll/Shield imports NoScrollCore (a Swift package). Build that
+          # module for the iOS SDK first, so `import NoScrollCore` resolves.
+          CORE="$RUNNER_TEMP/noscrollcore"
+          mkdir -p "$CORE"
+          xcrun swiftc -emit-module -parse-as-library -module-name NoScrollCore \
+            -target arm64-apple-ios17.0 -sdk "$SDK" \
+            -emit-module-path "$CORE/NoScrollCore.swiftmodule" \
+            NoScrollCore/Sources/NoScrollCore/*.swift
+          # The Shield files share types (ShieldController.Keys, AppGroup), so
+          # they typecheck as one unit.
+          xcrun swiftc -typecheck -target arm64-apple-ios17.0 -sdk "$SDK" \
+            -I "$CORE" NoScroll/Shield/*.swift
+          # Each extension is its own target with its own AppGroup copy.
+          for f in ShieldConfiguration/*.swift ShieldAction/*.swift \
+                   DeviceActivityMonitor/*.swift; do
             xcrun swiftc -typecheck -target arm64-apple-ios17.0 -sdk "$SDK" "$f"
           done

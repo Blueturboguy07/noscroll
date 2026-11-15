@@ -2,8 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- APP_DISPLAY_NAME, APP_NAME and PUBLIK_GATE_MODE come from ios/Config/App.xcconfig. -->
 	<key>CFBundleDisplayName</key>
-	<string>NoScroll</string>
+	<string>$(APP_DISPLAY_NAME)</string>
+	<key>AppFullName</key>
+	<string>$(APP_NAME)</string>
+	<key>PublikGateMode</key>
+	<string>$(PUBLIK_GATE_MODE)</string>
+	<!-- APP_STORE_BUILD (ios/Config/App.xcconfig): YES leaves Snapchat out of the app. -->
+	<key>AppStoreBuild</key>
+	<string>$(APP_STORE_BUILD)</string>
+
+	<!-- HTTPS through the OS and a signature check of the rule files only: exempt. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 
 	<!-- Widget taps arrive as noscroll://open/<service>. -->
 	<key>CFBundleURLTypes</key>
@@ -21,14 +33,18 @@
 	<!-- The wrapped sites ask for these when you post. Without the strings the
 	     pickers fail silently, which is the "can't upload a video" complaint. -->
 	<key>NSCameraUsageDescription</key>
-	<string>Instagram uses your camera when you take a photo or story inside NoScroll.</string>
+	<string>$(APP_NAME) lets the web site you open use your camera when you take a photo or video in $(APP_NAME).</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Instagram uses your microphone when you record video inside NoScroll.</string>
+	<string>$(APP_NAME) lets the web site you open use your microphone when you record a video in $(APP_NAME).</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Choose photos to upload inside NoScroll.</string>
+	<string>$(APP_NAME) lets you choose photos to upload to the web site you open in $(APP_NAME).</string>
 
 	<key>UILaunchScreen</key>
 	<dict/>
+	<!-- Light only, on purpose: the design is ink on warm paper, and its colours are not made for dark
+	     appearance. The app keeps this look when the phone is in dark mode. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

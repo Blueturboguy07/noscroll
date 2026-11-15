@@ -7,7 +7,7 @@ import ManagedSettings
 ///
 /// The reason this lives in an extension at all: the host app is not running
 /// when a schedule boundary passes. An app-process timer is exactly how you end
-/// up shipping the SocialLite bug where Sleep Mode never releases — the app was
+/// up shipping the bug where Sleep Mode never releases — the app was
 /// never foregrounded at 07:00, so nothing ever recomputed.
 final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 

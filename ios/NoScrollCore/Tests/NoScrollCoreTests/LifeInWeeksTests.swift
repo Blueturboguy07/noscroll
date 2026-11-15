@@ -2,11 +2,11 @@ import XCTest
 @testable import NoScrollCore
 
 /// The life grid is the most persuasive screen in the app, so its arithmetic is
-/// pinned. These cases reproduce the reference exactly: age 18, 4.8 scrolling
+/// pinned. These cases pin the expected numbers exactly: age 18, 4.8 scrolling
 /// hours a day, 90-year life → 18/24/24/9/15 and 96%.
 final class LifeInWeeksTests: XCTestCase {
 
-    func testReferenceCaseMatchesExactly() {
+    func testPinnedCaseMatchesExactly() {
         let life = LifeInWeeks(age: 18, scrollHoursPerDay: 4.8)
 
         func years(_ k: LifeInWeeks.Kind) -> Int {
@@ -31,6 +31,18 @@ final class LifeInWeeksTests: XCTestCase {
         let life = LifeInWeeks(age: 20, scrollHoursPerDay: 12)
         XCTAssertEqual(life.scrollPercent, 100)
         XCTAssertEqual(life.bands.first { $0.kind == .free }!.weeks, 0)
+    }
+
+    func testSevenHoursAtEighteenUsesAllFreeTime() {
+        // The blind test case: 7 h/day at age 18. 7 > 5 free hours, so 100%, no free band,
+        // and the screen must say that the hours are more than the free time.
+        let life = LifeInWeeks(age: 18, scrollHoursPerDay: 7)
+        XCTAssertEqual(life.scrollPercent, 100)
+        XCTAssertTrue(life.scrollExceedsFreeTime)
+        XCTAssertEqual(life.bands.first { $0.kind == .free }!.weeks, 0)
+        XCTAssertGreaterThan(life.bands.first { $0.kind == .scrolling }!.weeks, 0)
+        XCTAssertFalse(LifeInWeeks(age: 18, scrollHoursPerDay: 4.8).scrollExceedsFreeTime)
+        XCTAssertFalse(LifeInWeeks(age: 18, scrollHoursPerDay: 5).scrollExceedsFreeTime)
     }
 
     func testNoScrollingLeavesAllFreeTimeIntact() {

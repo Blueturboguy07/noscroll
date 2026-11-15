@@ -13,7 +13,7 @@
  *
  * On an advance attempt we REDIRECT BACK to the thread rather than silently
  * eating the gesture. A dead gesture reads as a broken app; a redirect reads as
- * intentional. (This is also SocialLite's observed behaviour.)
+ * intentional.
  */
 
 export interface IsolateOptions {

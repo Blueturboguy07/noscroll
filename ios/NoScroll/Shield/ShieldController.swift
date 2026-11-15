@@ -61,10 +61,9 @@ final class ShieldController: ObservableObject {
 
     /// Temporarily unshield so the user can post in the real app — the only
     /// correct answer to "you cannot post a Reel from the web". Attempting
-    /// private upload APIs instead is precisely what got The OG App pulled.
+    /// private upload APIs instead breaks App Store rules.
     ///
-    /// Three things SocialLite's version lacks, all of which are bugs we can see
-    /// in their reviews or reason about directly:
+    /// Three properties a plain timed unlock lacks:
     ///
     ///  1. A near-expiry warning, so the timer is not a surprise.
     ///  2. A grace extension while an upload is genuinely in progress — a fixed

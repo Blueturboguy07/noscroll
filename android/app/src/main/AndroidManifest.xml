@@ -34,6 +34,12 @@
             android:exported="false"
             android:theme="@style/Theme.NoScroll" />
 
+        <!-- Optional gate mode: Sign in with publik from the Status screen. -->
+        <activity
+            android:name=".publik.PublikSignInActivity"
+            android:exported="false"
+            android:theme="@style/Theme.NoScroll" />
+
         <!--
           Accessibility service: foreground-app detection ONLY.
           See ForegroundAppMonitor.kt for the Play policy note and

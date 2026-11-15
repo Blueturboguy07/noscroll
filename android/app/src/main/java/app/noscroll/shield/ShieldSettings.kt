@@ -56,7 +56,7 @@ class ShieldSettings(context: Context) {
      * Post Mode: temporarily unshield so the user can post in the real app —
      * the only correct answer to "you cannot post a Reel from the web".
      *
-     * Three properties SocialLite's version lacks:
+     * Three properties a plain timed unlock lacks:
      *   - a per-day budget, so repeated 10-minute unlocks are not simply
      *     unlimited access with extra steps;
      *   - a grace extension while an upload is genuinely in flight;

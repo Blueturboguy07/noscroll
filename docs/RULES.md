@@ -20,8 +20,8 @@ untested. Write `:has(parent > child)` instead. Enforced by `engine/test/rulelin
 
 | kind | use for |
 |---|---|
-| `route-rewrite` | `/shorts/<id>` → `/watch?v=<id>`. Cheapest and most robust. |
-| `route-block` | whole surfaces with a real URL (`/reels/`, `/explore/`). |
+| `route-rewrite` | one address to another (`^/a/(\d+)$` → `/b?id=$1`). No shipped rule uses it now. |
+| `route-block` | whole surfaces with a real URL (`/reels/`, `/explore/`, YouTube `/shorts/` with or without a video id). The engine checks the address on every in-page change (pushState, replaceState, popstate) too. |
 | `dom-remove` | everything with no URL — suggested posts, shelves, nav icons. |
 | `isolate` | single-item routes that must not advance to a next item. |
 | `style` | grayscale and similar. |

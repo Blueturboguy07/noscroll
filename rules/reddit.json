@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "minEngine": 1,
   "services": {
     "reddit": {
@@ -63,12 +63,12 @@
             "shreddit-post[promoted]",
             "shreddit-ad-post"
           ],
-          "defaultEnabled": true,
+          "defaultEnabled": false,
           "observe": true,
           "probe": {
             "expectMin": 0
           },
-          "source": "seeded from BevizLaszlo/UBlock-Filters-for-Social-Media (MIT)"
+          "source": "seeded from BevizLaszlo/UBlock-Filters-for-Social-Media (MIT). Off by default, and the iOS app shows no switch for it: NoScroll does not block ads (App Store guideline 5.2.2)."
         },
         "grayscale": {
           "kind": "style",
@@ -78,5 +78,5 @@
       }
     }
   },
-  "signature": "DzhD+SUTE3kMywPy2vYkHJGXK2KyGKFo3udj0tJgZfphvFLt+Sk7474puEtxn4PzDvmbjTvCoY0y1fEw2BvJDA=="
+  "signature": "1Wa1T8ER28XWXSTh3/e2m5/s01nD5pZYmmmHm5afymE8E/GToyAYYGuWiVZ+aYCb1sNXkRND+MgDD/hwszQ5BA=="
 }

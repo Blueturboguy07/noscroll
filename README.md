@@ -11,7 +11,10 @@ friend sends you a reel you can watch *that* video. You just can't scroll to the
 
 Eight services: **Instagram** and **YouTube** are probe-verified against the live sites;
 **X, TikTok, Facebook, LinkedIn, Snapchat** and **Reddit** ship as beta and are labelled so in
-the app.
+the app. The iOS App Store build (`APP_STORE_BUILD` in `ios/Config/App.xcconfig`) ships only Instagram,
+YouTube, TikTok, Facebook and LinkedIn, with no BETA label; for TikTok, Facebook and LinkedIn it shows only
+the blocks that work by address. It leaves out X, Reddit and Snapchat (on a phone, Snapchat's web site only
+says to use a computer).
 
 > Status: **pre-release.** The engine, rule bundles, both native shells and the shield layers are
 > written and tested, and both the iPhone and Android apps build and run. Not yet submitted to either store —
@@ -65,8 +68,8 @@ the point a user would otherwise expect to see it.
 
 ### Rules are data
 
-Every competitor in this category hardcodes CSS selectors and patches them reactively, which is
-why they visibly leak. NoScroll ships selectors as an **ed25519-signed JSON bundle** fetched at
+Hardcoded CSS selectors break whenever a site changes its markup, and the feed leaks until the
+next app update. NoScroll ships selectors as an **ed25519-signed JSON bundle** fetched at
 runtime with a three-tier fallback — remote → cached → baked into the binary — so a cold first
 launch with no network still blocks, and an upstream redesign is fixed in minutes instead of an
 App Store review cycle.
@@ -109,12 +112,17 @@ cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug
 cd probe && pnpm install && pnpm exec playwright install chromium && pnpm probe
 ```
 
-Rule bundles are signed. To work on them you need your own keypair:
+Rule bundles are signed with ed25519. The public key is committed
+(`keys/rules-signing.pub.pem`, `keys/rules-signing.pub.raw`, and the same 32
+bytes in `ios/NoScroll/Resources/rules-signing.pub.raw`). The private key is
+only in the repo secret `RULES_SIGNING_KEY`. Change a bundle in `rules/`, push,
+and the `Sign rule bundles` workflow signs every bundle, copies them into the
+iOS and Android resources and commits the result. Remote bundles served from
+`rules.noscroll.app` must be signed with the same key.
 
 ```bash
-node tools/sign-bundle.mjs keygen           # writes keys/ (gitignored)
-node tools/sign-bundle.mjs sign rules/*.json
-swift tools/verify-canonical.swift          # Node and Swift must agree byte for byte
+node tools/sign-bundle.mjs verify rules/*.json   # checks against the committed public key
+swift tools/verify-canonical.swift               # Node and Swift must agree byte for byte
 ```
 
 ---
@@ -156,6 +164,10 @@ app:
 2. **Rule-health telemetry is opt-in and anonymous.** It reports `{ruleId, expected, actual,
    bundleVersion}` — never a URL, never page content. See
    [`engine/src/bridge.ts`](engine/src/bridge.ts).
+3. **Sign in with publik.** The app uses Sign in with publik (`PUBLIK_GATE_MODE`: `required` opens
+   the app with it, `optional` puts it in Settings), and after sign-in counts its users with two
+   events (`app_opened`, `active_session`) — never a URL, never page content. See
+   [docs/PRIVACY.md](docs/PRIVACY.md#tier-3--sign-in-with-publik-and-usage-counting).
 
 No analytics SDK. No ad pixel. No crash reporter carrying identifiers. No tracking on the website
 or the legal pages.

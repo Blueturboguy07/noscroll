@@ -17,19 +17,21 @@ import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
 const ROOT = join(import.meta.dirname, '..');
-const ENGINE = readFileSync(join(ROOT, 'engine/dist/noscroll.js'), 'utf8');
+// NOSCROLL_ENGINE: the engine file to test, relative to the repo root. CI points it at the copy the
+// iOS app ships (ios/NoScroll/Resources/noscroll.js); the default is a fresh engine build.
+const ENGINE = readFileSync(join(ROOT, process.env.NOSCROLL_ENGINE ?? 'engine/dist/noscroll.js'), 'utf8');
 
 function bundle(service: string): string {
   return readFileSync(join(ROOT, `rules/${service}.json`), 'utf8');
 }
 
 /** Inject exactly what the shells inject, at document start. */
-async function installEngine(page: Page, service: string): Promise<void> {
+async function installEngine(page: Page, service: string, settings: Record<string, boolean> = {}): Promise<void> {
   await page.addInitScript({
     content: `
       window.__NOSCROLL_CONFIG = {
         bundle: ${bundle(service)},
-        settings: {},
+        settings: ${JSON.stringify(settings)},
         telemetry: true
       };
       ${ENGINE}
@@ -67,20 +69,109 @@ test.describe('YouTube', () => {
     await installEngine(page, 'youtube');
   });
 
-  test('the /shorts -> /watch rewrite lands on the same video', async ({ page }) => {
-    // A stable, long-lived Short would be ideal; instead assert the mechanism:
-    // any /shorts/<id> must end up on /watch?v=<id>.
-    await page.goto('https://m.youtube.com/shorts/dQw4w9WgXcQ', { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(/\/watch\?v=dQw4w9WgXcQ/, { timeout: 15_000 });
-    expect(page.url()).toContain('/watch?v=dQw4w9WgXcQ');
+  /**
+   * The Shorts tab, found by what a person sees (its title), not by our selectors: if the site
+   * renames a class, this still sees the tab. Also returns the tab bar for the log, as proof of
+   * what the live page drew.
+   */
+  async function tabBar(page: Page): Promise<Array<{ title: string; cls: string; visible: boolean }>> {
+    return page.evaluate(() =>
+      [...document.querySelectorAll('ytm-pivot-bar-item-renderer')].map((el) => {
+        const r = (el as HTMLElement).getBoundingClientRect();
+        const style = getComputedStyle(el as HTMLElement);
+        return {
+          title: (el.textContent ?? '').replace(/\s+/g, ' ').trim(),
+          cls: el.querySelector('.pivot-bar-item-tab')?.className ?? '',
+          visible: el.isConnected && r.width > 0 && r.height > 0 && style.display !== 'none' && style.visibility !== 'hidden',
+        };
+      }),
+    );
+  }
+
+  async function waitForTabBar(page: Page): Promise<boolean> {
+    try {
+      await page.waitForSelector('ytm-pivot-bar-item-renderer', { state: 'attached', timeout: 20_000 });
+      await page.waitForTimeout(2500); // the bar is redrawn when the page data arrives
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function leavesShorts(page: Page, timeout = 15_000): Promise<string> {
+    await page.waitForURL((u) => !u.pathname.startsWith('/shorts'), { timeout });
+    return new URL(page.url()).pathname;
+  }
+
+  test('the live page has a Shorts tab, and the engine removes it', async ({ page, context }) => {
+    // Control: the same page with NO engine (init scripts are per page).
+    const control = await context.newPage();
+    await control.goto('https://m.youtube.com/', { waitUntil: 'domcontentloaded' });
+    const controlBar = (await waitForTabBar(control)) ? await tabBar(control) : [];
+    await control.close();
+    console.log(`youtube control tab bar: ${JSON.stringify(controlBar)}`);
+    const controlHasShorts = controlBar.some((t) => t.title === 'Shorts' && t.visible);
+
+    await page.goto('https://m.youtube.com/', { waitUntil: 'domcontentloaded' });
+    expect(await waitForTabBar(page), 'm.youtube.com drew no tab bar: the probe cannot check the Shorts tab').toBe(true);
+    const bar = await tabBar(page);
+    const nav = (await probes(page)).find((p) => p.ruleId === 'youtube.shorts-nav');
+    console.log(`youtube tab bar with the engine: ${JSON.stringify(bar)}; shorts-nav removed ${nav?.actual ?? 0}`);
+
+    expect(bar.filter((t) => t.title === 'Shorts' && t.visible), 'a Shorts tab is still visible').toEqual([]);
+    expect(bar.some((t) => t.visible), 'the other tabs must stay').toBe(true);
+    if (controlHasShorts) {
+      expect(nav?.actual ?? 0, 'the Remove Shorts tab rule matched nothing on a page that has the tab').toBeGreaterThan(0);
+    } else {
+      test.info().annotations.push({ type: 'note', description: 'the control page drew no Shorts tab today' });
+    }
   });
 
-  test('home has no Shorts shelf and no Shorts tab', async ({ page }) => {
+  test('the Shorts tab address (/shorts/, no video id) goes home', async ({ page }) => {
+    await page.goto('https://m.youtube.com/shorts/', { waitUntil: 'domcontentloaded' });
+    expect(await leavesShorts(page)).toBe('/');
+  });
+
+  test('a Short address (/shorts/<id>) does not stay on Shorts', async ({ page }) => {
+    // The server sends an id that is not a Short to /watch (303); a real Short loads at /shorts/<id>
+    // and the engine sends it home. Either way the page must leave /shorts.
+    await page.goto('https://m.youtube.com/shorts/dQw4w9WgXcQ', { waitUntil: 'domcontentloaded' });
+    expect(await leavesShorts(page)).not.toMatch(/^\/shorts/);
+  });
+
+  test('an in-page move to /shorts/ (pushState) goes home', async ({ page }) => {
+    await page.goto('https://m.youtube.com/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => history.pushState({}, '', '/shorts/'));
+    expect(await leavesShorts(page, 10_000)).toBe('/');
+
+    // The same through the prototype, which skips a patched history object.
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => History.prototype.pushState.call(history, {}, '', '/shorts/dQw4w9WgXcQ'));
+    expect(await leavesShorts(page, 10_000)).toBe('/');
+  });
+
+  test('a tap on the Shorts tab does not open Shorts', async ({ context }) => {
+    // Show the tab on purpose (Remove Shorts tab off), so the tap itself can be tested.
+    const page = await context.newPage();
+    await installEngine(page, 'youtube', { 'youtube.shorts-nav': false });
+    await page.goto('https://m.youtube.com/', { waitUntil: 'domcontentloaded' });
+    const drawn = await waitForTabBar(page);
+    const tab = page.locator('ytm-pivot-bar-item-renderer', { hasText: /^\s*Shorts\s*$/ });
+    test.skip(!drawn || (await tab.count()) === 0, 'the live page drew no Shorts tab to tap today');
+    await tab.first().click();
+    await page.waitForTimeout(4000);
+    expect(new URL(page.url()).pathname, 'the tap opened a Shorts page').not.toMatch(/^\/shorts/);
+  });
+
+  test('home has no Shorts shelf link', async ({ page }) => {
     await page.goto('https://m.youtube.com/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(4000);
 
-    const shortsLinks = await page.locator("a[href^='/shorts']").count();
-    expect(shortsLinks, 'a /shorts link survived on the home feed').toBe(0);
+    const shortsLinks = await page.locator("a[href^='/shorts']").evaluateAll(
+      (els) => els.filter((e) => (e as HTMLElement).getBoundingClientRect().height > 0).length,
+    );
+    expect(shortsLinks, 'a visible /shorts link survived on the home feed').toBe(0);
 
     assertNoRot(await probes(page), 'youtube home');
   });
@@ -113,7 +204,10 @@ test.describe('Instagram', () => {
     await page.waitForTimeout(3000);
 
     expect(errors, 'the engine must not throw at document-start').toEqual([]);
-    await expect(page.locator('#noscroll-css')).toHaveCount(1);
+    // A signed-out runner often gets the login form at "/": a page with a password field is a
+    // sign-in page, and there the engine must be inert (no CSS at all).
+    const signInPage = (await page.locator("input[type='password']").count()) > 0;
+    await expect(page.locator('#noscroll-css')).toHaveCount(signInPage ? 0 : 1);
   });
 
   test('the engine is INERT on the login page', async ({ page, context }) => {

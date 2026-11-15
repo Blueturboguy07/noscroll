@@ -4,7 +4,7 @@ import Foundation
 /// A rule bundle is DATA, fetched and verified natively before it ever reaches
 /// the WebView. Shipping a new selector must never require an App Store release —
 /// that is the whole point, and the reason selector rot does not become a
-/// week-long outage the way it does for a competitor that hardcodes them.
+/// week-long outage the way it does when selectors are hardcoded in the binary.
 struct RuleBundle: Codable, Sendable {
     let version: Int
     let minEngine: Int

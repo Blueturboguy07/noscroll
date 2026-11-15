@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: PUBLIK_API_BASE_URL can point at a test publik on this computer over plain HTTP. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/publik_test_network" />
+</manifest>

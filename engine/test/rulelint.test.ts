@@ -85,6 +85,32 @@ describe('rule lint', () => {
   });
 
   /**
+   * NoScroll does not block ads (App Store guideline 5.2.2, and the terms of the services it opens).
+   * Only the surfaces named "sponsored" or "promoted" may point at ads; they default OFF, and the iOS app
+   * shows no switch for them. No other rule may match an ad: no "Why am I seeing" button (it is on ads
+   * too), no sponsored, promoted or ad marker, and no such word in its label.
+   */
+  it('only the ad surfaces point at ads, and they default off', () => {
+    const adMarker = /why am i seeing|sponsor|promot|utm_source|data-ad|\bads?\b|advert/i;
+    for (const [file, bundle] of bundles) {
+      for (const [svc, service] of Object.entries(bundle.services)) {
+        for (const [name, surface] of Object.entries(service.surfaces)) {
+          const id = `${file}:${svc}.${name}`;
+          if (name === 'sponsored' || name === 'promoted') {
+            expect(surface.defaultEnabled ?? false, `${id} must default off`).toBe(false);
+            continue;
+          }
+          expect(adMarker.test(surface.label ?? ''), `${id} label: ${surface.label}`).toBe(false);
+          if (surface.kind !== 'dom-remove') continue;
+          for (const selector of surface.selectors) {
+            expect(adMarker.test(selector), `${id}: ${selector}`).toBe(false);
+          }
+        }
+      }
+    }
+  });
+
+  /**
    * Nothing is forced on: every surface must be a switch the user owns. The
    * product's opinion lives in the DEFAULTS, not in taking the choice away.
    */

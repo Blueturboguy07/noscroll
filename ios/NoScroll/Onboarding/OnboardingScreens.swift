@@ -17,10 +17,22 @@ struct WelcomeScreen: View {
             .ignoresSafeArea()
 
             VStack {
-                Text("NoScroll")
+                Text(AppState.appName)
                     .font(Theme.display(40))
                     .tracking(3)
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 16)
+                    #if PUBLIK_TEST_HOOKS
+                    .background {
+                        GeometryReader { g in
+                            Color.clear
+                                .onAppear { LayoutProbe.titleY = g.frame(in: .global).minY }
+                                .onChange(of: g.frame(in: .global).minY) { _, y in LayoutProbe.titleY = y }
+                        }
+                    }
+                    #endif
                     .padding(.top, 12)
 
                 Spacer()
@@ -83,6 +95,8 @@ struct ScrollTimeScreen: View {
                     Label("Back", systemImage: "chevron.left")
                         .font(Theme.body(17, .semibold))
                         .foregroundStyle(Theme.inkSoft)
+                        .padding(.trailing, 12)
+                        .tapTarget()
                 }
                 .buttonStyle(.plain)
                 Spacer()
@@ -114,15 +128,17 @@ struct ScrollTimeScreen: View {
             .padding(.top, 30)
 
             VStack(spacing: 8) {
-                if abs(hours - average) < 0.25 {
-                    Text("This is the average")
-                        .font(Theme.body(13, .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Theme.scrolling, in: Capsule())
-                        .transition(.scale.combined(with: .opacity))
-                }
+                // Always in the layout (only its opacity changes), so the slider never moves under the finger.
+                let atAverage = abs(hours - average) < 0.25
+                Text("This is the average")
+                    .font(Theme.body(13, .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Theme.scrolling, in: Capsule())
+                    .scaleEffect(atAverage ? 1 : 0.85)
+                    .opacity(atAverage ? 1 : 0)
+                    .accessibilityHidden(!atAverage)
                 Slider(value: $hours, in: range, step: 0.1)
                     .tint(Theme.ink)
                 HStack {
@@ -174,7 +190,7 @@ struct AgeSheet: View {
                 .foregroundStyle(Theme.ink)
                 .padding(.top, 14)
 
-            Text("Used only to draw your life. No data collected or sent anywhere.")
+            Text("Used only to draw your life. Your age stays on this phone.")
                 .font(Theme.body(16))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
@@ -194,83 +210,17 @@ struct AgeSheet: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 4)
 
-            Button("Skip", action: onSkip)
-                .font(Theme.body(17, .semibold))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.vertical, 16)
+            Button(action: onSkip) {
+                Text("Skip")
+                    .font(Theme.body(17, .semibold))
+                    .foregroundStyle(Theme.inkSoft)
+                    .tapTarget(minWidth: 88)
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 6)
         }
         .background(Theme.paperRaised, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
         .padding(.horizontal, 16)
         .shadow(color: .black.opacity(0.22), radius: 30, y: 10)
-    }
-}
-
-// MARK: - Ad blocking
-
-/// Per-service switches presented as brand-tinted cards.
-struct AdBlockingScreen: View {
-    @EnvironmentObject private var state: AppState
-    let onContinue: () -> Void
-    let onSkip: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            PageDots(count: 3, index: 1).padding(.top, 6)
-
-            Text("Turn on Ad Blocking")
-                .font(Theme.display(31))
-                .foregroundStyle(Theme.ink)
-                .padding(.top, 22)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    ForEach(AppState.services.filter(\.hasAdBlocking)) { service in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("\(service.name):")
-                                .font(Theme.display(17, .bold))
-                                .foregroundStyle(Theme.ink)
-                            adCard(service)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 22)
-            }
-
-            PrimaryButton(title: "Continue", action: onContinue)
-                .padding(.horizontal, 20)
-            Button("Skip", action: onSkip)
-                .font(Theme.body(17, .semibold))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 12)
-        }
-        .padding(.bottom, 18)
-        .background(Theme.paper)
-    }
-
-    private func adCard(_ service: AppState.Service) -> some View {
-        let binding = state.binding(service: service.id, surfaces: service.adSurfaces)
-        return HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(.white.opacity(0.9))
-                .frame(width: 42, height: 42)
-                .overlay {
-                    Image(systemName: service.symbol)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(service.tint)
-                }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(service.name)
-                    .font(Theme.display(21, .bold))
-                    .foregroundStyle(.white)
-                Text(binding.wrappedValue ? service.adCopyOn : service.adCopyOff)
-                    .font(Theme.body(14))
-                    .foregroundStyle(.white.opacity(0.85))
-            }
-            Spacer()
-            Toggle("", isOn: binding).labelsHidden().tint(.white.opacity(0.35))
-        }
-        .padding(16)
-        .background(service.gradient, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }

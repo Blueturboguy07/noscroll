@@ -9,6 +9,9 @@ import WidgetKit
 /// have to remember to open is a blocker you stop opening.
 ///
 /// Each tile is a `Link` to `noscroll://open/<service>`, handled in RootView.
+/// The name people see: CFBundleDisplayName, from APP_DISPLAY_NAME in ios/Config/App.xcconfig.
+let widgetAppName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "NoScroll"
+
 struct ServiceEntry: TimelineEntry {
     let date: Date
     let services: [WidgetService]
@@ -23,7 +26,14 @@ struct WidgetService: Identifiable, Hashable {
     let start: Color
     let end: Color
 
-    static let all: [WidgetService] = [
+    /// The App Store build (Info.plist key AppStoreBuild) shows only the services the app ships there; the app
+    /// leaves out the same ids (AppState.notInStoreBuild).
+    static let isAppStoreBuild = ((Bundle.main.object(forInfoDictionaryKey: "AppStoreBuild") as? String) ?? "YES")
+        .trimmingCharacters(in: .whitespaces).uppercased() != "NO"
+    static let notInStoreBuild: Set<String> = ["x", "reddit", "snapchat"]
+    static let all: [WidgetService] = every.filter { !isAppStoreBuild || !notInStoreBuild.contains($0.id) }
+
+    static let every: [WidgetService] = [
         .init(id: "instagram", name: "Instagram",
               start: Color(red: 0.88, green: 0.19, blue: 0.42),
               end: Color(red: 0.97, green: 0.47, blue: 0.22)),
@@ -93,7 +103,7 @@ struct NoScrollWidgetView: View {
                         }
                     }
                 }
-                Label("NoScroll", systemImage: "square.grid.2x2.fill")
+                Label(widgetAppName, systemImage: "square.grid.2x2.fill")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -121,8 +131,8 @@ struct NoScrollWidget: Widget {
         StaticConfiguration(kind: "app.noscroll.shortcuts", provider: Provider()) { entry in
             NoScrollWidgetView(entry: entry)
         }
-        .configurationDisplayName("NoScroll shortcuts")
-        .description("Open your apps through NoScroll, straight from the home screen.")
+        .configurationDisplayName("\(widgetAppName) shortcuts")
+        .description("Open your apps through \(widgetAppName), straight from the home screen.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

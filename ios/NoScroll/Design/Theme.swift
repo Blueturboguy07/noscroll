@@ -11,10 +11,12 @@ enum Theme {
     static let paper = Color(hex: 0xF7EFE0)
     static let paperRaised = Color(hex: 0xFDF8EF)
     static let ink = Color(hex: 0x141414)
-    static let inkSoft = Color(hex: 0x8A8578)
+    /// Secondary text: 5.0:1 on paper, 5.4:1 on paperRaised (WCAG AA needs 4.5:1).
+    static let inkSoft = Color(hex: 0x6B665B)
 
-    /// Life-grid bands. Ordered as they stack, top to bottom.
-    static let past = Color(hex: 0xC0574A)
+    /// Life-grid bands. Ordered as they stack, top to bottom. Past is a warm gray, so that only
+    /// Scrolling is red (3.2:1 on paper; it differs from Scrolling in hue and lightness).
+    static let past = Color(hex: 0x8F8676)
     static let sleep = Color(hex: 0x1E3A5C)
     static let work = Color(hex: 0x4E8577)
     static let hygiene = Color(hex: 0xA99BD4)
@@ -24,7 +26,7 @@ enum Theme {
     // MARK: - Type
 
     /// Display face. The system rounded weightings carry the same friendly-but-
-    /// blunt tone as the reference without shipping a licensed font.
+    /// blunt tone we want without shipping a licensed font.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .black) -> Font {
         .system(size: size, weight: weight, design: .rounded)
     }
@@ -59,10 +61,12 @@ extension Color {
 // MARK: - Shared controls
 
 /// The primary action button: full-width, heavy, high contrast.
+/// `busy`: a spinner takes the place of the title (same size), and the button takes no taps.
 struct PrimaryButton: View {
     let title: String
     var tint: Color = Theme.ink
     var foreground: Color = Theme.paperRaised
+    var busy = false
     let action: () -> Void
 
     var body: some View {
@@ -70,11 +74,22 @@ struct PrimaryButton: View {
             Text(title)
                 .font(Theme.display(19, .bold))
                 .foregroundStyle(foreground)
+                .opacity(busy ? 0 : 1)
+                .overlay { if busy { ProgressView().tint(foreground) } }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 19)
                 .background(tint, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
         }
         .buttonStyle(.plain)
+        .disabled(busy)
+        .accessibilityLabel(busy ? "Checking" : title)
+    }
+}
+
+extension View {
+    /// At least 44 x 44 pt to tap (Apple's minimum), and the whole frame takes the tap.
+    func tapTarget(minWidth: CGFloat = 44) -> some View {
+        frame(minWidth: minWidth, minHeight: 44).contentShape(Rectangle())
     }
 }
 

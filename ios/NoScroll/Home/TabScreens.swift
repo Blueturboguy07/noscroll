@@ -1,38 +1,5 @@
 import SwiftUI
 
-/// Sleep Mode: a nightly window during which the shielded apps stay shut.
-///
-/// The schedule maths lives in `SleepSchedule`, which is recomputed from the
-/// wall clock and the current timezone every time rather than cached — the bug
-/// that leaves people staring at "you should be asleep" at 9am.
-struct SleepTab: View {
-    @EnvironmentObject private var state: AppState
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    Toggle("Sleep Mode", isOn: $state.sleepEnabled)
-                    DatePicker("Starts", selection: $state.sleepStart, displayedComponents: .hourAndMinute)
-                    DatePicker("Ends", selection: $state.sleepEnd, displayedComponents: .hourAndMinute)
-                } footer: {
-                    Text("Between these times the apps you've shielded stay closed. The window is recalculated from your device clock, so changing timezone takes effect immediately.")
-                }
-
-                Section("Right now") {
-                    LabeledContent("Status",
-                                   value: state.sleepActiveNow ? "Sleeping" : "Awake")
-                    if !state.hasScreenTimeAccess {
-                        Text("Sleep Mode can only close apps once Screen Time access is granted.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .navigationTitle("Sleep")
-        }
-    }
-}
-
 /// Every service's switches in one place, rather than one sheet at a time.
 struct AllSettingsTab: View {
     @EnvironmentObject private var state: AppState
@@ -48,8 +15,11 @@ struct AllSettingsTab: View {
                         }
                     } header: {
                         HStack(spacing: 8) {
-                            BrandMark(service: service.id, size: 15)
-                                .padding(5)
+                            // An SF Symbol, not the service's logo.
+                            Image(systemName: service.symbol)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 25, height: 25)
                                 .background(service.gradient, in: RoundedRectangle(cornerRadius: 6))
                             Text(service.name)
                             if service.beta {
@@ -66,90 +36,189 @@ struct AllSettingsTab: View {
     }
 }
 
-/// The enforcement layer's state, stated plainly.
-struct ShieldTab: View {
+/// Settings: the publik account, sign-out for each service, privacy, and About
+/// (how blocking works, the rule versions, the source code, the app version).
+struct ProfileTab: View {
     @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var gate: PublikGateModel
+
+    @State private var confirmSignOut = false
+    @State private var confirmDelete = false
+    /// A page in the in-app browser (help and support, the privacy policy, the source code), or nil.
+    @State private var webPage: PublikGateModel.BrowserPage?
+
+    static let sourceCodeURL = URL(string: "https://github.com/Blueturboguy07/noscroll")!
 
     var body: some View {
         NavigationStack {
             List {
+                publikSection
+                servicesSection
+
                 Section {
-                    LabeledContent("Screen Time access",
-                                   value: state.hasScreenTimeAccess ? "Granted" : "Not granted")
-                    LabeledContent("Enforcement",
-                                   value: state.hasScreenTimeAccess ? "Apps are shielded" : "Wrapper only")
+                    // publik's bare in-app support page, in the in-app browser.
+                    Button("Help and support") { webPage = PublikGateModel.BrowserPage(url: Publik.supportURL) }
                 } header: {
-                    Text("Shield")
-                } footer: {
-                    // The degraded mode is stated rather than glossed: claiming
-                    // an enforcement the build cannot deliver is both a lie and
-                    // an App Review risk.
-                    Text(state.hasScreenTimeAccess
-                         ? "Opening a shielded app sends you here instead."
-                         : "Without Screen Time access NoScroll blocks inside its own browser, but cannot stop you opening the real apps.")
+                    Text("Help")
                 }
 
-                if !state.hasScreenTimeAccess {
-                    Section {
-                        Button("Grant Screen Time access") {
-                            Task { await state.requestScreenTimeAccess() }
-                        }
-                        Button("Open iOS Settings") { state.openSystemSettings() }
-                        if state.screenTimeError != nil {
-                            Link("Why isn't this working?",
-                                 destination: URL(string: "https://github.com/Blueturboguy07/noscroll/blob/main/docs/ENTITLEMENT.md")!)
-                        }
-                    } footer: {
-                        if let error = state.screenTimeError {
-                            Text(error)
-                                .foregroundStyle(.orange)
-                                .fixedSize(horizontal: false, vertical: true)
+                Section {
+                    Button("Privacy policy") { webPage = PublikGateModel.BrowserPage(url: Publik.privacyURL) }
+                } header: {
+                    Text("Privacy")
+                } footer: {
+                    Text("Blocking runs on this iPhone. \(AppState.appName) sends nothing about what you look at. Your logins for the services stay in \(AppState.appName) on this iPhone.")
+                }
+
+                Section {
+                    NavigationLink("How blocking works") { HowBlockingWorksView() }
+                    NavigationLink("Blocking rules") { RuleDetailsView() }
+                    Button("Source code") { webPage = PublikGateModel.BrowserPage(url: Self.sourceCodeURL) }
+                    Text(AppState.versionLine)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Version: \(AppState.versionLine)")
+                } header: {
+                    Text("About")
+                } footer: {
+                    Text("\(AppState.appName) is free and open source under AGPL-3.0. It is not affiliated with any of the services it opens.")
+                }
+            }
+            .navigationTitle("Settings")
+            .sheet(isPresented: $gate.signInSheet) {
+                PublikGateView(model: gate)
+            }
+        }
+        // Delete account, step 3: publik's delete page in the in-app browser.
+        .sheet(item: $gate.deletePage, onDismiss: { gate.finishDelete() }) { page in
+            PublikBrowser(url: page.url).ignoresSafeArea()
+        }
+        // Help and support, the privacy policy and the source code: in the in-app browser, not the Safari app.
+        .sheet(item: $webPage) { page in
+            PublikBrowser(url: page.url).ignoresSafeArea()
+        }
+        .confirmationDialog("Sign out of publik?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+            Button("Sign out", role: .destructive) { gate.signOut() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(signOutMessage)
+        }
+        // Delete account, step 1: say what is deleted.
+        .alert("Delete your publik account?", isPresented: $confirmDelete) {
+            Button("Delete account", role: .destructive) { gate.deleteAccount() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This deletes your publik account for all publik apps, not only for \(AppState.appName). First, \(AppState.appName) signs you out and deletes its publik data on this iPhone. Then the publik page opens. Confirm the deletion on that page.")
+        }
+    }
+
+    private var signOutMessage: String {
+        gate.mode == .required
+            ? "\(AppState.appName) asks you to sign in with publik again before you can use it."
+            : "The app stops telling publik about app use until you sign in again."
+    }
+
+    private var publikSection: some View {
+        Section {
+            if gate.signedIn {
+                // The account email when publik gives one; else the handle; else no name at all.
+                if let email = gate.email {
+                    LabeledContent("Signed in as", value: email)
+                } else if let handle = gate.handle {
+                    LabeledContent("Signed in as", value: "@\(handle)")
+                } else {
+                    Text("Signed in with publik")
+                }
+                Button("Sign out", role: .destructive) { confirmSignOut = true }
+                // Only with an account: usage counting and account deletion.
+                Toggle("Count app use", isOn: $gate.usageCounting)
+                Button("Delete account", role: .destructive) { confirmDelete = true }
+            } else {
+                Button("Sign in with publik") { gate.signInSheet = true }
+            }
+        } header: {
+            Text("publik account")
+        } footer: {
+            Text(gate.signedIn ? "\(AppState.appName) tells publik when it opens and each 30 minutes that it stays open, so publik can count app use. It sends nothing about what you look at. Turn off Count app use to stop this." : "When you are signed in, \(AppState.appName) tells publik when it opens and each 30 minutes that it stays open, so publik can count app use. It sends nothing about what you look at. After you sign in, you can turn this off here (Count app use).")
+        }
+    }
+
+    /// One "Sign out" row for each service (App Store guideline 5.1.1(v)).
+    private var servicesSection: some View {
+        Section {
+            ForEach(AppState.services) { service in
+                let done = state.signedOutServices.contains(service.id)
+                Button {
+                    Task { await state.signOut(of: service) }
+                } label: {
+                    HStack {
+                        Text("Sign out of \(service.name)")
+                        Spacer()
+                        if done {
+                            Text("Signed out").foregroundStyle(.secondary)
                         }
                     }
                 }
-
-                Section("Post Mode") {
-                    LabeledContent("Unlocks left today", value: "\(state.postModeUnlocksRemaining)")
-                    Button("Unlock for 10 minutes") { state.beginPostMode() }
-                        .disabled(!state.hasScreenTimeAccess || state.postModeUnlocksRemaining == 0)
-                }
+                .disabled(done)
             }
-            .navigationTitle("Shield")
+        } header: {
+            Text("Service accounts")
+        } footer: {
+            Text("Sign out deletes the cookies and saved data of that service in \(AppState.appName) on this iPhone. Your account at the service stays.")
         }
     }
 }
 
-/// Accounts, privacy, and the rule bundle's provenance.
-struct ProfileTab: View {
+/// Settings > About > How blocking works: the rules, in plain words.
+struct HowBlockingWorksView: View {
+    var body: some View {
+        List {
+            Section("What it does") {
+                Text("\(AppState.appName) opens each service in its own browser inside the app. When a page loads, \(AppState.appName) hides the parts that keep you scrolling, for example Reels, Shorts and suggested posts.")
+                Text("It also stops pages such as Reels or Shorts from opening. You go to the start page of the service instead.")
+            }
+            Section("You choose") {
+                Text("Each block has a switch. Find the switches in the Blocks tab, or tap the Settings card of a service on the home screen. Turn a switch off to see that part again.")
+            }
+            Section("On your iPhone only") {
+                Text("All of this happens on your iPhone. \(AppState.appName) sends nothing about what you look at.")
+            }
+            Section("Sign-in pages") {
+                Text("On a sign-in page, \(AppState.appName) stops. It does not hide, read or change anything on that page. A sign at the top of the screen says that \(AppState.appName) is paused. Blocking starts again after you sign in.")
+            }
+            Section("The rules") {
+                Text("A list of rules for each service tells \(AppState.appName) what to hide. The lists come with the app, and each list has a signature. \(AppState.appName) checks the signature and does not use a list that was changed.")
+                Text("Web sites change. A rule can stop working until the next update of the app.")
+                if !appStoreBuild {
+                    // Not in the App Store build: it has no BETA services and says no "beta" (guideline 2.2).
+                    Text("Services marked BETA are newer, and their rules are tested less.")
+                }
+            }
+        }
+        .navigationTitle("How blocking works")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Settings > About > Blocking rules: the version of each service's rule list and of the engine.
+struct RuleDetailsView: View {
     @EnvironmentObject private var state: AppState
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Rules") {
-                    ForEach(AppState.services) { service in
-                        LabeledContent(service.name,
-                                       value: state.bundleVersion(for: service.id))
-                    }
+        List {
+            Section {
+                ForEach(AppState.services) { service in
+                    LabeledContent(service.name, value: state.bundleVersion(for: service.id))
                 }
-
-                Section {
-                    LabeledContent("Engine", value: "v1")
-                    Toggle("Share rule health", isOn: $state.telemetryEnabled)
-                } header: {
-                    Text("Privacy")
-                } footer: {
-                    Text("Rule health reports which blocking rules stopped matching — a rule id and a count, nothing else. Never a URL, never anything you looked at. Your logins never leave this device either way.")
-                }
-
-                Section {
-                    Link("Source code", destination: URL(string: "https://github.com/Blueturboguy07/noscroll")!)
-                    Link("How rules work", destination: URL(string: "https://github.com/Blueturboguy07/noscroll/blob/main/docs/RULES.md")!)
-                } footer: {
-                    Text("NoScroll is free and open source under AGPL-3.0. It is not affiliated with any of the services it opens.")
-                }
+            } header: {
+                Text("Rule lists")
+            } footer: {
+                Text("Each service has its own list of rules. A new version comes with an update of the app.")
             }
-            .navigationTitle("You")
+            Section("Blocking engine") {
+                LabeledContent("Engine", value: "Version 1")
+            }
         }
+        .navigationTitle("Blocking rules")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

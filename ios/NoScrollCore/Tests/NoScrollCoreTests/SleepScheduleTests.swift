@@ -3,10 +3,10 @@ import XCTest
 
 /// Regression tests for the bug we are specifically not shipping.
 ///
-/// SocialLite has two independent public reviews reporting Sleep Mode failing to
-/// release at the scheduled end — one user stuck on the "you should be asleep"
-/// screen at 9am. Every test below is a scenario that would produce exactly that
-/// symptom if the window were computed once and cached.
+/// The failure: Sleep Mode does not release at the scheduled end, and the user
+/// is stuck on the "you should be asleep" screen at 9am. Every test below is a
+/// scenario that would produce exactly that symptom if the window were computed
+/// once and cached.
 final class SleepScheduleTests: XCTestCase {
 
     private func cal(_ tz: String) -> Calendar {
@@ -45,7 +45,7 @@ final class SleepScheduleTests: XCTestCase {
 
         XCTAssertFalse(s.isActive(at: date("2026-07-29T07:00:00-06:00"), calendar: c), "07:00")
         XCTAssertFalse(s.isActive(at: date("2026-07-29T09:00:00-06:00"), calendar: c),
-                       "9am — the exact symptom in SocialLite's review")
+                       "9am — the stuck-screen symptom")
         XCTAssertFalse(s.isActive(at: date("2026-07-29T13:00:00-06:00"), calendar: c), "1pm")
         XCTAssertFalse(s.isActive(at: date("2026-07-29T21:59:00-06:00"), calendar: c), "21:59")
     }

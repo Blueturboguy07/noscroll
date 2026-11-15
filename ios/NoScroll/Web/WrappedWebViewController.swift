@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import SafariServices
 import UIKit
 import WebKit
 
@@ -65,7 +66,7 @@ final class WrappedWebViewController: UIViewController {
         cfg.websiteDataStore = dataStore
 
         // Without these, video plays fullscreen-only and is silent unless the
-        // ringer is on — a specific, repeated complaint about SocialLite.
+        // ringer is on.
         cfg.allowsInlineMediaPlayback = true
         cfg.mediaTypesRequiringUserActionForPlayback = []
 
@@ -112,8 +113,7 @@ final class WrappedWebViewController: UIViewController {
     /// iOS reaps the WebView process under memory pressure. Without restoration,
     /// switching to an authenticator app during 2FA and coming back produces a
     /// white screen and forces a restart — which blocks login entirely. That is
-    /// a real, reported SocialLite bug and it is the single worst one, because
-    /// the user cannot get past it.
+    /// the worst failure of a wrapped web app, because the user cannot get past it.
     private func restoreOrLoad() {
         if let state = restorationState ?? UserDefaults.standard.data(forKey: stateKey) {
             webView.interactionState = state
@@ -135,6 +135,21 @@ final class WrappedWebViewController: UIViewController {
     /// switch over two hardcoded cases with `default: instagram`, which sent
     /// all six other services to Instagram.
     private func homeURL() -> URL { startURL }
+
+    /// The service's own domains, from the `match` patterns of its rule bundle (ServiceLinks, NoScrollCore).
+    private lazy var serviceDomains: [String] = {
+        let match = (try? JSONDecoder().decode(RuleBundle.self, from: bundleRaw))?.services[session.service]?.match ?? []
+        let domains = ServiceLinks.domains(fromMatch: match)
+        return domains.isEmpty ? [startURL.host?.lowercased() ?? ""].filter { !$0.isEmpty } : domains
+    }()
+
+    /// A link that leaves the service: the in-app Safari sheet shows it. The web view never shows another site.
+    private func openOutside(_ url: URL) {
+        guard presentedViewController == nil else { return }
+        let safari = SFSafariViewController(url: url)
+        safari.dismissButtonStyle = .close
+        present(safari, animated: true)
+    }
 }
 
 // MARK: - Navigation
@@ -158,6 +173,16 @@ extension WrappedWebViewController: WKNavigationDelegate {
             decisionHandler(.cancel); return
         }
 
+        // A page of another site (a link in a post, a profile's web site, a redirect of a link shim) opens in
+        // the in-app Safari sheet, not here: the web view shows only the service and its sign-in pages, so the
+        // app gives no unrestricted web access. Frames inside a page of the service are not checked.
+        let mainFrame = navigationAction.targetFrame?.isMainFrame ?? true
+        if mainFrame, !ServiceLinks.staysInApp(url, serviceDomains: serviceDomains) {
+            decisionHandler(.cancel)
+            openOutside(url)
+            return
+        }
+
         decisionHandler(.allow)
     }
 
@@ -174,9 +199,9 @@ extension WrappedWebViewController: WKNavigationDelegate {
 // MARK: - UI delegate
 
 /// WKUIDelegate is MANDATORY, not optional. Without these callbacks, `<input
-/// type=file>` pickers and getUserMedia fail *silently* — which is exactly the
-/// "can't upload a video to posts/story" complaint against SocialLite. The
-/// feature looks broken rather than unsupported.
+/// type=file>` pickers and getUserMedia fail *silently*, and "upload a video to
+/// a post or story" stops working. The feature looks broken rather than
+/// unsupported.
 extension WrappedWebViewController: WKUIDelegate {
 
     func webView(_ webView: WKWebView,

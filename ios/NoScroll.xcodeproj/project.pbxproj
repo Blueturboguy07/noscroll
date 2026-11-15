@@ -13,8 +13,6 @@
 		5A0F8E775023BC474E03BE33 /* WebScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */; };
 		D83AB944B5F8E0296DC5253D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F101DA5C9C1BF120AFC3D3D /* Theme.swift */; };
 		E3D2C8740D06E02BD6ABD35D /* TabScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3625EA0C0613FDC22D64C5DC /* TabScreens.swift */; };
-		33F5423E5FFE6DCC43DAFDA5 /* BrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98198764AB5B5DD6D6ED8722 /* BrandMark.swift */; };
-		C92F86E2B54AF053DA1925D8 /* BrandPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */; };
 		9A4AD3B553ADBA5EE081781C /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CFA9C35930C2FCC655A15D /* HomeView.swift */; };
 		DC66C7088500AC1FB21DACFC /* ServiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */; };
 		603FA5A9AC96BEBE2A841CB5 /* LifeGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E7317D5642AA8442B74BAB /* LifeGridView.swift */; };
@@ -23,10 +21,16 @@
 		FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */; };
 		024E40666AED54B036AF4364 /* SVGPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = F289B64C92194643788A6FA4 /* SVGPath.swift */; };
 		79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0730769F06E849F940D126 /* SleepSchedule.swift */; };
+		D8EDD629186169E753567515 /* PublikLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD1EBFBCED5B9504A81B20 /* PublikLinks.swift */; };
+		0E7D3DDDF7CBD32FC32F8A66 /* PublikPoll.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F63448B07578F3357AE670 /* PublikPoll.swift */; };
+		3CE4D79B84107E7F69BFA4F0 /* ServiceLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D35EB49E723714B46EB60A /* ServiceLinks.swift */; };
 		01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BD89AE0AFB93182037786A /* RuleBundle.swift */; };
 		49A807443D5252C9D186CD14 /* WebSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */; };
 		A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */; };
+		2A26EEF3C7B7A46C30908F19 /* Publik.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC25B1C44E7EFD3BA98BE479 /* Publik.swift */; };
+		CB61FC5EBB6AB920F2CD353A /* PublikGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE4E19A38278296C23E2BE6 /* PublikGateView.swift */; };
 		8BBA0F12CFE98E6B7CEE26F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 847708244D2F2364D2D98223 /* Assets.xcassets */; };
+		E6D635CFD2FB052996BB14C2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E1FFFACE93EA5E72ECB976CC /* PrivacyInfo.xcprivacy */; };
 		0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */ = {isa = PBXBuildFile; fileRef = D2E4B2A875DB71820FEEF62C /* noscroll.js */; };
 		73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */ = {isa = PBXBuildFile; fileRef = F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */; };
 		2F54E958873733761E2D57DE /* facebook.json in Resources */ = {isa = PBXBuildFile; fileRef = 6DD636EB38F7FB6347CF8CEC /* facebook.json */; };
@@ -39,6 +43,7 @@
 		827770E84FF0BF9D5999EA61 /* youtube.json in Resources */ = {isa = PBXBuildFile; fileRef = 45D328F985929718EE6E102E /* youtube.json */; };
 		5E86D988E1CFC7573C497EFA /* NoScrollWidget.swift in WidgetSources */ = {isa = PBXBuildFile; fileRef = 1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */; };
 		6A4BD3B1CBC66F4CF0721548 /* NoScrollWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AEDC9D5FAA9591CF1291BADC /* PrivacyInfo.xcprivacy in WidgetResources */ = {isa = PBXBuildFile; fileRef = BD7955A5F28830838C940789 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,8 +53,6 @@
 		5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebScreen.swift"; path = "NoScroll/App/WebScreen.swift"; sourceTree = "<group>"; };
 		7F101DA5C9C1BF120AFC3D3D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Theme.swift"; path = "NoScroll/Design/Theme.swift"; sourceTree = "<group>"; };
 		3625EA0C0613FDC22D64C5DC /* TabScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TabScreens.swift"; path = "NoScroll/Home/TabScreens.swift"; sourceTree = "<group>"; };
-		98198764AB5B5DD6D6ED8722 /* BrandMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BrandMark.swift"; path = "NoScroll/Design/BrandMark.swift"; sourceTree = "<group>"; };
-		64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BrandPaths.swift"; path = "NoScroll/Design/BrandPaths.swift"; sourceTree = "<group>"; };
 		30CFA9C35930C2FCC655A15D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HomeView.swift"; path = "NoScroll/Home/HomeView.swift"; sourceTree = "<group>"; };
 		D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ServiceSettingsView.swift"; path = "NoScroll/Home/ServiceSettingsView.swift"; sourceTree = "<group>"; };
 		B2E7317D5642AA8442B74BAB /* LifeGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LifeGridView.swift"; path = "NoScroll/Onboarding/LifeGridView.swift"; sourceTree = "<group>"; };
@@ -58,10 +61,17 @@
 		9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LifeInWeeks.swift"; path = "NoScrollCore/Sources/NoScrollCore/LifeInWeeks.swift"; sourceTree = "<group>"; };
 		F289B64C92194643788A6FA4 /* SVGPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SVGPath.swift"; path = "NoScrollCore/Sources/NoScrollCore/SVGPath.swift"; sourceTree = "<group>"; };
 		AF0730769F06E849F940D126 /* SleepSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SleepSchedule.swift"; path = "NoScrollCore/Sources/NoScrollCore/SleepSchedule.swift"; sourceTree = "<group>"; };
+		56CD1EBFBCED5B9504A81B20 /* PublikLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PublikLinks.swift"; path = "NoScrollCore/Sources/NoScrollCore/PublikLinks.swift"; sourceTree = "<group>"; };
+		F5F63448B07578F3357AE670 /* PublikPoll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PublikPoll.swift"; path = "NoScrollCore/Sources/NoScrollCore/PublikPoll.swift"; sourceTree = "<group>"; };
+		23D35EB49E723714B46EB60A /* ServiceLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ServiceLinks.swift"; path = "NoScrollCore/Sources/NoScrollCore/ServiceLinks.swift"; sourceTree = "<group>"; };
 		54BD89AE0AFB93182037786A /* RuleBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RuleBundle.swift"; path = "NoScroll/Core/RuleBundle.swift"; sourceTree = "<group>"; };
 		6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WebSession.swift"; path = "NoScroll/Core/WebSession.swift"; sourceTree = "<group>"; };
 		F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WrappedWebViewController.swift"; path = "NoScroll/Web/WrappedWebViewController.swift"; sourceTree = "<group>"; };
+		EC25B1C44E7EFD3BA98BE479 /* Publik.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Publik.swift"; path = "NoScroll/Publik/Publik.swift"; sourceTree = "<group>"; };
+		9AE4E19A38278296C23E2BE6 /* PublikGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PublikGateView.swift"; path = "NoScroll/Publik/PublikGateView.swift"; sourceTree = "<group>"; };
 		847708244D2F2364D2D98223 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = "Assets.xcassets"; path = "NoScroll/Assets.xcassets"; sourceTree = "<group>"; };
+		E1FFFACE93EA5E72ECB976CC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = "PrivacyInfo.xcprivacy"; path = "NoScroll/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
+		7D8DF384E15487F897149129 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "App.xcconfig"; path = "Config/App.xcconfig"; sourceTree = "<group>"; };
 		D2E4B2A875DB71820FEEF62C /* noscroll.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "noscroll.js"; path = "NoScroll/Resources/noscroll.js"; sourceTree = "<group>"; };
 		F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */ = {isa = PBXFileReference; lastKnownFileType = file; name = "rules-signing.pub.raw"; path = "NoScroll/Resources/rules-signing.pub.raw"; sourceTree = "<group>"; };
 		6DD636EB38F7FB6347CF8CEC /* facebook.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "facebook.json"; path = "NoScroll/Resources/Rules/facebook.json"; sourceTree = "<group>"; };
@@ -73,6 +83,7 @@
 		E923E430F8E46F763F647273 /* x.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "x.json"; path = "NoScroll/Resources/Rules/x.json"; sourceTree = "<group>"; };
 		45D328F985929718EE6E102E /* youtube.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "youtube.json"; path = "NoScroll/Resources/Rules/youtube.json"; sourceTree = "<group>"; };
 		1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NoScrollWidget.swift"; path = "NoScrollWidget/NoScrollWidget.swift"; sourceTree = "<group>"; };
+		BD7955A5F28830838C940789 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = "PrivacyInfo.xcprivacy"; path = "NoScrollWidget/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
 		FBF257999FE8034997CE0C5E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info.plist"; path = "NoScrollWidget/Info.plist"; sourceTree = "<group>"; };
 		C3EBA99A50031723E7FACE2F /* NoScrollWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NoScrollWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D91517BFBDECE389497A425B /* NoScroll.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoScroll.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -101,6 +112,7 @@
 		1629A0BB4117BEFC577EF28D = {
 			isa = PBXGroup;
 			children = (
+				7D8DF384E15487F897149129 /* App.xcconfig */,
 				D8DBA3F9900DD17689CA0C4D /* Sources */,
 				307A90002D1285ED8C05A9E0 /* Resources */,
 				3AF7E71D86EA58D9E0F75F28 /* NoScrollWidget */,
@@ -117,8 +129,6 @@
 				5C6F4DB443B6BA064F8EF1EB /* WebScreen.swift */,
 				7F101DA5C9C1BF120AFC3D3D /* Theme.swift */,
 				3625EA0C0613FDC22D64C5DC /* TabScreens.swift */,
-				98198764AB5B5DD6D6ED8722 /* BrandMark.swift */,
-				64B0EE8F62191D2ACC3ECF5C /* BrandPaths.swift */,
 				30CFA9C35930C2FCC655A15D /* HomeView.swift */,
 				D9142C103B350A4F42060B98 /* ServiceSettingsView.swift */,
 				B2E7317D5642AA8442B74BAB /* LifeGridView.swift */,
@@ -127,9 +137,14 @@
 				9F0633E77EC760EF2A904903 /* LifeInWeeks.swift */,
 				F289B64C92194643788A6FA4 /* SVGPath.swift */,
 				AF0730769F06E849F940D126 /* SleepSchedule.swift */,
+				56CD1EBFBCED5B9504A81B20 /* PublikLinks.swift */,
+				F5F63448B07578F3357AE670 /* PublikPoll.swift */,
+				23D35EB49E723714B46EB60A /* ServiceLinks.swift */,
 				54BD89AE0AFB93182037786A /* RuleBundle.swift */,
 				6F7F0F00CF30E18AB6827BC3 /* WebSession.swift */,
 				F80B5AA7285EE89404D034D8 /* WrappedWebViewController.swift */,
+				EC25B1C44E7EFD3BA98BE479 /* Publik.swift */,
+				9AE4E19A38278296C23E2BE6 /* PublikGateView.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -138,6 +153,7 @@
 			isa = PBXGroup;
 			children = (
 				847708244D2F2364D2D98223 /* Assets.xcassets */,
+				E1FFFACE93EA5E72ECB976CC /* PrivacyInfo.xcprivacy */,
 				D2E4B2A875DB71820FEEF62C /* noscroll.js */,
 				F448BA98B41A3C469FBAA0C0 /* rules-signing.pub.raw */,
 				6DD636EB38F7FB6347CF8CEC /* facebook.json */,
@@ -166,6 +182,7 @@
 			children = (
 				1AEB70D6322DB986B2114091 /* NoScrollWidget.swift */,
 				FBF257999FE8034997CE0C5E /* Info.plist */,
+				BD7955A5F28830838C940789 /* PrivacyInfo.xcprivacy */,
 			);
 			name = NoScrollWidget;
 			sourceTree = "<group>";
@@ -180,6 +197,7 @@
 				FCA229C23F166EBB0BA5029E,
 				4F6F5CC3FCCF73F75AE9CCF4,
 				B9C6EB6F79FC54535ACB3053,
+				A98CF45B9EB258742F1A12D7 /* publik app token */,
 				425893CE4AEDF359C5F0F0D7,
 			);
 			buildRules = ();
@@ -197,6 +215,7 @@
 			buildPhases = (
 				59C757B69A2BA5C7B3FDB1D7,
 				DE01148BD5ECED1017080940,
+				610A5AE89E343EB10249B970,
 			);
 			buildRules = ();
 			dependencies = ();
@@ -263,6 +282,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8BBA0F12CFE98E6B7CEE26F4 /* Assets.xcassets in Resources */,
+				E6D635CFD2FB052996BB14C2 /* PrivacyInfo.xcprivacy in Resources */,
 				0020A065EE1971D8D94E8A44 /* noscroll.js in Resources */,
 				73A4DAFBEDD5F44B73C51FBA /* rules-signing.pub.raw in Resources */,
 				2F54E958873733761E2D57DE /* facebook.json in Resources */,
@@ -276,7 +296,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		610A5AE89E343EB10249B970 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AEDC9D5FAA9591CF1291BADC /* PrivacyInfo.xcprivacy in WidgetResources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A98CF45B9EB258742F1A12D7 /* publik app token */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "publik app token";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Sign in with publik needs the app token (pat_) in the bundle: Publik.swift reads publik-app-token.txt.\n# The token is public by design: it only mints capped keys for this app. Never put a pk_ key here. Never print it.\n# PUBLIK_APP_TOKEN at build time (CI: the repo secret), else publik-app-token.txt at the repo root.\n# A Release build without a pat_ token FAILS. A Debug build only warns.\nOUT=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/publik-app-token.txt\"\nTOKEN=$(printf '%s' \"${PUBLIK_APP_TOKEN:-}\" | tr -d '[:space:]')\nif [ -z \"$TOKEN\" ] && [ -f \"${SRCROOT}/../publik-app-token.txt\" ]; then\n  TOKEN=$(tr -d '[:space:]' < \"${SRCROOT}/../publik-app-token.txt\")\nfi\ncase \"$TOKEN\" in\n  pat_*)\n    printf '%s' \"$TOKEN\" > \"$OUT\"\n    ;;\n  *)\n    rm -f \"$OUT\"\n    if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n      echo \"error: Release build without a publik app token (pat_). Set PUBLIK_APP_TOKEN or add publik-app-token.txt at the repo root.\"\n      exit 1\n    fi\n    echo \"warning: no publik app token (pat_); this Debug build will ask for a new build.\"\n    ;;\nesac\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		FCA229C23F166EBB0BA5029E = {
@@ -289,8 +336,6 @@
 				5A0F8E775023BC474E03BE33 /* WebScreen.swift in Sources */,
 				D83AB944B5F8E0296DC5253D /* Theme.swift in Sources */,
 				E3D2C8740D06E02BD6ABD35D /* TabScreens.swift in Sources */,
-				33F5423E5FFE6DCC43DAFDA5 /* BrandMark.swift in Sources */,
-				C92F86E2B54AF053DA1925D8 /* BrandPaths.swift in Sources */,
 				9A4AD3B553ADBA5EE081781C /* HomeView.swift in Sources */,
 				DC66C7088500AC1FB21DACFC /* ServiceSettingsView.swift in Sources */,
 				603FA5A9AC96BEBE2A841CB5 /* LifeGridView.swift in Sources */,
@@ -299,9 +344,14 @@
 				FDD33EE84FB43E2CFCA75F3A /* LifeInWeeks.swift in Sources */,
 				024E40666AED54B036AF4364 /* SVGPath.swift in Sources */,
 				79493D91E790ABA69B173F63 /* SleepSchedule.swift in Sources */,
+				D8EDD629186169E753567515 /* PublikLinks.swift in Sources */,
+				0E7D3DDDF7CBD32FC32F8A66 /* PublikPoll.swift in Sources */,
+				3CE4D79B84107E7F69BFA4F0 /* ServiceLinks.swift in Sources */,
 				01B48439A20256793F4B65E7 /* RuleBundle.swift in Sources */,
 				49A807443D5252C9D186CD14 /* WebSession.swift in Sources */,
 				A206A501EE4E7DD87D1C6593 /* WrappedWebViewController.swift in Sources */,
+				2A26EEF3C7B7A46C30908F19 /* Publik.swift in Sources */,
+				CB61FC5EBB6AB920F2CD353A /* PublikGateView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -318,6 +368,7 @@
 /* Begin XCBuildConfiguration section */
 		6004C90EA86F79D24F736B17 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7D8DF384E15487F897149129 /* App.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
@@ -328,7 +379,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				PUBLIK_TEST_HOOKS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(PUBLIK_TEST_HOOKS_CONDITION_$(PUBLIK_TEST_HOOKS))";
 				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
@@ -338,16 +390,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				NOSCROLL_ENTITLEMENTS = "";
 				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
 				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -355,21 +407,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
-				MARKETING_VERSION = 0.1.0;
+				INFOPLIST_KEY_CFBundleDisplayName = "$(APP_DISPLAY_NAME)";
+				MARKETING_VERSION = 0.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
 		8C1BE4D75C50C6B06F4574D3 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7D8DF384E15487F897149129 /* App.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
@@ -379,6 +432,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(PUBLIK_TEST_HOOKS_CONDITION_$(PUBLIK_TEST_HOOKS))";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -389,16 +443,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				NOSCROLL_ENTITLEMENTS = "";
 				CODE_SIGN_ENTITLEMENTS = "$(NOSCROLL_ENTITLEMENTS)";
 				INFOPLIST_FILE = NoScroll/Info.plist;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -406,16 +460,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoScrollWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NoScroll;
-				MARKETING_VERSION = 0.1.0;
+				INFOPLIST_KEY_CFBundleDisplayName = "$(APP_DISPLAY_NAME)";
+				MARKETING_VERSION = 0.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noscroll.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

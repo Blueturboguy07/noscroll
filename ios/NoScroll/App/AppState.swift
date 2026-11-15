@@ -1,15 +1,15 @@
-import FamilyControls
 import Foundation
 import SwiftUI
 import UIKit
+import WebKit
 
 /// App-wide state: the verified rule bundles, the engine source, and per-surface
 /// user settings.
 ///
-/// This build is the **wrapper-only** variant. The shield layer needs the gated
+/// Version 1 is the **browser only**. The Screen Time shield needs Apple's
 /// `com.apple.developer.family-controls` entitlement (docs/ENTITLEMENT.md), so
-/// until that is granted the app is honest about what it does: it gives you a
-/// calmer way in, and it does not claim to stop you opening the real app.
+/// this build does not ask for Screen Time and does not claim to stop you
+/// opening the real apps. It gives you a calmer way in through its own browser.
 @MainActor
 final class AppState: ObservableObject {
 
@@ -25,6 +25,37 @@ final class AppState: ObservableObject {
     private let settingsKey = "noscroll.settings"
     private let onboardedKey = "noscroll.onboarded"
 
+    /// The full name in the app's own screens ("publik NoScroll"): the Info.plist key
+    /// AppFullName, from APP_NAME in ios/Config/App.xcconfig.
+    static let appName = (Bundle.main.object(forInfoDictionaryKey: "AppFullName") as? String)
+        ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "publik NoScroll"
+
+    /// The short name under the icon and in the widget gallery ("NoScroll"):
+    /// CFBundleDisplayName, from APP_DISPLAY_NAME. Use it where the user must find
+    /// the app by the name iOS shows.
+    static let homeScreenName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? "NoScroll"
+
+    /// "publik NoScroll 0.1.5 (6)": the full name, the release version and the build number, for Settings.
+    static let versionLine: String = {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = info["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info["CFBundleVersion"] as? String ?? "?"
+        return "\(appName) \(version) (\(build))"
+    }()
+
+    /// Surfaces that hide ads ("sponsored", "promoted"). The app never turns
+    /// them on and never shows a switch for them: blocking ads conflicts with
+    /// the terms of the services it opens (App Store guideline 5.2.2).
+    static let adSurfaceKeys: Set<String> = ["sponsored", "promoted"]
+
+    /// False for a rule that this build never applies and shows no switch for: the ad rules (every build), and in
+    /// the App Store build the page-part rules of the services in `addressOnlyInStoreBuild`.
+    static func isOffered(service: String, key: String, kind: String) -> Bool {
+        if adSurfaceKeys.contains(key) { return false }
+        if isAppStoreBuild && addressOnlyInStoreBuild.contains(service) && !addressKinds.contains(kind) { return false }
+        return true
+    }
+
     /// First run shows onboarding, where the user sees every switch once and
     /// decides. Nothing is forced on.
     @Published var needsOnboarding: Bool
@@ -39,26 +70,9 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(scrollHoursPerDay, forKey: "noscroll.scrollHours") }
     }
 
-    /// True once Screen Time authorisation is granted. Gated on the
-    /// FamilyControls entitlement — see docs/ENTITLEMENT.md — so it is false in
-    /// every build until Apple approves it.
-    @Published private(set) var hasScreenTimeAccess = false
-
-    /// Per-service time today. Real numbers need a DeviceActivityReport
-    /// extension under the same entitlement; until then this says so rather
-    /// than inventing a figure, which is the exact dishonesty this project is
-    /// reacting to.
-    func usageToday(for serviceID: String) -> String {
-        guard hasScreenTimeAccess else { return "—" }
-        let minutes = screenTimeMinutes[serviceID] ?? 0
-        return minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h \(minutes % 60)m"
-    }
-
-    @Published private(set) var screenTimeMinutes: [String: Int] = [:]
-
     // MARK: - Navigation
 
-    enum Tab: Hashable { case sleep, adjust, home, shield, profile }
+    enum Tab: Hashable { case adjust, home, profile }
     @Published var tab: Tab = .home
     /// Set by a widget tap; HomeView opens this service's browser.
     @Published var pendingService: String?
@@ -72,128 +86,29 @@ final class AppState: ObservableObject {
         pendingService = id
     }
 
-    // MARK: - Sleep Mode
-
-    @Published var sleepEnabled = UserDefaults.standard.bool(forKey: "noscroll.sleep.on") {
-        didSet { UserDefaults.standard.set(sleepEnabled, forKey: "noscroll.sleep.on") }
-    }
-    @Published var sleepStart = AppState.time(hour: 22)
-    @Published var sleepEnd = AppState.time(hour: 7)
-
-    /// Recomputed on read, never cached — see SleepSchedule.
-    var sleepActiveNow: Bool {
-        let cal = Calendar.current
-        let s = cal.component(.hour, from: sleepStart) * 60 + cal.component(.minute, from: sleepStart)
-        let e = cal.component(.hour, from: sleepEnd) * 60 + cal.component(.minute, from: sleepEnd)
-        return SleepSchedule(startMinute: s, endMinute: e, enabled: sleepEnabled, weekdays: [])
-            .isActive(at: Date())
-    }
-
-    private static func time(hour: Int) -> Date {
-        Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date()
-    }
-
-    // MARK: - Post Mode
-
-    @Published private(set) var postModeUnlocksRemaining = 4
-
-    func beginPostMode() {
-        guard postModeUnlocksRemaining > 0 else { return }
-        postModeUnlocksRemaining -= 1
-        #if NOSCROLL_SHIELD
-        shield.beginPostMode()
-        #endif
-    }
-
-    // MARK: - Telemetry
-
-    @Published var telemetryEnabled = UserDefaults.standard.bool(forKey: "noscroll.telemetry") {
-        didSet { UserDefaults.standard.set(telemetryEnabled, forKey: "noscroll.telemetry") }
-    }
-
     func bundleVersion(for serviceID: String) -> String {
-        guard let v = bundles[serviceID]?.version else { return "unavailable" }
-        return "v\(v)"
+        guard let v = bundles[serviceID]?.version else { return "Not available" }
+        return "Version \(v)"
     }
 
-    /// Why the last Screen Time request failed, shown to the user.
-    ///
-    /// This used to be a silent no-op behind a compile flag, so tapping
-    /// "Grant access" did nothing at all and looked like the app was broken.
-    /// It now calls the real API and reports whatever comes back.
-    @Published var screenTimeError: String?
+    // MARK: - Sign out of a service
 
-    /// Apps the user picked in Apple's FamilyActivityPicker.
-    @Published var shieldSelection = FamilyActivitySelection()
+    /// Services signed out in this run, so Settings can say "Signed out".
+    @Published private(set) var signedOutServices: Set<String> = []
 
-    func requestScreenTimeAccess() async {
-        #if targetEnvironment(simulator)
-        // Not a limitation of this app: the Screen Time frameworks are simply
-        // not functional in the Simulator, so the system prompt can never
-        // appear there. Say so rather than failing mysteriously.
-        screenTimeError = "Screen Time isn't available in the iOS Simulator. "
-            + "Run NoScroll on a real iPhone to grant it."
-        hasScreenTimeAccess = false
-        #else
-        do {
-            try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
-            hasScreenTimeAccess = AuthorizationCenter.shared.authorizationStatus == .approved
-            screenTimeError = hasScreenTimeAccess
-                ? nil
-                : "Screen Time access was declined. You can turn it on in Settings."
-        } catch {
-            screenTimeError = Self.explain(error)
-            hasScreenTimeAccess = false
-        }
-        #endif
+    /// Sign out of one service: delete its cookies, storage and cache in this
+    /// app's browser on this device. The account at that service stays.
+    func signOut(of service: Service) async {
+        let store = WKWebsiteDataStore(forIdentifier: service.sessionID)
+        await store.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
+        // The saved page state (WrappedWebViewController) can hold a signed-in page.
+        UserDefaults.standard.removeObject(forKey: "noscroll.state.\(service.sessionID.uuidString)")
+        signedOutServices.insert(service.id)
     }
 
-    /// Turns Apple's Screen Time errors into something a person can act on.
-    ///
-    /// The default text for the common case is "Couldn't communicate with a
-    /// helper application", which is an XPC failure message that tells the user
-    /// nothing whatsoever about the actual cause — the app not carrying the
-    /// Family Controls entitlement.
-    static func explain(_ error: Error) -> String {
-        let ns = error as NSError
-
-        // NSXPCConnectionInvalid. The Family Controls daemon refuses to talk to
-        // a process that is not entitled, so this IS the missing-entitlement case.
-        if ns.domain == NSCocoaErrorDomain && ns.code == 4099 {
-            return "This build doesn't carry Apple's Family Controls entitlement, so iOS won't "
-                + "hand out Screen Time access. Apple has to approve that entitlement for the "
-                + "app before this can work — see docs/ENTITLEMENT.md. Everything else in "
-                + "NoScroll works without it."
-        }
-
-        if let fc = error as? FamilyControlsError {
-            switch fc {
-            case .unavailable:
-                return "Screen Time isn't available on this device."
-            case .invalidAccountType:
-                return "Screen Time needs a personal Apple ID. A Managed Apple ID or a child "
-                    + "account can't grant it here."
-            case .authorizationCanceled:
-                return "You cancelled the Screen Time prompt. Tap Grant access to try again."
-            case .authenticationMethodUnavailable:
-                return "iOS couldn't verify your Apple ID. Check you're signed in, then retry."
-            case .restricted:
-                return "Screen Time is restricted on this device, so NoScroll can't request it."
-            case .networkError:
-                return "Couldn't reach Apple to set up Screen Time. Check your connection."
-            case .invalidArgument:
-                return "Screen Time rejected the request. Please report this."
-            @unknown default:
-                break
-            }
-        }
-        return error.localizedDescription
-    }
-
-    /// Opens this app's page in Settings. Works everywhere, no entitlement.
-    func openSystemSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+    /// Opening a service again signs in again, so the "Signed out" mark goes.
+    func didOpen(_ service: Service) {
+        signedOutServices.remove(service.id)
     }
 
     init() {
@@ -214,9 +129,14 @@ final class AppState: ObservableObject {
     private func seedDefaults() {
         for service in Self.services {
             guard let svc = bundles[service.id]?.services[service.id] else { continue }
-            for (name, surface) in svc.surfaces where surface.label != nil {
+            for (name, surface) in svc.surfaces {
                 let key = "\(service.id).\(name)"
-                if settings[key] == nil { settings[key] = surface.defaultEnabled ?? false }
+                if !Self.isOffered(service: service.id, key: name, kind: surface.kind) {
+                    // Off, also for people who had turned it on in an older build.
+                    if settings[key] != false { settings[key] = false }
+                } else if surface.label != nil, settings[key] == nil {
+                    settings[key] = surface.defaultEnabled ?? false
+                }
             }
         }
     }
@@ -289,7 +209,9 @@ final class AppState: ObservableObject {
             },
             set: { [weak self] newValue in
                 guard let self else { return }
-                for key in keys { self.settings["\(service).\(key)"] = newValue }
+                for key in keys where !Self.adSurfaceKeys.contains(key) {
+                    self.settings["\(service).\(key)"] = newValue
+                }
             }
         )
     }
@@ -306,8 +228,8 @@ final class AppState: ObservableObject {
     func surfaces(for service: String) -> [SurfaceGroup] {
         guard let svc = bundles[service]?.services[service] else { return [] }
         var byLabel: [String: (keys: [String], suggested: Bool)] = [:]
-        for (key, surface) in svc.surfaces {
-            guard let label = surface.label else { continue }
+        for (key, surface) in svc.surfaces where Self.isOffered(service: service, key: key, kind: surface.kind) {
+            guard let label = Self.displayLabel(surface.label) else { continue }
             var entry = byLabel[label] ?? (keys: [], suggested: false)
             entry.keys.append(key)
             entry.suggested = entry.suggested || (surface.defaultEnabled ?? false)
@@ -319,6 +241,19 @@ final class AppState: ObservableObject {
                 if lhs.suggested != rhs.suggested { return lhs.suggested && !rhs.suggested }
                 return lhs.label < rhs.label
             }
+    }
+
+    /// The signed rule files name one Instagram switch "Hide Ads & Suggested".
+    /// The app does not offer ad blocking, so it shows that switch by what it is for.
+    private static func displayLabel(_ label: String?) -> String? {
+        label == "Hide Ads & Suggested" ? "Hide suggested posts" : label
+    }
+
+    /// How many of a service's switches are on, for the home screen.
+    func blockCount(for service: String) -> (on: Int, total: Int) {
+        let groups = surfaces(for: service)
+        let on = groups.filter { binding(service: service, surfaces: $0.keys).wrappedValue }.count
+        return (on, groups.count)
     }
 
     private func loadSettings() {

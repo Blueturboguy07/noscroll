@@ -1,0 +1,75 @@
+name: Sign rule bundles
+
+# Signs every rule bundle with the private key in the repo secret
+# RULES_SIGNING_KEY, builds the engine from engine/src, copies the engine and
+# the signed bundles into the iOS and Android resources, and commits them.
+# The private key never leaves the secret: it is not printed, not written to
+# disk and not committed.
+#
+# ed25519 signatures and the engine build are deterministic. A run on bundles
+# that are already signed and an engine that is already built changes nothing
+# and makes no commit.
+#
+# After a merge, run it by hand (Actions > Sign rule bundles > Run workflow)
+# on any branch whose rule bundles or engine changed.
+on:
+  push:
+    branches: [signin-gate]
+    paths:
+      - 'rules/**'
+      - 'keys/**'
+      - 'engine/src/**'
+      - 'engine/build.mjs'
+      - 'engine/package.json'
+      - 'engine/pnpm-lock.yaml'
+      - 'tools/sign-bundle.mjs'
+      - 'tools/sync-engine.mjs'
+      - '.github/workflows/sign-rules.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sign-rules-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Sign every rule bundle
+        env:
+          RULES_SIGNING_KEY: ${{ secrets.RULES_SIGNING_KEY }}
+        run: |
+          if [ -z "$RULES_SIGNING_KEY" ]; then
+            echo "::error::The repo secret RULES_SIGNING_KEY is not set."
+            exit 1
+          fi
+          node tools/sign-bundle.mjs sign rules/*.json
+      - name: Verify with the committed public key
+        run: node tools/sign-bundle.mjs verify rules/*.json
+      - name: Build the engine and copy it and the signed bundles into the apps
+        run: |
+          pnpm install --dir engine --frozen-lockfile
+          node tools/sync-engine.mjs
+      - name: Commit the signatures and the engine
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rules ios/NoScroll/Resources/Rules ios/NoScroll/Resources/noscroll.js \
+                  android/app/src/main/assets/rules android/app/src/main/assets/noscroll.js
+          if git diff --cached --quiet; then
+            echo "The rule bundles are signed and the engine copies are current."
+            exit 0
+          fi
+          git diff --cached --stat
+          git commit -m "Sign rule bundles and sync the engine (sign-rules workflow)"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

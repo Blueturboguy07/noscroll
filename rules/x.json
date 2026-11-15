@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "minEngine": 1,
   "services": {
     "x": {
@@ -60,11 +60,12 @@
             "article:has([data-testid='placementTracking'])",
             "article:has(span:only-child[data-testid='promotedIndicator'])"
           ],
-          "defaultEnabled": true,
+          "defaultEnabled": false,
           "observe": true,
           "probe": {
             "expectMin": 0
-          }
+          },
+          "source": "Off by default, and the iOS app shows no switch for it: NoScroll does not block ads (App Store guideline 5.2.2)."
         },
         "who-to-follow": {
           "kind": "dom-remove",
@@ -87,5 +88,5 @@
       }
     }
   },
-  "signature": "bgmwwoNAUSLUcJYeLahCawuf2nDp4rVycqs8t9uNziW4pwBrv0S0bcEwVDkIgC4AFhmCf5H7snGOM1aKgCdsBw=="
+  "signature": "9gw5BrdSs6xmTJH/AQUcKjR0D8cx9bJ9Arm/P+osXLRWyxE6ETtGXXPlycJxpnKPuldgCxysZnPx0tXFxZ8mCg=="
 }

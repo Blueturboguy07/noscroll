@@ -25,6 +25,35 @@ Off by default. When on, a message contains exactly:
 Never a URL. Never page content. Never an identifier. Enforced in `engine/src/bridge.ts`, where
 diagnostic message types are gated on the opt-in flag.
 
+## Tier 3 — Sign in with publik and usage counting
+
+NoScroll is listed on publik (publikhq.com). The app uses **Sign in with publik**, and the
+publik module counts its users. The code is `ios/NoScroll/Publik/Publik.swift` and
+`android/app/src/main/java/app/noscroll/publik/Publik.kt`. One build setting, `PUBLIK_GATE_MODE`,
+sets where the sign-in is: `required` (the app opens with it) or `optional` (it is in Settings,
+and the app works without it).
+
+- At first start, the app gets a key for this device from publik (`POST /api/v1/installs`). It
+  sends the app name and version, the system (`ios` or `android`), a random install ID, the device
+  name and the processor type. The key stays in the app's own files. On iOS, the key file is
+  excluded from iCloud and device backups. On Android, the app has no backup.
+- On iOS, the same file keeps a "signed in" mark and your publik handle after you sign in. With
+  them, the app opens when publik is not reachable. Sign out deletes them with the key.
+- You sign in on publik's own page, in the browser. NoScroll never sees your publik password.
+- After you sign in, the app sends two events: `app_opened` at start, and `active_session` every
+  30 minutes while the app is on screen. Each event holds the app name, a random install ID, the
+  event name, the app version, the system and the processor type, with the device's publik key.
+  Never a URL, never page content, never anything from Instagram, YouTube or the other services.
+- Usage counting starts only after you sign in. Settings > "Count app use" turns it off
+  (`consent.json` in the app's publik folder).
+- Settings > "Sign out" deletes the device's publik key from the device first, then revokes it
+  (`POST /api/v1/installs/revoke`). Settings > "Delete account" signs out, deletes the app's publik data on the device,
+  then opens publik's own delete page (https://publikhq.com/settings/profile#delete-account-title).
+- Settings > "Sign out of <service>" deletes that service's cookies and saved data in the app (iOS).
+- The iOS privacy manifest is `ios/NoScroll/PrivacyInfo.xcprivacy`: no tracking; collected data
+  is the device ID, the user ID and product interaction, all linked to the publik account.
+- NoScroll calls no AI model. publik's words on app usage: https://publikhq.com/privacy#app-usage
+
 ## What is not present
 
 - No analytics SDK.

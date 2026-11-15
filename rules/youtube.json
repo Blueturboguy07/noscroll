@@ -52,7 +52,7 @@
           "kind": "dom-remove",
           "label": "Remove Shorts tab",
           "selectors": [
-            "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.shorts)",
+            "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab[class*='shorts'])",
             "ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.pivot-shorts)",
             "ytm-pivot-bar-item-renderer:has(.pivot-shorts)",
             "ytd-mini-guide-entry-renderer:has(a[title='Shorts'])",

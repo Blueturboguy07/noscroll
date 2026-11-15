@@ -178,7 +178,7 @@ describe('YouTube: the tab bar of the current mobile site', () => {
   it('hides the Shorts tab with CSS before the first paint', () => {
     run(yt);
     const css = document.getElementById('noscroll-css')?.textContent ?? '';
-    expect(css).toContain('.pivot-bar-item-tab.shorts');
+    expect(css).toContain(".pivot-bar-item-tab[class*='shorts']");
     expect(css).toContain('.pivot-bar-item-tab.pivot-shorts');
   });
 

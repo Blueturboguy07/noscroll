@@ -56,7 +56,7 @@ env:
   # A build machine is not a user (publikhq.com/skills/telemetry.md, section 6).
   DO_NOT_TRACK: "1"
   TEAM_ID: R5R3ZS54LV
-  SIGNING: ${{ inputs.signing || 'auto' }}
+  SIGNING: ${{ inputs.signing || 'manual' }}
   # App Store bundle ids: {"id in the repo": "id in App Store Connect"}.
   STORE_IDS: '{"app.noscroll": "com.publikhq.noscroll", "app.noscroll.widget": "com.publikhq.noscroll.widget"}'
   # The App Store provisioning profile of each App Store bundle id (manual signing).
@@ -65,7 +65,7 @@ env:
 
 jobs:
   appstore:
-    name: Signed App Store build (upload ${{ inputs.upload == true }}, signing ${{ inputs.signing || 'auto' }})
+    name: Signed App Store build (upload ${{ inputs.upload == true }}, signing ${{ inputs.signing || 'manual' }})
     runs-on: macos-26
     timeout-minutes: 45
     steps:
